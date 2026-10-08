@@ -53,9 +53,11 @@ actor ClaudeCodeProvider: UsageProvider {
             for (key, record) in new { records[key] = (path, record) }
         }
 
+        // Drop records older than the window, so memory does not grow while the app runs for months.
+        records = records.filter { $0.value.record.timestamp >= start }
         return ProviderSnapshot(
             provider: id,
-            records: records.values.map(\.record).filter { $0.timestamp >= start },
+            records: records.values.map(\.record),
             limits: [],
             updatedAt: now
         )
