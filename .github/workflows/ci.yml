@@ -16,3 +16,4 @@ jobs:
       - run: swift --version
       - run: swift build
       - run: swift test
+      - run: node --test npm/test
