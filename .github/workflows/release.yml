@@ -1,0 +1,22 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # macos-15 is an Apple silicon (arm64) runner. Keep the runner and Xcode the same as ci.yml.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+      - run: sudo xcode-select -s /Applications/Xcode_26.3.app
+      - run: scripts/build-app.sh "$GITHUB_REF_NAME"
+      - run: |
+          { echo 'SHA-256:'; echo '```'; cat SHA256SUMS; echo '```'; } > notes.md
+          gh release create "$GITHUB_REF_NAME" TokenBar.zip SHA256SUMS --title "$GITHUB_REF_NAME" --notes-file notes.md
+        env:
+          GH_TOKEN: ${{ github.token }}
