@@ -334,7 +334,7 @@ Skipped: detection of the hidden state. `MenuBarExtra` does not expose its `NSSt
 
 ## 9. Humor data files
 
-All humor files are JSON in `Sources/TokenBar/Resources/`. SwiftPM copies them with `resources: [.copy("Resources/…")]`. Load them with `Bundle.module`. The DRD owns the fields and the voice. The TRD owns the file format and path.
+All humor files are JSON in `Sources/TokenBar/Resources/`. SwiftPM processes them with `resources: [.process("Resources")]`. Load them with `Bundle.tokenBar` (`Core/ResourceBundle.swift`), not `Bundle.module` (D34). The DRD owns the fields and the voice. The TRD owns the file format and path.
 
 | File | Top-level keys | Item fields |
 |---|---|---|
@@ -347,9 +347,9 @@ Load rules:
 2. A test checks that each `id` is unique and that each `price_eur` is > 0.
 3. A test checks that each roast placeholder is in the DRD list (`{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{time}`, `{cost}`, `{unit_value}`, `{unit_plural}`, `{tuition_percent}`, `{tuition_years}`).
 4. Store the roast rotation history (DRD 7.4) in `UserDefaults` as a list of the last 10 IDs. Keep the time of the last roast change in memory.
-5. Store the tuition running total in `UserDefaults`: `tuitionFirstLaunch` (date), `tuitionSpendUSD` (`Decimal` as a string) and `tuitionCountedThrough` (date). These values are not secrets.
+5. Store the tuition running total in `UserDefaults`: `tuitionFirstLaunch` (date), `tuitionSpendEUR` (`Decimal` as a string) and `tuitionCountedThrough` (date). These values are not secrets.
 6. On each refresh, add the cost of each complete day after `tuitionCountedThrough` and before today. Then set `tuitionCountedThrough` to yesterday.
-7. Spend since first launch = `tuitionSpendUSD` + the cost of today. Do not store the cost of today. A day older than the 35-day window is not counted.
+7. Spend since first launch = `tuitionSpendEUR` + the cost of today. Do not store the cost of today. A day older than the 35-day window is not counted.
 
 Skipped: loading user-supplied data files from disk. Add it if contributors ask to test units without a build.
 
