@@ -12,18 +12,26 @@ struct JSONLTailReader: Sendable {
     }
 
     private var files: [String: FileState] = [:]
+    private let chunkSize: Int
 
-    /// Returns the complete lines that were added since the last read of `url`.
-    /// `restarted` is true when the reader dropped its old state for the file.
+    /// Tests set a small `chunkSize` to make lines cross chunk boundaries.
+    init(chunkSize: Int = 1 << 20) {
+        self.chunkSize = chunkSize
+    }
+
+    /// Calls `body` once for each complete, non-empty line that was added since the last read of `url`.
+    /// The reader reads in chunks of `chunkSize` bytes, so memory does not grow with the file size.
+    /// Returns true when the reader dropped its old state for the file.
     /// Then the caller must drop the records that it read from that file before.
     /// Causes: the file was truncated, replaced (new inode) or deleted.
     /// A missing file gives no lines. The reader forgets the file.
     /// Bytes after the last newline stay in a buffer until their newline arrives.
-    mutating func readNewLines(at url: URL) throws -> (lines: [Data], restarted: Bool) {
+    /// If `body` throws, the reader keeps its old state. The next read gives the same lines again.
+    mutating func readNewLines(at url: URL, _ body: (Data) throws -> Void) throws -> Bool {
         let path = url.path
         var info = stat()
         guard stat(path, &info) == 0 else {
-            if errno == ENOENT { return ([], files.removeValue(forKey: path) != nil) }
+            if errno == ENOENT { return files.removeValue(forKey: path) != nil }
             throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
         }
         let size = UInt64(info.st_size)
@@ -34,20 +42,19 @@ struct JSONLTailReader: Sendable {
             state = FileState(device: info.st_dev, inode: info.st_ino, offset: 0)
             restarted = true
         }
-        guard size != state.offset || restarted else { return ([], false) }
+        guard size != state.offset || restarted else { return false }
 
         let handle = try FileHandle(forReadingFrom: url)
         defer { try? handle.close() }
         try handle.seek(toOffset: state.offset)
-        let chunk = try handle.readToEnd() ?? Data()
-        state.offset += UInt64(chunk.count)
-
-        // The last piece is the bytes after the last newline: empty or a partial line.
-        var pieces = (state.partial + chunk).split(separator: 0x0A, omittingEmptySubsequences: false)
-        state.partial = Data(pieces.removeLast())
+        while let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty {
+            state.offset += UInt64(chunk.count)
+            // The last piece is the bytes after the last newline: empty or a partial line.
+            var pieces = (state.partial + chunk).split(separator: 0x0A, omittingEmptySubsequences: false)
+            state.partial = Data(pieces.removeLast())
+            for line in pieces where !line.isEmpty { try body(Data(line)) }
+        }
         files[path] = state
-
-        let lines = pieces.filter { !$0.isEmpty }.map { Data($0) }
-        return (lines, restarted)
+        return restarted
     }
 }

@@ -19,8 +19,9 @@ import Testing
     }
 
     private mutating func read() throws -> (lines: [String], restarted: Bool) {
-        let result = try reader.readNewLines(at: url)
-        return (result.lines.map { String(decoding: $0, as: UTF8.self) }, result.restarted)
+        var lines: [String] = []
+        let restarted = try reader.readNewLines(at: url) { lines.append(String(decoding: $0, as: UTF8.self)) }
+        return (lines, restarted)
     }
 
     @Test mutating func readsOnlyAppendedLines() throws {
@@ -86,5 +87,14 @@ import Testing
         #expect(gone.lines == [])
         #expect(gone.restarted)
         #expect(try read().restarted == false)
+    }
+
+    @Test mutating func readsLinesAcrossChunkBoundaries() throws {
+        reader = JSONLTailReader(chunkSize: 4)
+        try write("first-line\nsecond\nx\npart")
+        #expect(try read().lines == ["first-line", "second", "x"])
+        try append("ial\n")
+        #expect(try read().lines == ["partial"])
+        try FileManager.default.removeItem(at: url)
     }
 }
