@@ -23,7 +23,8 @@ Tasks are split by layer (decided 2026-10-08). The layers share few files, so ag
 | Layer | Owner | Tasks |
 |---|---|---|
 | Core, providers and release | Claude | TRD-T01, T02, T03, T04, T05, T07, T10, T12, T13, T26 |
-| Humor and UI | Agents from other providers | TRD-T06, T08, T09, T14, T15, T16, T27 |
+| Humor | OpenCode (`opencode-go/kimi-k3`) | TRD-T06, T14 |
+| UI | Codex (ChatGPT) | TRD-T08, T09, T15, T16, T27 |
 | Remaining v1.0 tasks | Assigned later | TRD-T11, T18, T23 |
 | Later | Not assigned | TRD-T17, T19, T20, T21, T22, T24 |
 
@@ -38,9 +39,44 @@ A wave is a set of tasks that can run at the same time. Start a wave only when t
 | 3 | T04, T05, T07, T12, T26 | v0.1 (T12: v0.2) |
 | 4 | T08, T09, T13, T15, T16 | v0.1 (T13, T15, T16: v0.2) |
 | 5 | T27 | v0.2 |
-| 6 | T18, then T23 | v1.0 |
+| 6 | T18, then T23; T28 | v1.0 |
 | After the alpha | T11, only if the maintainer approves | v1.0 |
 
-## 4. Time budget
+## 4. Agents from other providers
+
+Claude starts OpenCode and Codex from the command line, one run for each issue (decided 2026-10-08). Both tools passed a pilot task and a permission probe on 2026-10-08.
+
+### 4.1 Run steps
+
+1. Claude makes the branch and the worktree for the issue. Claude adds the Linear claim comment with the tool and the model.
+2. Claude starts the tool in the worktree. The prompt is the Linear issue text and this instruction: "Read AGENTS.md and the skills in `.agents/skills/` first."
+3. When the tool stops, Claude runs `swift build` and `swift test` again. Claude does not trust the tool report alone.
+4. Claude does the pre-review (Section 1, step 6). Claude also checks that the diff changes only the files that the issue owns.
+5. Claude opens the pull request. The description names the tool and the model.
+
+### 4.2 OpenCode
+
+| Item | Value |
+|---|---|
+| Command | `opencode run --dir <worktree> -m opencode-go/kimi-k3 "<prompt>"` |
+| Permissions | [`opencode.json`](../opencode.json) in the repository root. Do not use `--auto`. |
+| Allowed shell commands | `swift build`, `swift test`, `git status`, `git diff`, `git add`, `git commit`, `ls`. All other commands are denied. |
+| Other limits | No web fetch. No access outside the worktree. |
+| Commits | OpenCode commits on its branch. |
+
+The probe showed that OpenCode checks each part of a compound command. `git status && touch FILE` is denied.
+
+### 4.3 Codex
+
+| Item | Value |
+|---|---|
+| Command | `codex exec -C <worktree> --sandbox workspace-write "<prompt>"` |
+| Sandbox | Writes only in the worktree. No network. `.git` is read-only. |
+| Tests | Codex runs `swift test --disable-sandbox`, because the SwiftPM sandbox cannot run inside the Codex sandbox. |
+| Commits | Codex cannot write to `.git`. Claude commits the Codex changes on the branch. |
+
+**Known limit:** the Codex sandbox does not block reads. Codex can read files outside the worktree, for example credential files. The maintainer accepted this risk (2026-10-08). Before each Codex commit, Claude checks the diff for secrets and for files outside the issue scope.
+
+## 5. Time budget
 
 The maintainer has 3 to 5 hours a week (PRD R11). Reviews and merges use most of this time. Plan about 2 waves a week. If a wave is late, cut Should stories first (PRD R11).
