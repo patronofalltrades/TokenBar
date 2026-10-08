@@ -1,0 +1,194 @@
+{
+  "roasts": [
+    {
+      "id": "zero-01",
+      "text": "No tokens today. A rare case of an MBA doing the reading. Teaching note pending.",
+      "category": "zero",
+      "locale": "en"
+    },
+    {
+      "id": "low-01",
+      "text": "{percent}% of your limit used. The board asks if AI is a strategy or a press release.",
+      "category": "low",
+      "locale": "en"
+    },
+    {
+      "id": "low-02",
+      "text": "Low usage. Either you finished the case yourself, or you did not open it. Discuss.",
+      "category": "low",
+      "locale": "en"
+    },
+    {
+      "id": "mid-01",
+      "text": "The protagonist delegated the analysis to an LLM. The LLM delegated it to a sub-agent. A classic consulting pyramid.",
+      "category": "mid",
+      "locale": "en"
+    },
+    {
+      "id": "mid-02",
+      "text": "{unit_value} {unit_plural} of compute today. The campus café line is slower, but it does not hallucinate.",
+      "category": "mid",
+      "locale": "en"
+    },
+    {
+      "id": "mid-03",
+      "text": "You have generated more slides today than the protagonist will read this term.",
+      "category": "mid",
+      "locale": "en"
+    },
+    {
+      "id": "high-01",
+      "text": "The protagonist has {remaining}% of {model} left and a 9 AM deadline. Discuss.",
+      "category": "high",
+      "locale": "en"
+    },
+    {
+      "id": "high-02",
+      "text": "{percent}% used. This is now a case about the allocation of scarce resources.",
+      "category": "high",
+      "locale": "en"
+    },
+    {
+      "id": "high-03",
+      "text": "At this burn rate, the startup in Exhibit 4 would also be out of runway.",
+      "category": "high",
+      "locale": "en"
+    },
+    {
+      "id": "high-04",
+      "text": "The cold call is coming. The tokens are not.",
+      "category": "high",
+      "locale": "en"
+    },
+    {
+      "id": "limit-01",
+      "text": "Limit reached. You must now read the case yourself. Resets in {reset}.",
+      "category": "limit",
+      "locale": "en"
+    },
+    {
+      "id": "limit-02",
+      "text": "The protagonist is out of tokens and must face the case alone. The teaching note calls this \"thinking\".",
+      "category": "limit",
+      "locale": "en"
+    },
+    {
+      "id": "limit-03",
+      "text": "Exhibit 1: You. Exhibit 2: The limit. Exhibit 3: Reset in {reset}.",
+      "category": "limit",
+      "locale": "en"
+    },
+    {
+      "id": "late-01",
+      "text": "It is {time}. The protagonist is still prompting. The teaching note calls this \"commitment\".",
+      "category": "late",
+      "locale": "en"
+    },
+    {
+      "id": "late-02",
+      "text": "Late night, high usage, case due tomorrow. Three data points, one pattern. Discuss.",
+      "category": "late",
+      "locale": "en"
+    },
+    {
+      "id": "late-03",
+      "text": "Tokens used after midnight do not appear on your transcript. Neither does sleep.",
+      "category": "late",
+      "locale": "en"
+    },
+    {
+      "id": "weekday-01",
+      "text": "Monday, 8 AM. You are opening the case for the first time. The model already read it twice.",
+      "category": "weekday",
+      "weekdays": [
+        "mon"
+      ],
+      "locale": "en"
+    },
+    {
+      "id": "weekday-02",
+      "text": "Saturday in Barcelona. Your Claude usage is up. Your beach usage is down. Discuss the trade-off.",
+      "category": "weekday",
+      "weekdays": [
+        "sat"
+      ],
+      "locale": "en"
+    },
+    {
+      "id": "weekday-03",
+      "text": "Friday evening, tokens still flowing. Either a deadline, or you are the group member who \"will just finish the deck\".",
+      "category": "weekday",
+      "weekdays": [
+        "fri"
+      ],
+      "locale": "en"
+    },
+    {
+      "id": "spend-01",
+      "text": "Today's API-equivalent cost is {cost}. That is lunch for two at the campus menú del día. The model did not share.",
+      "category": "spend",
+      "locale": "en"
+    },
+    {
+      "id": "spend-02",
+      "text": "Your tokens cost more today than your coffee habit this week. Only one of them helps you stay awake in class.",
+      "category": "spend",
+      "locale": "en"
+    },
+    {
+      "id": "career-01",
+      "text": "The protagonist asked the model to \"make it more MECE\". The model agreed. Nobody knows what changed.",
+      "category": "career",
+      "locale": "en"
+    },
+    {
+      "id": "career-02",
+      "text": "{percent}% utilization. Banking recruiters call this \"a great culture fit\".",
+      "category": "career",
+      "locale": "en"
+    },
+    {
+      "id": "career-03",
+      "text": "You used AI to write a cover letter about your passion for the firm. The firm used AI to read it.",
+      "category": "career",
+      "locale": "en"
+    },
+    {
+      "id": "career-04",
+      "text": "The model gave you three frameworks and a 2x2. You are now ready for consulting.",
+      "category": "career",
+      "locale": "en"
+    },
+    {
+      "id": "provider-01",
+      "text": "Codex wrote 400 lines today. Your commit message was \"fix\".",
+      "category": "provider",
+      "provider": "codex",
+      "locale": "en"
+    },
+    {
+      "id": "tuition-01",
+      "text": "At your current burn rate, your tokens will cover your MBA tuition in {tuition_years}. The financing office is not impressed.",
+      "category": "tuition",
+      "locale": "en"
+    },
+    {
+      "id": "tuition-02",
+      "text": "{tuition_percent} of your MBA tuition, paid in tokens. The ROI case writes itself.",
+      "category": "tuition",
+      "locale": "en"
+    },
+    {
+      "id": "tuition-03",
+      "text": "You have now spent {tuition_percent} of an MBA on asking a model to explain the MBA.",
+      "category": "tuition",
+      "locale": "en"
+    },
+    {
+      "id": "provider-02",
+      "text": "Claude and Codex both used today. Diversified portfolio. Your finance professor would approve of the risk profile, not the cost.",
+      "category": "provider",
+      "locale": "en"
+    }
+  ]
+}
