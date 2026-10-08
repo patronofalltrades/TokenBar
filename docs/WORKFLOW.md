@@ -18,6 +18,8 @@ When an agent stops work, it writes a handoff comment in Linear. Use the format 
 
 ## 2. Task owners
 
+**Current rule (decided 2026-10-08, D35):** Claude agents build all issues. The OpenCode and Codex setup in Section 4 is parked. The table below is the target split when the maintainer starts them again.
+
 Tasks are split by layer (decided 2026-10-08). The layers share few files, so agents can work in parallel.
 
 | Layer | Owner | Tasks |

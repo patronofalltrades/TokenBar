@@ -394,7 +394,7 @@ The title is literal. The body has the number first, then an optional roast. Add
 | Self-aware | Make fun of the user's AI habit and of TokenBar. | Make the user feel stupid. |
 | Kind | Roast the behavior. | Roast the body, gender, origin, religion, language, money problems or grades. |
 | Anonymous | Use "the protagonist", "you" or a gender-neutral name: Alex, Jordan, Robin, Andrea, Sam. Use they/them. | Name a real person, professor, student or company employee. |
-| Short | Maximum 140 characters. Two sentences maximum. | Use multi-line jokes. |
+| Short | Maximum 140 characters (decided 2026-10-08, D32). No sentence limit. | Use multi-line jokes. |
 | Safe for class | A student can show it on a projector. | Use profanity, alcohol excess or sexual content. |
 
 The case format is the signature: a short situation, a number, and a prompt such as "Discuss." Use "Discuss." in a maximum of 1 in 4 roasts.
