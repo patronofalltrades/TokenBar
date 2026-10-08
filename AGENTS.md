@@ -85,7 +85,7 @@ More than one agent works on this repository at the same time. Agents can come f
 
 ### 6.1 Linear is the source of truth
 
-1. Work only on a Linear issue that the maintainer assigned to you.
+1. Work only on a Linear issue in the TokenBar project (team key `IES`) that the maintainer assigned to you.
 2. Before you start, set the issue to **In Progress**. Add a comment with your agent name and model.
 3. If the issue is already **In Progress** for a different agent, do not start. Tell the maintainer.
 4. When you open the pull request, link it to the issue.
@@ -94,7 +94,7 @@ More than one agent works on this repository at the same time. Agents can come f
 
 1. Do not commit to `main`. Do not push to `main`.
 2. Use one branch for each issue. Name the branch `<agent>/<issue-id>-<short-name>`.
-   Example: `claude/TOK-12-claude-code-provider`.
+   Example: `claude/IES-187-claude-code-provider`.
 3. Use a separate git worktree for each branch. Do not change files in the worktree of a different agent.
 4. Do not rebase, force-push or delete the branch of a different agent.
 
@@ -130,7 +130,7 @@ Do not write "done" if a step failed or if you did not do a step. Report the res
 
 - Use Conventional Commits format: `<type>(<scope>): <summary>`.
 - Write the summary in the imperative. Example: `feat(providers): add Codex log parser`.
-- Include the Linear issue ID in the commit body. Example: `Refs TOK-12`.
+- Include the Linear issue ID in the commit body. Example: `Refs IES-187`.
 - If your tool requires an AI attribution trailer, add it as a trailer.
 
 ## 9. Actions that need approval
