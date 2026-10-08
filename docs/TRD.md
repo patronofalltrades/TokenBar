@@ -1,0 +1,508 @@
+# TokenBar Technical Requirements Document (TRD)
+
+| Field | Value |
+|---|---|
+| Status | Draft 1 |
+| Scope | v0.1 alpha to v1.0 |
+| Date | 2026-10-08 |
+| Related | [PRD](PRD.md), [DRD](DRD.md), [AGENTS.md](../AGENTS.md) |
+
+**Writing standard.** This document uses ASD-STE100. Code identifiers, paths and JSON keys are verbatim. A claim marked **UNVERIFIED** has no confirmation from a primary source or from a file on a test Mac.
+
+**Design rule.** This TRD follows the `ponytail` skill. Use the Swift standard library and Apple frameworks first. Do not add an abstraction until a second user of it exists. Each section names what it skips and when to add it.
+
+## 1. Overview
+
+TokenBar is a macOS menu bar app. It reads LLM usage from local log files and from optional admin APIs. It calculates an API-equivalent cost. It converts the cost into café units and shows a roast.
+
+Technical goals:
+
+1. Read only token counts, model names, timestamps and limit percentages. Never keep prompt or response content.
+2. Make no network request unless the user adds an API key or turns on the update check.
+3. Show new usage in 60 seconds or less (PRD AC5).
+4. Use less than 1% average CPU when idle (PRD NFR-04).
+5. Keep the provider layer clean: one `UsageProvider` protocol and one adapter for each source.
+
+## 2. Architecture
+
+```
+            ┌──────────────────────── TokenBar.app (one process) ────────────────────────┐
+ ~/.claude/projects/**/*.jsonl ─┐                                                       │
+ statusline-limits.json ────────┼─► ClaudeCodeProvider ─┐                               │
+ ~/.codex/sessions/**/*.jsonl ──┼─► CodexProvider ──────┤                               │
+ api.anthropic.com (admin key) ─┼─► AnthropicAdminProvider ─┤  UsageProvider            │
+ api.openai.com (admin key) ────┴─► OpenAIAdminProvider ────┘  .fetch() async          │
+                                              │                                         │
+                                              ▼                                         │
+                         UsageStore (@MainActor, @Observable, refresh loop)             │
+                           │        │              │                                   │
+                           ▼        ▼              ▼                                   │
+                     CostEngine  CafeIndex     Roasts      ◄── prices.json, cafe-units.json,
+                     (prices)    (EUR units)   (selector)       roasts.json (bundle resources)
+                           │        │              │                                   │
+                           ▼        ▼              ▼                                   │
+                  MenuBarLabel   PopoverView   LimitAlerts (UserNotifications)          │
+            └────────────────────────────────────────────────────────────────────────────┘
+ Keychain ◄── Keychain.swift (admin keys only)        HTTP.swift ──► host allowlist only
+```
+
+Rules:
+
+1. Providers return data only. Providers do not import SwiftUI or AppKit. They do not format text.
+2. `UsageStore` owns the refresh loop and the provider list. Views read only from `UsageStore`.
+3. Humor (café index and roasts) is data. Code selects and fills the strings. Code does not contain jokes.
+
+**Why a protocol.** `ponytail` forbids an interface with one implementation. v0.2 has two local providers and v0.3 adds two API providers. Thus `UsageProvider` has four implementations. The protocol is justified.
+
+## 3. Repository layout
+
+```
+Package.swift                         one executableTarget "TokenBar", one testTarget
+Sources/TokenBar/
+  App/TokenBarApp.swift               @main App, MenuBarExtra, provider registration
+  App/main.swift                      (v0.2, replaces @main) branches to --statusline mode
+  App/StatuslineBridge.swift          (v0.2) writes Claude limit snapshot
+  Core/Models.swift                   value types (Section 4)
+  Core/UsageProvider.swift            protocol
+  Core/UsageStore.swift               refresh loop, aggregation
+  Core/JSONLTailReader.swift          incremental line reader
+  Core/CostEngine.swift               tokens × price
+  Core/Keychain.swift                 (v0.3) SecItem wrapper
+  Core/HTTP.swift                     (v0.3) URLSession call with host allowlist
+  Core/UpdateCheck.swift              (v0.3) opt-in GitHub release check
+  Providers/ClaudeCodeProvider.swift
+  Providers/ClaudeCodeLimits.swift    (v0.2) reads the status line limit file
+  Providers/CodexProvider.swift       (v0.2)
+  Providers/AnthropicAdminProvider.swift   (v0.3)
+  Providers/OpenAIAdminProvider.swift      (v0.3)
+  Humor/CafeIndex.swift
+  Humor/Roasts.swift                  (v0.2)
+  Alerts/LimitAlerts.swift            (v0.2)
+  UI/MenuBarLabel.swift
+  UI/PopoverView.swift
+  UI/SettingsView.swift               (v0.2)
+  UI/APIKeysView.swift                (v0.3)
+  Resources/prices.json
+  Resources/cafe-units.json
+  Resources/roasts.json               (v0.2)
+  Resources/Info.plist                LSUIElement = true
+Tests/TokenBarTests/
+  *Tests.swift                        one file for each source file with logic
+  Fixtures/claude/*.jsonl             synthetic data only
+  Fixtures/codex/*.jsonl              synthetic data only
+  Fixtures/api/*.json                 synthetic API responses
+scripts/build-app.sh                  assembles TokenBar.app from the SwiftPM binary
+scripts/make-dmg.sh                   hdiutil wrapper
+.github/workflows/ci.yml              build and test on each pull request
+.github/workflows/release.yml         universal build, DMG, GitHub Release on tag
+```
+
+Skipped: a separate library target. Add `TokenBarCore` when the MCP server (Section 13) needs the providers in a second executable. The provider files have no UI imports, so the change is a file move.
+
+## 4. Data model
+
+Signatures only. Agents can add fields that an issue needs. Agents must not rename these types.
+
+```swift
+enum ProviderID: String, Codable, Sendable, CaseIterable { case claudeCode, codex, anthropicAPI, openAIAPI }
+
+struct TokenCounts: Equatable, Sendable {           // all values are token counts
+    var input = 0          // uncached input
+    var output = 0         // includes reasoning or thinking tokens
+    var cacheRead = 0
+    var cacheWrite5m = 0
+    var cacheWrite1h = 0
+}
+
+struct UsageRecord: Sendable {                       // one API response, or one API bucket
+    let provider: ProviderID
+    let model: String
+    let timestamp: Date
+    let tokens: TokenCounts
+    let reportedCostUSD: Decimal?                    // set only by admin API providers
+}
+
+struct LimitWindow: Sendable {
+    let name: String                                 // "5-hour", "weekly"
+    let usedPercent: Double                          // 0...100
+    let resetsAt: Date?
+    let observedAt: Date                             // used for the Stale state (DRD 2.4)
+}
+
+struct ProviderSnapshot: Sendable {
+    let provider: ProviderID
+    let records: [UsageRecord]                       // window: last 35 days
+    let limits: [LimitWindow]
+    let updatedAt: Date
+}
+
+protocol UsageProvider: Sendable {
+    var id: ProviderID { get }
+    func fetch(now: Date) async throws -> ProviderSnapshot
+}
+```
+
+Providers keep their parse state (file offsets, deduplication keys) inside an `actor`. A thrown error goes to `UsageStore`, which keeps the last good snapshot and shows the error in the popover.
+
+## 5. Provider specifications
+
+### 5.1 Claude Code (local logs)
+
+**Location.** `~/.claude/projects/<encoded-cwd>/<session-uuid>.jsonl` and `~/.claude/projects/<encoded-cwd>/<session-uuid>/subagents/agent-*.jsonl`. Scan `**/*.jsonl` under `~/.claude/projects`. If `CLAUDE_CONFIG_DIR` is set, use `$CLAUDE_CONFIG_DIR/projects` (CodexBar `docs/claude.md`; UNVERIFIED on this Mac). Ignore `*/vercel-plugin/*.jsonl` and other files without assistant lines; the parser skips them anyway.
+
+**Format.** JSON Lines. One JSON object for each line. Verified on 2026-10-08 with Claude Code 2.1.284 to 2.1.290 (229 files, 380 MB). Top-level `type` values include `assistant`, `user`, `attachment`, `system`, `ai-title`, `last-prompt` and `file-history-snapshot`. Only `type == "assistant"` lines carry token usage. The `user`, `ai-title` and `last-prompt` lines hold prompt content. Never decode them.
+
+| Field (JSON path) | Type | Use |
+|---|---|---|
+| `type` | string | Keep only `"assistant"`. |
+| `timestamp` | string, ISO 8601 UTC with milliseconds | Record time. |
+| `message.model` | string | Model ID, for example `claude-opus-5-5`. Skip `"<synthetic>"`. |
+| `message.id` | string | Deduplication key, part 1. |
+| `requestId` | string, sometimes absent | Deduplication key, part 2. |
+| `message.usage.input_tokens` | int | Uncached input → `input`. |
+| `message.usage.output_tokens` | int | → `output`. Includes thinking tokens. |
+| `message.usage.cache_read_input_tokens` | int | → `cacheRead`. |
+| `message.usage.cache_creation.ephemeral_5m_input_tokens` | int | → `cacheWrite5m`. |
+| `message.usage.cache_creation.ephemeral_1h_input_tokens` | int | → `cacheWrite1h`. |
+| `message.usage.cache_creation_input_tokens` | int | Sum of both cache writes. Use as `cacheWrite5m` only if `cache_creation` is absent. |
+| `isApiErrorMessage` | bool, optional | Skip the line if `true`. |
+| `isSidechain` | bool | Subagent line. Count it. Subagent usage is real usage. |
+
+Other `message.usage` keys exist (`service_tier`, `speed`, `inference_geo`, `server_tool_use`, `iterations`, `output_tokens_details.thinking_tokens`). v0.1 ignores them. `message.content` holds prompt and response content. **Never decode `message.content`.** Decode into a `Decodable` struct that declares only the fields in the table. `JSONDecoder` then drops all other keys.
+
+**Deduplication.** Claude Code writes one line for each content block of a response. Thus one response appears on many lines with the same `message.id` and `requestId`. On this Mac, 5,591 unique responses produced 11,827 assistant lines. In 50 cases the repeated lines had different usage values (streaming snapshots). Rule: key = `message.id + ":" + requestId` (or `message.id` alone if `requestId` is absent). The last line for a key replaces earlier lines. Keep keys across files, because resumed sessions can copy old lines (CodexBar `docs/claude.md`; UNVERIFIED here).
+
+**Limits (5-hour and weekly).** The logs do not contain limit percentages. A `rateLimits` key appears only in `system` error lines, and its value was `null` in all samples. Do not estimate a percentage from tokens. Anthropic does not publish limits as token counts. A token-based estimate would be wrong and would break PRD-US-11 AC2.
+
+Use the documented Claude Code status line input. The status line command receives JSON on stdin. For Pro and Max subscribers, it includes `rate_limits.five_hour.used_percentage`, `rate_limits.five_hour.resets_at`, `rate_limits.seven_day.used_percentage` and `rate_limits.seven_day.resets_at` (epoch seconds). Source: <https://code.claude.com/docs/en/statusline> ("Rate limit usage"). The object is present only after the first API response.
+
+Bridge design (v0.2, issue TRD-T13):
+
+1. The user sets `"statusLine": {"type": "command", "command": "/Applications/TokenBar.app/Contents/MacOS/TokenBar --statusline"}` in `~/.claude/settings.json`. TokenBar shows this snippet with a Copy button. TokenBar does not edit `settings.json`.
+2. In `--statusline` mode, the binary reads stdin. It decodes only `rate_limits`. It writes `{"five_hour":…,"seven_day":…,"observed_at":…}` atomically to `~/Library/Application Support/TokenBar/claude-limits.json`. It prints one short line, for example `62% 5h`, and exits. It does not start the UI.
+3. Do not use `cat > file`. The full input contains `session_name`, an AI-generated title from the prompt, and paths. TokenBar must not store these.
+4. If the user already has a status line, TokenBar shows the snippet and a note. The user decides. Skipped: a chaining wrapper. Add it if alpha testers ask.
+
+Reliability: **high accuracy, possibly stale.** The values come from Claude Code itself. They update only while Claude Code runs. If `now > resets_at`, show the window as reset (0%). Show the Stale state (DRD 2.4) when `observed_at` is older than 15 minutes and the window has not reset.
+
+Rejected alternative: `GET https://api.anthropic.com/api/oauth/usage` with the OAuth token from the `Claude Code-credentials` Keychain item. CodexBar uses this path (`docs/claude.md`). The endpoint is not public. Reading the token of a different app causes Keychain prompts and ACL problems. CodexBar documents many failure modes for it. Revisit only if Anthropic documents the endpoint.
+
+**Failure modes.** Directory absent → provider shows "Claude Code not found". Malformed line → skip the line, count it, continue. Partial last line (file in write) → keep the bytes until the next newline. File truncated or replaced (size < offset, or inode changed) → reparse that file. Unknown model → count tokens, cost is unknown (Section 6).
+
+**Verification status.** Log fields: verified on this Mac. Status line `rate_limits`: verified in official docs, not yet tested end to end.
+
+### 5.2 Codex CLI (local logs)
+
+**Location.** `~/.codex/sessions/YYYY/MM/DD/rollout-<timestamp>-<uuid>.jsonl` and `~/.codex/archived_sessions/rollout-*.jsonl`. If `CODEX_HOME` is set, use `$CODEX_HOME` instead of `~/.codex` (CodexBar `docs/codex.md`; UNVERIFIED here). Verified on 2026-10-08: 315 files, 1.3 GB, 4 files larger than 50 MB.
+
+**Format.** JSON Lines. Each line has `timestamp` (ISO 8601 UTC with milliseconds), `ordinal`, `type` and `payload`. Relevant lines:
+
+| Line | Field (JSON path) | Use |
+|---|---|---|
+| `type == "turn_context"` | `payload.model` | Current model for later usage lines in the file. |
+| `type == "token_usage_record"` | `payload.response_id` | Deduplication key. |
+| same | `payload.usage.input_tokens`, `.cached_input_tokens`, `.cache_write_input_tokens`, `.output_tokens`, `.reasoning_output_tokens` | Tokens for one response. |
+| `type == "event_msg"`, `payload.type == "token_count"` | `payload.info.last_token_usage.*` (same keys) | Tokens for one response, older files only. |
+| same | `payload.rate_limits.primary` and `.secondary` → `used_percent`, `window_minutes`, `resets_at` (epoch s) | Limit windows. |
+| same | `payload.rate_limits.plan_type`, `.limit_id` | Display only. |
+
+Mapping: `input = input_tokens − cached_input_tokens`. `cacheRead = cached_input_tokens`. `cacheWrite5m = cache_write_input_tokens`. `output = output_tokens`. `cached_input_tokens` is part of `input_tokens` (CodexBar guards `cached <= input`; UNVERIFIED in OpenAI docs). `reasoning_output_tokens` is part of `output_tokens` (UNVERIFIED). Never decode `response_item` lines, `payload.base_instructions` or `payload.collaboration_mode.settings.developer_instructions`. They hold content.
+
+Double count rule: if a file has any `token_usage_record` line, use only those lines for tokens. Else use `token_count` lines. Do not use `total_token_usage`. It is cumulative.
+
+**Limits.** Codex writes its limits into the log. On this Mac every `token_count` line had `primary.window_minutes == 10080` (weekly), `secondary == null`, and `plan_type == "prolite"`. Name the window from `window_minutes`: 300 → "5-hour", 10080 → "weekly", other → "<n>-minute". Use the newest `token_count` line across all files. Reliability: **high accuracy, possibly stale**, same rules as Section 5.1.
+
+**Failure modes.** Same as Section 5.1. A file can grow by many MB during one session. The tail reader (Section 7) handles this.
+
+**Verification status.** Verified on this Mac (Codex CLI with `codex-auto-review` and `gpt-6-sol` models). The format changes often. Keep fixtures for both the old (`token_count` only) and new (`token_usage_record`) shapes.
+
+### 5.3 Anthropic Admin API (optional, v0.3)
+
+| Item | Value |
+|---|---|
+| Usage | `GET https://api.anthropic.com/v1/organizations/usage_report/messages` |
+| Cost | `GET https://api.anthropic.com/v1/organizations/cost_report` |
+| Headers | `x-api-key: <admin key>`, `anthropic-version: 2023-06-01`, `User-Agent: TokenBar/<version>` |
+| Key | Admin API key, prefix `sk-ant-admin01-`. Workspace API keys do not work. |
+| Query | `starting_at`, `ending_at` (RFC 3339), `bucket_width` (`1d`, `1h`, `1m`; cost: `1d` only), `group_by[]=model` (usage), `group_by[]=description` (cost), `limit`, `page` |
+| Usage fields | `data[].starting_at`, `data[].results[].model`, `.uncached_input_tokens`, `.cache_read_input_tokens`, `.cache_creation.ephemeral_5m_input_tokens`, `.cache_creation.ephemeral_1h_input_tokens`, `.output_tokens`; `has_more`, `next_page` |
+| Cost fields | `data[].results[].amount` (decimal string in cents: `"123.45"` = $1.2345), `.currency` (`"USD"`), `.model`, `.token_type` |
+| Freshness | Data appears in about 5 minutes. Poll a maximum of once a minute. |
+
+Sources: <https://platform.claude.com/docs/en/manage-claude/usage-cost-api>, <https://platform.claude.com/docs/en/api/beta/organization/usage_report/retrieve_messages>, <https://platform.claude.com/docs/en/api/beta/organization/cost_report/retrieve>. Verified 2026-10-08.
+
+**Important limit.** "The Admin API is unavailable for individual accounts." Only an organization in the Claude Console has admin keys. Most students do not have one. The PRD and the onboarding text must say this.
+
+Refresh every 15 minutes, because data is about 5 minutes late. Request today and the current month only. Map one result to one `UsageRecord` with `timestamp = starting_at` and `reportedCostUSD` from the cost report.
+
+Failure modes: 401/403 → "Key rejected. Use an admin key." 429 → wait for the next cycle. No network → keep the last snapshot, show Stale.
+
+### 5.4 OpenAI Admin API (optional, v0.3)
+
+| Item | Value |
+|---|---|
+| Usage | `GET https://api.openai.com/v1/organization/usage/completions` |
+| Cost | `GET https://api.openai.com/v1/organization/costs` |
+| Headers | `Authorization: Bearer <admin key>` |
+| Key | Organization admin key from <https://platform.openai.com/settings/organization/admin-keys>. Project keys do not work. |
+| Query | `start_time` (Unix s, required), `end_time`, `bucket_width` (`1m`, `1h`, `1d`; costs: `1d` only), `group_by` (for example `model`), `limit`, `page` |
+| Usage fields | `input_tokens`, `input_cached_tokens`, `output_tokens`, `num_model_requests`, `model`; pagination cursor `next_page` |
+| Cost fields | `amount.value`, `amount.currency`, `line_item`, `project_id` |
+
+Source: <https://developers.openai.com/cookbook/examples/completions_usage_api>. The API reference page returned HTTP 403 to the verification fetch. Thus the response envelope keys (`data[].results[]`, `has_more`) are **UNVERIFIED**. Confirm them with a real admin key before TRD-T20 is done. Mapping: `input = input_tokens − input_cached_tokens` (UNVERIFIED that cached is a subset).
+
+### 5.5 xAI (later)
+
+Known: CodexBar reads a prepaid balance and daily spend from `https://management-api.x.ai/v1/billing/teams/{team_id}/prepaid/balance` and `POST …/billing/teams/{team_id}/usage` with a Management API key and team ID (CodexBar `docs/xai.md`). This is **UNVERIFIED** against xAI docs. It covers the developer platform only, not Grok consumer plans. No local Grok log source is known. Do not build an xAI provider until the maintainer approves the new host (AGENTS.md Section 9).
+
+## 6. Cost engine
+
+API-equivalent cost = Σ over token classes (tokens × price for that model and class) ÷ 1,000,000.
+
+1. Use `reportedCostUSD` if a provider supplies it (admin APIs). Do not calculate a second value.
+2. Else look up the model in `prices.json`. Try an exact `id` match first. Then try the longest `id` that is a prefix of the model name. This matches dated IDs such as `claude-haiku-4-5-20251001`.
+3. If no match exists, the cost for that record is `nil`. The popover shows "price unknown" and the token count. Do not guess.
+4. Use `Decimal` for money. Do not use `Double`.
+5. A class with no price in the file costs 0. For example, OpenAI has no cache-write price.
+
+`Resources/prices.json` (values below are **EXAMPLE values, not real prices**):
+
+```json
+{
+  "last_verified": "2026-10-08",
+  "unit": "USD per 1M tokens",
+  "models": [
+    { "id": "claude-example-model", "input": 1.00, "output": 5.00,
+      "cache_read": 0.10, "cache_write_5m": 1.25, "cache_write_1h": 2.00,
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing" }
+  ]
+}
+```
+
+Rules for contributors: update `last_verified` and `source` with each price change. A test fails if `last_verified` is missing or if a model has no `source`. The popover footer shows "Prices verified <date>".
+
+Currency: providers bill in USD. The café index uses EUR (DRD 7.6). `cafe-units.json` has a top-level `usd_to_eur` rate and `rate_updated` date. The rate is a community estimate. Skipped: a live exchange-rate source. It needs a new host (DRD Q3).
+
+## 7. Refresh and performance
+
+**Decision: polling, not file events.** A timer runs every 30 seconds. Each tick does a `stat` of each candidate file and reads only new bytes. The popover Refresh button runs a tick at once.
+
+Reasons:
+
+1. 30 seconds meets the 60-second target (PRD AC5).
+2. FSEvents on `~/.claude` fires for many files that TokenBar does not use (history, cache, file-history). It adds a C API wrapper and a second code path.
+3. One `stat` for each of about 550 files every 30 seconds costs almost nothing.
+
+Skipped: FSEvents (`FSEventStreamCreate`). Add it if measured CPU or latency fails the targets.
+
+Energy rules:
+
+1. Use `Task.sleep` in one loop, or a `Timer` with `tolerance = 10 s`, so that macOS can coalesce wakeups.
+2. Use a 120-second interval when `ProcessInfo.processInfo.isLowPowerModeEnabled` is true.
+3. Run parsing off the main actor. Send only the new `ProviderSnapshot` to the main actor.
+4. API providers run every 15 minutes, not every tick.
+
+**Incremental parsing (`JSONLTailReader`).** Keep a state for each file: device and inode, size, byte offset, and a buffer for a partial line.
+
+1. If inode or device changed, or size < offset: reset the offset to 0. Drop that file's records.
+2. If size == offset: skip the file.
+3. Else read from the offset to the end with `FileHandle`. Split on `\n`. Keep the bytes after the last `\n` as the partial line.
+4. Before decoding, test the raw line for a marker (`"type":"assistant"` for Claude; `token_usage_record`, `token_count` or `turn_context` for Codex). Skip all other lines without decoding. This skips most bytes.
+
+**Startup window.** On launch, scan only files whose modification date is in the last 35 days. This covers "this month" and the weekly window. Keep records in memory only. Skipped: an on-disk cache. Add it if a cold scan takes more than 3 seconds on a 1.5 GB log set. Measure this in TRD-T05 and TRD-T12.
+
+**Day boundaries.** "Today" starts at local midnight in `Calendar.current`. The DRD and PRD own the week definition (DRD Q5).
+
+## 8. Menu bar and the notch
+
+Problem: on a Mac with a notch, macOS hides status items that do not fit to the right of the notch. macOS does not tell the user (DRD 2.3).
+
+Mitigation:
+
+1. Detect a notch: `NSScreen.main?.auxiliaryTopLeftArea != nil` (macOS 12+). Use the screen that has the menu bar.
+2. If a notch exists, use Compact mode as the default (max 52 pt, DRD 2.2). Else use Standard (90 pt).
+3. Fix the label width. Use `.monospacedDigit()`. Reserve space for the longest value, for example `100%`. The width must not change on each update. A width change makes macOS move other items.
+4. Use `Text` and one SF Symbol in the `MenuBarExtra` label. Do not use an `NSImage` wider than the text.
+5. In Settings, tell the user: hold Command and drag the TokenBar icon to the right, next to the clock. Items near the clock are hidden last.
+
+Skipped: detection of the hidden state. `MenuBarExtra` does not expose its `NSStatusItem`. A check of the status item window frame against the notch area is possible but fragile (UNVERIFIED). Add it if alpha users report a hidden icon.
+
+## 9. Humor data files
+
+All humor files are JSON in `Sources/TokenBar/Resources/`. SwiftPM copies them with `resources: [.copy("Resources/…")]`. Load them with `Bundle.module`. The DRD owns the fields and the voice. The TRD owns the file format and path.
+
+| File | Top-level keys | Item fields |
+|---|---|---|
+| `cafe-units.json` | `usd_to_eur`, `rate_updated`, `units` | DRD 7.6: `id`, `singular`, `plural`, `symbol`, `emoji`, `price_eur`, `price_note`, `source`, `updated` |
+| `roasts.json` | `roasts` | DRD 7.2: `id`, `text`, `category`, `min_percent`, `max_percent`, `hours`, `weekdays`, `provider`, `locale` |
+
+Load rules:
+
+1. Decode with `Codable`. Reject the whole file if decoding fails. A unit test decodes the shipped files, so a bad pull request fails CI.
+2. A test checks that each `id` is unique and that each `price_eur` is > 0.
+3. A test checks that each roast placeholder is in the DRD list (`{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{time}`, `{cost}`, `{unit_value}`, `{unit_plural}`).
+4. Store the roast rotation history (DRD 7.4) in `UserDefaults` as a list of the last 15 IDs.
+
+Skipped: loading user-supplied data files from disk. Add it if contributors ask to test units without a build.
+
+## 10. Security and privacy
+
+| Requirement | Implementation | Check |
+|---|---|---|
+| Local only | No server. No analytics SDK. No crash reporter. | Code review. `grep` in CI for `URLSession` outside `Core/HTTP.swift`. |
+| No prompt content | Decodable structs declare only the fields in Section 5. | Fixture test: content contains `SECRET-MARKER`; assert no record, log or file contains it. |
+| Keys in Keychain | `SecItemAdd`/`SecItemCopyMatching`, `kSecClassGenericPassword`, service = bundle ID, account = `ProviderID.rawValue`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`. | Unit test with a test-only service name. |
+| No keys in files | Never write a key to `UserDefaults`, a file or a log. Do not print a key in an error. | Code review. |
+| Host allowlist | `HTTP.swift` has one function. It rejects any host not in `["api.anthropic.com", "api.openai.com", "api.github.com"]`. | Unit test. |
+| Read-only on other apps' files | Open `~/.claude` and `~/.codex` files read-only. Never write there. | Code review. |
+| Logs | Use `os.Logger` with `privacy: .private` for paths and model names. Log counts, not values. | Code review. |
+
+Network hosts:
+
+| Host | When | Data sent |
+|---|---|---|
+| `api.anthropic.com` | Anthropic admin key added | Admin key, date range |
+| `api.openai.com` | OpenAI admin key added | Admin key, date range |
+| `api.github.com` | Update check turned on (opt-in, PRD-US-20) | Nothing except the request itself |
+
+A new host needs maintainer approval (AGENTS.md Section 9).
+
+## 11. Permissions and sandbox decision
+
+**Decision: no App Sandbox. Hardened Runtime on. Developer ID distribution outside the Mac App Store.**
+
+Analysis:
+
+1. A sandboxed app cannot read `~/.claude` or `~/.codex`. A sandboxed app can read them only after the user selects the folder in an `NSOpenPanel` and the app stores a security-scoped bookmark.
+2. These folders are hidden. A non-engineer cannot easily select a hidden folder. This breaks the 2-minute onboarding target (PRD-US-18).
+3. The App Sandbox is required only for the Mac App Store. TokenBar ships on GitHub and Homebrew.
+4. Notarization requires Hardened Runtime, not the sandbox.
+5. CodexBar ships non-sandboxed for the same reason (`docs/sparkle.md`).
+
+Consequences:
+
+1. No entitlements file is needed. Do not add `com.apple.security.*` entitlements without approval.
+2. macOS TCC does not protect `~/.claude` or `~/.codex`. TokenBar needs no Full Disk Access. Do not ask for it.
+3. Notifications need user permission. Ask on the first alert setup (v0.2), not at launch.
+4. `UNUserNotificationCenter` needs a real app bundle with a bundle ID. It fails in a bare `swift run` binary (UNVERIFIED for macOS 14+; test in TRD-T15).
+
+Revisit if the maintainer wants the Mac App Store.
+
+## 12. Testing strategy
+
+1. Use Swift Testing (`import Testing`, `@Test`, `#expect`). Run `swift test`.
+2. **Use synthetic fixtures only.** Never copy a line from a real user log into the repository. Write fixture lines by hand. Use `"<redacted>"` or `SECRET-MARKER` in content fields.
+3. Each parser test file covers these cases: a normal line, a repeated line with the same key, a changed usage for the same key, a malformed line, a partial last line, a truncated file, an unknown model.
+4. `JSONLTailReader` tests write to a temporary file in steps: append, append a partial line, finish the line, truncate.
+5. `CostEngine` tests use a fixture price file, not the shipped one. Check prefix matching, unknown models and `Decimal` rounding.
+6. Data file tests decode the shipped `prices.json`, `cafe-units.json` and `roasts.json` (Section 9).
+7. API provider tests use `URLProtocol` stubs with fixture JSON. No test calls a real API.
+8. Inject `now: Date` into each provider and the store. Do not call `Date()` in logic.
+9. UI: no snapshot tests in v0.1. Test the label text function (state → string) as a pure function.
+10. Performance check (manual, TRD-T05 and TRD-T12): cold scan time on the maintainer's Mac and idle CPU in Activity Monitor. Record both in the pull request.
+
+## 13. Build and release pipeline
+
+**CI (`ci.yml`).** On each pull request: `macos-15` runner, select Xcode with Swift 6 (`sudo xcode-select -s /Applications/Xcode_<version>.app`; exact version UNVERIFIED on the runner image), `swift build`, `swift test`. No third-party actions except `actions/checkout`.
+
+**Release (`release.yml`).** On a tag `v*`:
+
+1. `swift build -c release --arch arm64 --arch x86_64`. The universal binary is in `.build/apple/Products/Release/TokenBar` (path UNVERIFIED; check `--show-bin-path`).
+2. `scripts/build-app.sh` makes `TokenBar.app/Contents/{MacOS,Resources,Info.plist}`. It copies the SwiftPM resource bundle into `Contents/Resources`. Confirm that `Bundle.module` finds it there (UNVERIFIED; the generated accessor checks `Bundle.main.resourceURL`).
+3. Alpha: ad-hoc sign with `codesign --force --deep --sign - TokenBar.app`. Apple silicon needs at least an ad-hoc signature.
+4. `scripts/make-dmg.sh`: `hdiutil create -volname TokenBar -srcfolder TokenBar.app -format UDZO TokenBar-<version>.dmg`.
+5. Upload the DMG and its SHA-256 to a GitHub Release with `gh release create`.
+
+**Signed build (v0.3, needs PRD Q4).**
+
+1. Import the Developer ID Application certificate from GitHub secrets into a temporary keychain (`security create-keychain`, `security import`).
+2. `codesign --force --options runtime --timestamp --sign "Developer ID Application: …" TokenBar.app`.
+3. Sign the DMG. Then `xcrun notarytool submit TokenBar.dmg --key <p8> --key-id <id> --issuer <uuid> --wait`.
+4. `xcrun stapler staple TokenBar.dmg`.
+5. Store secrets only in GitHub Actions secrets. Changes to this workflow need approval (AGENTS.md Section 9).
+
+**Homebrew.** Cask `Casks/tokenbar.rb` in `patronofalltrades/homebrew-tap` with `version`, `sha256`, `url` (GitHub Release DMG), `app "TokenBar.app"` and `depends_on macos: ">= :sonoma"`. Update the cask by hand for alpha. Skipped: automatic tap updates; they need a cross-repo token. Risk: Homebrew rules for unsigned casks can change (UNVERIFIED for third-party taps).
+
+**Auto-update decision: no Sparkle.** Sparkle needs a dependency, an EdDSA key, an appcast and a signed build. CodexBar disables Sparkle for unsigned and Homebrew builds anyway (`docs/sparkle.md`). TokenBar uses:
+
+1. Homebrew users: `brew upgrade` (PRD-US-20 AC1).
+2. DMG users: an opt-in daily check. `GET https://api.github.com/repos/patronofalltrades/TokenBar/releases/latest`. Compare `tag_name` with `CFBundleShortVersionString`. If newer, show "Update available" in the popover footer with a link to the release page. No download, no install.
+
+Add Sparkle only if users fail to update and the build is signed.
+
+**Future seams (do not build now).**
+
+- MCP server: a later `--mcp` mode in `App/main.swift` can reuse the providers and `CostEngine`, because they have no UI imports. It must expose totals only, never records with paths. Skipped until the roadmap item starts.
+- Class leaderboard: needs a backend. This breaks "no data leaves the Mac". It needs an explicit opt-in, a pseudonym, daily totals only (no model, project or path), and a deletion path. Out of scope for v1.0.
+
+## 14. Work breakdown
+
+Rules: one issue = one branch = one pull request. "Owns" lists the files the issue creates. Shared edits are named. Every issue must meet AGENTS.md Section 7. Provider registration is a one-line shared edit in `App/TokenBarApp.swift`.
+
+### v0.1 alpha
+
+| ID | Title | Depends on | Owns | Acceptance criteria |
+|---|---|---|---|---|
+| TRD-T01 | Package skeleton and menu bar shell | — | `Package.swift`, `App/TokenBarApp.swift`, `Resources/Info.plist`, `.github/workflows/ci.yml` | `swift build` and `swift test` pass in CI. App shows a `MenuBarExtra` with placeholder text. No Dock icon. |
+| TRD-T02 | Core models and `UsageProvider` protocol | T01 | `Core/Models.swift`, `Core/UsageProvider.swift` | Types match Section 4. Compiles with Swift 6 strict concurrency. |
+| TRD-T03 | Incremental JSONL tail reader | T01 | `Core/JSONLTailReader.swift`, tests | Handles append, partial line, truncation, inode change (Section 7). Tests pass. |
+| TRD-T04 | Price table and cost engine | T02 | `Core/CostEngine.swift`, `Resources/prices.json`, tests | Section 6 rules 1–5. Data file test. Real prices with `source` URLs for current Claude models. |
+| TRD-T05 | Claude Code provider (tokens) | T02, T03 | `Providers/ClaudeCodeProvider.swift`, `Fixtures/claude/*`, tests | Section 5.1 fields and deduplication. `SECRET-MARKER` test passes. Cold scan time recorded. |
+| TRD-T06 | Café index data and converter | T01 | `Humor/CafeIndex.swift`, `Resources/cafe-units.json`, tests | DRD 7.6 selection rules 1–9. Data file test. |
+| TRD-T07 | Usage store and refresh loop | T02 | `Core/UsageStore.swift`, tests | 30 s loop, low-power interval, keeps last snapshot on error. Tested with a stub provider. |
+| TRD-T08 | Menu bar label and notch mode | T06, T07 | `UI/MenuBarLabel.swift`, tests | DRD 2.2–2.4 states. Fixed width. Notch default (Section 8). Label text function tested. |
+| TRD-T09 | Popover view | T04, T06, T07 | `UI/PopoverView.swift` | DRD Section 3 layout. Shows cost, "price unknown", last update time, prices verified date. |
+| TRD-T10 | App bundle, DMG and release workflow (unsigned) | T01 | `scripts/build-app.sh`, `scripts/make-dmg.sh`, `.github/workflows/release.yml` | A tag produces a universal DMG on GitHub Releases. App launches after "Open Anyway". `Bundle.module` loads resources. |
+| TRD-T11 | Homebrew cask (alpha) | T10 | `Casks/tokenbar.rb` in the tap repository | `brew install --cask patronofalltrades/tap/tokenbar` installs the alpha. |
+
+### v0.2 alpha
+
+| ID | Title | Depends on | Owns | Acceptance criteria |
+|---|---|---|---|---|
+| TRD-T12 | Codex provider (tokens and limits) | T02, T03 | `Providers/CodexProvider.swift`, `Fixtures/codex/*`, tests | Section 5.2. Both log shapes. No double count. Weekly limit from newest line. |
+| TRD-T13 | Claude limit bridge (status line) | T05 | `App/main.swift`, `App/StatuslineBridge.swift`, `Providers/ClaudeCodeLimits.swift`, tests; shared edit: remove `@main` in `App/TokenBarApp.swift` | Section 5.1 bridge steps 1–4. Writes only `rate_limits`. Reset and Stale rules tested. |
+| TRD-T14 | Roast data and selector | T01 | `Humor/Roasts.swift`, `Resources/roasts.json`, tests | DRD 7.2–7.4. Placeholder test. Deterministic with injected random source. |
+| TRD-T15 | Limit alerts | T07 | `Alerts/LimitAlerts.swift`, tests | 80% and 95% defaults. One alert for each threshold in each window (PRD-US-12). Permission asked on first setup. |
+| TRD-T16 | Settings window | T07 | `UI/SettingsView.swift` | DRD Section 5 (General, Alerts tabs). Status line snippet with Copy button. Command-drag tip. |
+
+### v0.3 beta
+
+| ID | Title | Depends on | Owns | Acceptance criteria |
+|---|---|---|---|---|
+| TRD-T17 | Keychain wrapper | T01 | `Core/Keychain.swift`, tests | Save, read, delete. Section 10 attributes. |
+| TRD-T18 | HTTP client with host allowlist | T01 | `Core/HTTP.swift`, tests | Rejects other hosts. CI `grep` check for `URLSession` outside this file. |
+| TRD-T19 | Anthropic Admin provider | T02, T17, T18 | `Providers/AnthropicAdminProvider.swift`, `Fixtures/api/anthropic-*.json`, tests | Section 5.3. Pagination. Cents to dollars. 15-minute interval. |
+| TRD-T20 | OpenAI Admin provider | T02, T17, T18 | `Providers/OpenAIAdminProvider.swift`, `Fixtures/api/openai-*.json`, tests | Section 5.4. Envelope keys confirmed with a real key and noted in this TRD. |
+| TRD-T21 | API key screen | T16, T17 | `UI/APIKeysView.swift` | DRD 4.3: secure field, Test button, admin-key note. |
+| TRD-T22 | Signing and notarization | T10, PRD Q4 | shared edit: `.github/workflows/release.yml` | Notarized, stapled DMG opens with no Gatekeeper warning. Needs approval. |
+| TRD-T23 | Opt-in update check | T18 | `Core/UpdateCheck.swift`, tests | Off by default. One request a day at most. Version compare tested. |
+| TRD-T24 | Cask for signed build | T22 | `Casks/tokenbar.rb` in the tap repository | Cask points to the notarized DMG. |
+| TRD-T25 | Plan mode (only if PRD Q1 accepted) | T06, T16 | `Humor/PlanMode.swift`, tests | PRD plan mode. Not a `UsageProvider`: it has no usage source. |
+
+Parallel waves: Wave 1: T01. Wave 2: T02, T03, T06, T10, T14, T17, T18. Wave 3: T04, T05, T07, T11, T12, T19, T20, T23. Wave 4: T08, T09, T13, T15, T16. Wave 5: T21, T22, T25. Wave 6: T24.
+
+## 15. Risks
+
+| ID | Risk | Mitigation |
+|---|---|---|
+| TR1 | Claude Code or Codex changes its log format. | Tolerant decoding: missing optional fields do not fail a line. Fixtures for each known shape. Count skipped lines and show "format changed?" if the share is high. |
+| TR2 | Status line bridge conflicts with an existing user status line. | Never overwrite `settings.json`. Show the snippet and let the user decide. |
+| TR3 | Limit data is stale when the CLI is idle. | Use `resets_at` and the Stale state. Never show an old percentage as current. |
+| TR4 | Cold scan of 1.3 GB Codex logs is slow. | 35-day window, marker prefilter, measure in T12. Add a disk cache only if needed. |
+| TR5 | Prices change and the table is wrong. | `last_verified` shown in the UI. Community pull requests. |
+| TR6 | Most students have no admin key. | State it in onboarding. Admin APIs stay optional. |
+| TR7 | Unsigned alpha scares non-engineers. | README "Open Anyway" steps. Signed build for v1.0. |
+| TR8 | The TokenBar icon hides behind the notch. | Compact default, fixed width, Command-drag tip (Section 8). |
+| TR9 | A parser bug stores prompt content. | Field-only `Decodable` structs and the `SECRET-MARKER` test. |
+
+## 16. Open questions
+
+| ID | Question | Owner |
+|---|---|---|
+| TQ1 | Bundle ID for the app and the Keychain service. Proposal: `com.patronofalltrades.TokenBar`. | Maintainer |
+| TQ2 | Is the status line bridge acceptable as the Claude limit source? It answers PRD Q2 for Claude Code. Codex limits are in its logs. | Maintainer |
+| TQ3 | Default refresh interval: 30 s (proposal) or 60 s? | Maintainer |
+| TQ4 | Is the 35-day window enough for the popover views in the DRD? | DRD owner |
+| TQ5 | Does the release workflow need a Homebrew tap token for automatic cask updates after v1.0? | Maintainer |
+| TQ6 | Which Xcode version does CI pin? It must ship Swift 6 and Swift Testing. | First agent on T01 |
+| TQ7 | Does TokenBar also read `~/Library/Application Support/Claude/*/.claude/projects` (Claude Desktop sessions)? CodexBar does. Not checked on this Mac. | Maintainer |

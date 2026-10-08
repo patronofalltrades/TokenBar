@@ -2,7 +2,7 @@
 
 TokenBar is a macOS menu bar app. It shows how much AI you use, and it makes fun of you for it.
 
-TokenBar shows your Claude, ChatGPT and Grok usage in the menu bar, next to the camera notch. It does not show only dollars. It shows the cost in units that an IESE MBA student understands: cafés con leche, case packets and Barcelona rent.
+TokenBar shows your Claude Code, Codex and LLM API usage in the menu bar, next to the camera notch. It does not show only dollars. It shows the cost in units that an IESE MBA student understands: cafés con leche, case packets and Barcelona rent.
 
 ```
  ◐ 62% · 3.4 ☕          ← this is all you see in the menu bar
@@ -40,12 +40,16 @@ The humor is part of the product, not decoration. A number that makes you laugh 
 | Feature | Description |
 |---|---|
 | Menu bar usage | Shows the most important usage number next to the notch. |
-| Claude Code usage | Reads local Claude Code session logs. You do not need an API key. |
-| Codex usage | Reads local Codex CLI session logs. You do not need an API key. |
-| API usage (optional) | Reads OpenAI and Anthropic usage APIs with an admin key that you supply. |
+| Claude Code usage | Reads local Claude Code session logs. You do not need an API key. A one-time status line setup adds the 5-hour and weekly limits. |
+| Codex usage | Reads local Codex CLI session logs, including limits. You do not need an API key. |
+| API usage (optional) | Reads OpenAI and Anthropic usage APIs with an admin key that you supply. The Anthropic Admin API needs an organization account. |
 | IESE cost conversions | Converts your spend into IESE units, for example cafés con leche. |
 | Case-method roasts | Shows short jokes in the style of an IESE case. |
 | Limit alerts | Sends a macOS notification when you approach a limit. |
+
+### What TokenBar cannot see
+
+TokenBar cannot see usage in the ChatGPT, Claude.ai or Grok web and desktop chat apps. These apps do not supply a public usage source. TokenBar does not read browser cookies to get this data.
 
 ### How TokenBar calculates cost
 
@@ -60,7 +64,7 @@ The conversion units are in a plain data file. Anyone can add a unit or correct 
 - TokenBar reads data only on your Mac.
 - TokenBar does not send usage data to any server. There is no telemetry.
 - TokenBar keeps API keys in the macOS Keychain.
-- TokenBar does not read the content of your prompts. It reads only token counts, model names and timestamps.
+- TokenBar does not read the content of your prompts. It reads only token counts, model names, timestamps, limit percentages and limit reset times.
 
 ## Requirements
 

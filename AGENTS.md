@@ -34,7 +34,7 @@ Rules:
 6. Do not use idioms, slang or phrasal verbs when a single verb is available.
 7. Use a pronoun only when its noun is clear.
 
-**Exception:** User-facing humor strings (roasts and café-index labels) do not follow ASD-STE100. Follow the voice rules in [docs/DRD.md](docs/DRD.md) for these strings.
+**Exception:** User-facing humor strings (roasts, café-index labels, notification text and onboarding text) do not follow ASD-STE100. Follow the voice rules in [docs/DRD.md](docs/DRD.md) for these strings.
 
 ## 3. Skills
 
@@ -74,8 +74,8 @@ Do not add a third-party dependency without approval from the maintainer. Use th
 
 1. Each usage source is a `UsageProvider`. Each provider is in its own file in `Sources/TokenBar/Providers/`.
 2. A provider returns usage data. A provider does not format text or show UI.
-3. The cost conversion (café index) is data, not code. Keep units in a data file.
-4. Do not read prompt content or response content from logs. Read only token counts, model names and timestamps.
+3. Prices, café-index units and roasts are data, not code. Keep them in `Sources/TokenBar/Resources/*.json`. Each price must have a source URL and a "last verified" date.
+4. Do not read prompt content or response content from logs. Read only token counts, model names, timestamps, limit percentages and limit reset times.
 5. Do not send usage data off the Mac. Do not add telemetry or analytics.
 6. Keep API keys only in the Keychain. Do not write keys to files, logs or `UserDefaults`.
 
@@ -101,7 +101,7 @@ More than one agent works on this repository at the same time. Agents can come f
 ### 6.3 File ownership
 
 1. Change only the files that your issue needs.
-2. If you must change a shared file, write the file names in your Linear comment before you change them. Shared files are `Package.swift`, `AGENTS.md`, `docs/*.md` and files in `Sources/TokenBar/Core/`.
+2. If you must change a shared file, write the file names in your Linear comment before you change them. Shared files are `Package.swift`, `AGENTS.md`, `docs/*.md`, `Sources/TokenBar/App/TokenBarApp.swift`, `Sources/TokenBar/Resources/*.json` and files in `Sources/TokenBar/Core/`.
 3. Do not reformat or rename code that is not part of your issue.
 
 ### 6.4 Handoff
