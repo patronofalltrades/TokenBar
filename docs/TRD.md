@@ -436,7 +436,7 @@ Facts for this decision (checked 2026-10-08):
 **Release (`release.yml`).** On a tag `v*`:
 
 1. `swift build -c release --arch arm64`. The arm64 binary is in `.build/arm64-apple-macosx/release/TokenBar` (path UNVERIFIED; check `--show-bin-path`).
-2. `scripts/build-app.sh` makes `TokenBar.app/Contents/{MacOS,Resources,Info.plist}`. The `Info.plist` sets `LSUIElement` to true. It copies the SwiftPM resource bundle into `Contents/Resources`. Confirm that `Bundle.module` finds it there (UNVERIFIED; the generated accessor checks `Bundle.main.resourceURL`).
+2. `scripts/build-app.sh` makes `TokenBar.app/Contents/{MacOS,Resources,Info.plist}`. The `Info.plist` sets `LSUIElement` to true. It copies the SwiftPM resource bundle into `Contents/Resources`. The generated `Bundle.module` does not look in `Contents/Resources`: it checks the `.app` root and the build folder only (verified 2026-10-08, Swift 6.3.3). App code must load resources with `Bundle.tokenBar` (`Core/ResourceBundle.swift`), which checks `Contents/Resources` first. Do not call `Bundle.module` directly.
 3. Ad-hoc sign the bundle with `codesign --force --sign - TokenBar.app`. This signature seals `Info.plist` and the resources (fact 4). Do not use `--deep`, because the bundle has one executable.
 4. Verify the signature with `codesign --verify --strict --verbose=2 TokenBar.app`.
 5. Make the npm app archive with `ditto -c -k --keepParent TokenBar.app npm/TokenBar.zip`.

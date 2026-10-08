@@ -6,3 +6,6 @@ DerivedData/
 xcuserdata/
 *.dmg
 .env
+TokenBar.app/
+TokenBar.zip
+SHA256SUMS
