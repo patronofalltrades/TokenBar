@@ -58,7 +58,7 @@ The user can also set **Show café index next to the number** (default: on in St
 | Mode | Content | Maximum width |
 |---|---|---|
 | Standard | Symbol, primary metric, café index | 90 pt |
-| Compact | Symbol and primary metric | 52 pt |
+| Compact | Symbol and one value. The bar style (Section 2.5) selects the value. | 52 pt |
 | Icon only | Symbol only | 22 pt |
 
 The symbol in all modes changes with the state (Section 2.4). The Icon only mode uses the state symbol as the only signal. The popover shows the number.
@@ -97,6 +97,21 @@ Rules:
 5. The `☕` in this document and in the README is the `cup.and.saucer.fill` symbol. Do not use a color emoji in the menu bar.
 
 Verify each symbol name in the SF Symbols app for macOS 14 before implementation.
+
+### 2.5 Bar style: Funny or Serious
+
+The user selects the bar style in onboarding (Section 4.5). The user can change it in **Settings > General > Bar style**. There is no default. The user must select one.
+
+| Bar style | Compact, Normal state | Compact, Warning or Limit hit state | Standard mode |
+|---|---|---|---|
+| Funny | Café-index value: `☕ 3.4` | Limit value: `⚠ 87%` or `⌛ 1h48` | Primary metric and café index |
+| Serious | Primary metric: `◐ 62%` | Limit value: `⚠ 87%` or `⌛ 1h48` | Primary metric only. Roasts off. |
+
+Rules:
+
+1. In the Warning and Limit hit states, both styles show the limit value. The joke never hides a warning (principle 4).
+2. The Funny style uses the unit of Section 7.6. The `☕` is the symbol of the selected unit.
+3. The Serious style sets **Roasts** and **Café index** to off. The user can turn them on again in Settings.
 
 ---
 
@@ -269,7 +284,25 @@ Many users are not engineers. Do not use the words "CLI", "JSONL" or "endpoint" 
 | Open at login | Show a toggle in the welcome screen. Default off. | As a system dialog at launch. |
 | Folder access | Only if the TRD requires a sandbox. Then explain the folder before the open panel shows. | Without an explanation. |
 
-### 4.5 Onboarding tone
+### 4.5 Bar style choice
+
+After detection, the welcome popover asks the user to select a bar style (Section 2.5). Show the two options with a live preview of the menu bar item.
+
+```
+┌──────────────────────────────────────────┐
+│ How do you want the bar?                 │
+│                                          │
+│  [ ☕ 3.4 ]  Funny                        │
+│  Your spend in cafés con leche. Roasts.  │
+│                                          │
+│  [ ◐ 62% ]  Serious                      │
+│  Numbers only. No jokes.                 │
+│                                          │
+│  Warnings always show the real number.   │
+└──────────────────────────────────────────┘
+```
+
+### 4.6 Onboarding tone
 
 Use the voice of Section 7.1, but keep instructions literal. Humor is allowed in the welcome line only.
 
@@ -298,6 +331,7 @@ A standard macOS Settings window with tabs. Use the SwiftUI `Settings` scene. Wi
 
 | Tab | Field | Type | Default |
 |---|---|---|---|
+| General | Bar style | Funny / Serious (Section 2.5) | Selected in onboarding |
 | General | Menu bar shows | Picker (Section 2.1) | Auto |
 | General | Display mode | Standard / Compact / Icon only | Compact with notch, else Standard |
 | General | Café index in bar | Toggle | On |
@@ -388,7 +422,7 @@ Roasts are data, not code. Store roasts in a data file next to the café-index u
 | `provider` | string, optional | `codex` |
 | `locale` | string | `en` |
 
-Placeholders: `{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{time}`, `{cost}`, `{unit_value}`, `{unit_plural}`. If a placeholder has no value, do not select the roast.
+Placeholders: `{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{time}`, `{cost}`, `{unit_value}`, `{unit_plural}`, `{tuition_percent}`, `{tuition_years}`. If a placeholder has no value, do not select the roast.
 
 ### 7.3 Categories and triggers
 
@@ -403,6 +437,7 @@ Placeholders: `{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{
 | `weekday` | Monday before 10:00, Friday after 18:00, or Saturday and Sunday. |
 | `spend` | Cost today is in the top unit range (Section 7.6) or above €20. |
 | `career` | Any time. Low weight. Recruiting, consulting and banking jokes. |
+| `tuition` | 7 or more days of data. Low weight. Uses the tuition benchmark (Section 7.6). |
 | `provider` | A provider-specific condition, for example Codex use only. |
 
 Selection order:
@@ -452,6 +487,9 @@ Selection order:
 | career-03 | career | `You used AI to write a cover letter about your passion for the firm. The firm used AI to read it.` |
 | career-04 | career | `The model gave you three frameworks and a 2x2. You are now ready for consulting.` |
 | provider-01 | provider | `Codex wrote 400 lines today. Your commit message was "fix".` |
+| tuition-01 | tuition | `At your current burn rate, your tokens will cover your IESE tuition in {tuition_years}. The financing office is not impressed.` |
+| tuition-02 | tuition | `{tuition_percent} of your IESE tuition, paid in tokens. The ROI case writes itself.` |
+| tuition-03 | tuition | `You have now spent {tuition_percent} of an MBA on asking a model to explain the MBA.` |
 | provider-02 | provider | `Claude and Codex both used today. Diversified portfolio. Your finance professor would approve of the risk profile, not the cost.` |
 
 The `provider-01` line uses a fixed number as a joke. Do not present it as data. If the TRD supplies a line count, replace the number with a placeholder.
@@ -488,8 +526,34 @@ All prices are **community estimates — verify**. They are not official prices.
 | `t_casual` | T-casual metro card | T-casual metro cards | `tram.fill` | 🚇 | 12.00 | TMB, 10 trips, zone 1. Verify. |
 | `menu_del_dia` | menú del día | menús del día | `takeoutbag.and.cup.and.straw.fill` | 🍽️ | 15.00 | Typical Barcelona lunch menu. Verify. |
 | `ryanair_weekend` | Ryanair weekend escape | Ryanair weekend escapes | `airplane` | ✈️ | 40.00 | Return flight from BCN, booked early. Verify. |
-| `iese_tuition_day` | day of IESE tuition | days of IESE tuition | `building.columns.fill` | 🎓 | 170.00 | Total program fee divided by program days. Verify. |
 | `bcn_room_month` | month of Barcelona room rent | months of Barcelona room rent | `house.fill` | 🏠 | 750.00 | Shared flat room near IESE. Verify. |
+
+#### The tuition benchmark
+
+IESE tuition is not a café unit. A daily cost is always a very small part of tuition, so a unit value is never in range. TokenBar uses tuition as a **benchmark** for total spend over time.
+
+The data file has one tuition entry:
+
+| Field | Value |
+|---|---|
+| `id` | `iese_mba_tuition` |
+| `label` | IESE MBA tuition |
+| `price_eur` | Community estimate. Use the published program fee. Verify. |
+| `source`, `updated` | Same rules as café units. |
+
+TokenBar calculates two values from it:
+
+| Value | Formula | Example |
+|---|---|---|
+| `{tuition_percent}` | Spend since first launch ÷ tuition × 100 | `0.04%` |
+| `{tuition_years}` | Years to reach tuition at the average daily spend of the last 30 days | `412 years` |
+
+Rules:
+
+1. Show the tuition benchmark in the popover under the café-index line, in the Funny style only. Example: `🎓 0.04% of your IESE tuition, paid in tokens.`
+2. Use it in roasts with the `tuition` category (Section 7.3).
+3. The joke is about the tokens, not about the cost of tuition. Do not suggest that the user cannot pay tuition.
+4. If there are less than 7 days of data, do not show `{tuition_years}`.
 
 Note: the plural of `bravas_bar_tomas` is the same as the singular. This is correct.
 
@@ -508,6 +572,30 @@ Note: the plural of `bravas_bar_tomas` is the same as the singular. This is corr
 Format: one decimal place below 10, no decimal places at 10 and above. Use `singular` only when the displayed value is exactly `1`. Always show the real cost on the same row in the popover.
 
 ---
+
+### 7.7 Share card (v0.2)
+
+The share card lets the user post the joke in a class chat. It is the main word-of-mouth feature.
+
+1. The popover footer has a **Share** button (`square.and.arrow.up`).
+2. **Share** copies an image and a text to the clipboard. The user pastes them into WhatsApp or LinkedIn.
+3. Render the image with SwiftUI `ImageRenderer`. Do not add a dependency.
+4. The card contains: today's café-index value, the tuition benchmark (if available), the current roast and the text "TokenBar · github.com/patronofalltrades/TokenBar".
+5. The card does not contain the user name, file paths, project names or prompt content. It shows model names only if the roast uses `{model}`.
+6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat."
+7. In the Serious style, the card shows the numbers only.
+
+```
+┌──────────────────────────────┐
+│  ☕ 3.4 cafés con leche today │
+│  🎓 0.04% of IESE tuition     │
+│                              │
+│  "The cold call is coming.   │
+│   The tokens are not."       │
+│                              │
+│  TokenBar · github.com/…     │
+└──────────────────────────────┘
+```
 
 ## 8. Visual style
 
@@ -618,7 +706,7 @@ The user can reach all controls in the popover and in Settings with the keyboard
 | 5 | Does "This week" start on Monday, or is it a rolling 7 days? Does "Today" start at local midnight? | PRD |
 | 6 | Does each limit have its own threshold, or does Auto mode use only the highest limit for alerts? | PRD |
 | 7 | Who reviews new community roasts for the voice rules? Define a review checklist in CONTRIBUTING. | Maintainer |
-| 8 | Is "day of IESE tuition" too close to money problems (Section 1, principle 3)? Test with students. | Maintainer |
-| 9 | Do we need a "Share" button that copies today's café index and roast as text? This is a possible growth feature. | PRD |
+| 8 | Resolved 2026-10-08: tuition is a benchmark, not a café unit (Section 7.6). | — |
+| 9 | Resolved 2026-10-08: the share card is a v0.2 Must (Section 7.7). | — |
 | 10 | Future idea, not v1: a mood mascot in the popover that reacts to the usage level. | Later |
 | 11 | Future idea, not v1: an opt-in class leaderboard (README roadmap). It needs its own privacy design. | Later |

@@ -59,6 +59,8 @@ API usage comes with a real cost from the provider. Subscription usage (Claude P
 
 The conversion units are in a plain data file. Anyone can add a unit or correct a price with a pull request. Prices are community estimates, not official prices.
 
+TokenBar also shows how much of your IESE tuition your tokens have cost since you first opened TokenBar.
+
 ## Privacy
 
 - TokenBar reads data only on your Mac.
@@ -73,35 +75,59 @@ The conversion units are in a plain data file. Anyone can add a unit or correct 
 
 ## Install
 
-> Not available yet. The first alpha release will be on GitHub Releases.
+> Not available yet. The first alpha release will be on npm and GitHub Releases.
 
-Planned methods:
+TokenBar is free and open source. Builds are not signed with an Apple Developer ID. Use the npm method or the Homebrew method. With these methods, macOS opens TokenBar with no security prompt.
+
+### npm (recommended)
+
+You need [Node.js](https://nodejs.org) 18 or later.
 
 ```sh
-brew install --cask patronofalltrades/tap/tokenbar
+npm install -g tokenbar
+tokenbar install
 ```
 
-You can also download the DMG from [Releases](https://github.com/patronofalltrades/TokenBar/releases).
+`tokenbar install` copies TokenBar.app to `~/Applications` and opens it. To get a new version, run `npm update -g tokenbar`, then run `tokenbar install` again.
 
-**Alpha builds are not signed.** macOS will block the first launch. To open the app:
+To remove TokenBar, run `tokenbar uninstall`, then run `npm uninstall -g tokenbar`.
+
+### Homebrew
+
+This method builds TokenBar from source. You need the Xcode Command Line Tools.
+
+```sh
+brew trust --tap patronofalltrades/tap
+brew install patronofalltrades/tap/tokenbar
+cp -R "$(brew --prefix)/opt/tokenbar/TokenBar.app" ~/Applications/
+```
+
+After each `brew upgrade`, copy the app again.
+
+### DMG
+
+Download the DMG from [Releases](https://github.com/patronofalltrades/TokenBar/releases). macOS blocks the first launch of a DMG build. To open the app:
 
 1. Open **System Settings > Privacy & Security**.
 2. Find the TokenBar message.
 3. Click **Open Anyway**.
 
-The class launch build will be signed and notarized by Apple. Then this step will not be necessary.
+### Check a download
+
+Each release lists the SHA-256 checksum of each file. The npm package has a provenance statement that links it to the GitHub Actions build.
 
 ## Roadmap
 
 | Stage | Scope |
 |---|---|
-| v0.1 alpha | Claude Code logs, menu bar number, popover, café index. |
-| v0.2 alpha | Codex logs, case-method roasts, limit alerts. |
-| v0.3 beta | Optional API keys (OpenAI, Anthropic). Signed and notarized build. |
+| v0.1 alpha | Claude Code logs, menu bar number, popover, café index, case-method roasts. |
+| v0.2 alpha | Codex logs, limit alerts, share card. |
+| v0.3 beta | Optional API keys (OpenAI, Anthropic). |
 | v1.0 | Class launch to IESE MBA 2027 and 2028. |
 | Later | MCP server, so that an AI assistant can query your usage. |
 | Later | Opt-in class leaderboard ("Top Token Burner, Section B"). |
 | Later | xAI (Grok) usage, when xAI supplies a usage source. |
+| Later, optional | Signed and notarized build. Only if non-technical users become a target after the alpha. |
 
 ## Documentation
 

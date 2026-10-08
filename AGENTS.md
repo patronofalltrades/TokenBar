@@ -66,7 +66,7 @@ If your tool does not load skills automatically, read the `SKILL.md` files in `.
 | Project | Swift Package Manager |
 | Tests | Swift Testing |
 | Secrets | macOS Keychain |
-| Release | GitHub Actions, GitHub Releases (DMG), Homebrew cask |
+| Release | GitHub Actions. npm package `tokenbar` (primary). Homebrew formula that builds from source (secondary). DMG on GitHub Releases (fallback). Ad-hoc signature only. No Developer ID in v0.x (TRD Section 13). |
 
 Do not add a third-party dependency without approval from the maintainer. Use the Swift standard library and Apple frameworks first.
 
@@ -140,6 +140,8 @@ Ask the maintainer before you do any of these actions:
 - Add a dependency
 - Change the minimum macOS version
 - Change the CI or release workflow
-- Change signing, notarization or Homebrew configuration
+- Change signing, notarization, npm package or Homebrew configuration
 - Delete a file that a different issue created
 - Make a network request to a new host
+
+Do not publish to npm from a laptop. Only the release workflow publishes, with provenance (TRD Section 13).

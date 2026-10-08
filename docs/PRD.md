@@ -28,9 +28,11 @@ Use these terms with these meanings in all TokenBar documents.
 | Roast | A short joke in the style of an IESE case. Roasts are in a data file. |
 | Menu bar item | The icon and text that TokenBar shows in the macOS menu bar. |
 | Popover | The panel that opens when the user clicks the menu bar item. |
-| Plan mode | A manual mode. The user enters a subscription plan and its monthly price. TokenBar uses no usage source. |
+| Bar style | The user choice for the menu bar item: Funny or Serious (DRD 2.5). |
+| Tuition benchmark | The spend since first launch as a percentage of IESE MBA tuition (DRD 7.6). It is not a café unit. |
+| Share card | An image of today's café index that the user copies to the clipboard (DRD 7.7). |
 | Alpha tester | A person who installs an alpha build before the class launch. |
-| Class launch | The v1.0 release to the IESE MBA classes of 2027 and 2028. |
+| Class launch | The v1.0 release to the launch audience. The class WhatsApp poll selects the audience (Section 10, step 0). |
 
 ## 2. Problem
 
@@ -57,6 +59,8 @@ Supporting jobs:
 
 The audience is the IESE MBA classes of 2027 and 2028. The README assumes approximately 350 students in each class. Most use a Mac. Most are not engineers.
 
+**v1 is for people who use AI coding tools or LLM APIs** (Section 6). The launch audience is not final. Before the launch, the maintainer runs a one-question poll in the class WhatsApp: "Do you use Claude Code or Codex?" The answer selects the launch audience: the whole class, or AI builders (for example, the IESE AI Club). See Section 10, step 0. The result is not known yet.
+
 The personas below are assumptions. Validate them with the alpha survey (Section 9).
 
 | | P1: Marta, the web-chat user | P2: Arjun, the power user | P3: Lucía, the side-project builder |
@@ -64,7 +68,7 @@ The personas below are assumptions. Validate them with the alpha survey (Section
 | Background | Ex-consultant. Targets strategy roles. | Ex-software engineer or PM. Targets tech roles. | Ex-founder. Builds a startup idea during the MBA. |
 | AI tools | ChatGPT Plus in the browser and the desktop app. Sometimes claude.ai. | Claude Pro or Max with Claude Code. Codex CLI. | OpenAI or Anthropic API with her own organization. Claude Code. |
 | Main question | "Is my subscription worth the money?" | "How close am I to my 5-hour limit?" | "How much did my prototype cost today?" |
-| What TokenBar v1 can measure | Nothing automatically. Plan mode only. | Claude Code and Codex usage. | Claude Code usage and API cost with an admin key. |
+| What TokenBar v1 can measure | Nothing. Not a v1 user. | Claude Code and Codex usage. | Claude Code usage and API cost with an admin key. |
 | Share of audience | Large majority (assumption) | Minority (assumption) | Small minority (assumption) |
 | Role in launch | Spreads the jokes. Low data value. | Primary v1 user. Gives the best feedback. | Validates the API feature. |
 
@@ -107,29 +111,29 @@ The personas below are assumptions. Validate them with the alpha survey (Section
 | Option | Description | Assessment |
 |---|---|---|
 | A | Read browser cookies or local app data to get web-chat usage. | Rejected. It conflicts with G4. It can break the provider terms of service. It breaks when the web app changes. |
-| B | Do not support P1. Tell P1 that TokenBar is not for them. | Honest, but it loses most of the class launch audience. |
-| C | Plan mode. P1 enters the plan and its monthly price. TokenBar shows the monthly fee in café units, a daily share, and roasts. | Honest and cheap to build. It gives humor value, but no usage measurement. |
+| B | Do not support P1. Tell P1 that TokenBar is not for them. | **Selected 2026-10-08.** Honest. It can lose part of the class launch audience. The poll in Section 10, step 0 measures this loss. |
+| C | Plan mode. P1 enters the plan and its monthly price. TokenBar shows the monthly fee in café units, a daily share, and roasts. | Rejected 2026-10-08. It gives humor value, but no usage measurement. |
 | D | Manual usage log. P1 records each session. | Rejected. Nobody will do this every day. |
 
-**Recommendation: Option C, and say clearly what TokenBar cannot do.**
+**Decision (2026-10-08): Option B, with honest onboarding.**
 
-1. Make P2 the primary v1 user. Measure success on P2 first (Section 9).
-2. Add plan mode in v0.3 so that P1 can install TokenBar and get the humor layer.
+1. v1 is for people who use AI coding tools or LLM APIs. P1 is not a v1 user.
+2. Make P2 the primary v1 user. Measure success on P2 first (Section 9).
 3. In onboarding and on the README, state: "TokenBar cannot see web-chat usage." Do not imply otherwise.
-4. Keep the open question (Q1) to look for a reliable web-chat source. Add a source only if it obeys G4.
+4. Add a web-chat source later only if it is reliable and obeys G4.
 
-**Note for the maintainer.** The README first paragraph says that TokenBar shows "Claude, ChatGPT and Grok usage". This is not true for v1. Section 13 proposes a change.
+**Note for the maintainer.** The README first paragraph now names the v1 sources (Section 13, item 1).
 
 ## 7. Scope: user stories
 
 Format: "As a <persona>, I want <capability>, so that <benefit>." Each acceptance criterion (AC) must be testable. Priority: **Must** blocks the stage release. **Should** does not.
 
-### 7.1 v0.1 alpha: Claude Code logs, menu bar, popover, café index
+### 7.1 v0.1 alpha: Claude Code logs, menu bar, popover, café index, roasts
 
 **PRD-US-01 Install the alpha build** (Must)
-As an alpha tester, I want to install TokenBar from GitHub Releases or Homebrew, so that I can test it.
+As an alpha tester, I want to install TokenBar from npm, Homebrew or GitHub Releases, so that I can test it.
 - AC1: A DMG is attached to each GitHub release.
-- AC2: `brew install --cask patronofalltrades/tap/tokenbar` installs the same version.
+- AC2: `npm install -g tokenbar`, then `tokenbar install`, installs the same version. `brew install patronofalltrades/tap/tokenbar` (a formula that builds from source) also installs the same version.
 - AC3: The README tells how to open an unsigned build with **Open Anyway**.
 - AC4: The app runs on macOS 14 or later, on Apple silicon and Intel.
 
@@ -153,6 +157,8 @@ As any user, I want one short value next to the notch, so that I see my usage wi
 - AC1: The menu bar item shows one primary value and one café-unit value. Example format: `◐ 62% · 3.4 ☕`.
 - AC2: The user can select the primary value: limit percentage, cost today, or tokens today.
 - AC3: The text does not exceed the width that the DRD specifies.
+- AC4: The user selects a bar style: Funny or Serious (DRD 2.5). No default exists. The user can change the style later.
+- AC5: In the Warning and Limit hit states, both bar styles show the limit value (DRD 2.5, rule 1).
 
 **PRD-US-05 See the full report in the popover** (Must)
 As any user, I want details when I click, so that I understand the number.
@@ -167,6 +173,8 @@ As any user, I want my cost in IESE units, so that I remember it.
 - AC3: The popover shows a minimum of two café units for the current cost.
 - AC4: A contributor can add a unit with one pull request that changes only the data file.
 - AC5: A test fails if a unit has a missing field or a price of zero or less.
+- AC6: In the Funny bar style, the popover shows the tuition benchmark: the share of IESE tuition that the spend since first launch has cost (DRD 7.6).
+- AC7: The data file has one tuition entry, `iese_mba_tuition`. TokenBar shows the years-to-tuition value only with 7 or more days of data.
 
 **PRD-US-07 Trust the privacy promise** (Must)
 As any user, I want proof that my data stays on my Mac, so that I can install TokenBar safely.
@@ -179,22 +187,22 @@ As P1, I want a clear message when TokenBar finds no usage source, so that I do 
 - AC1: If no usage source exists, the popover tells which sources TokenBar supports.
 - AC2: The message states that TokenBar cannot see web-chat usage.
 
-### 7.2 v0.2 alpha: Codex logs, roasts, limit alerts
-
-**PRD-US-09 See Codex usage without a key** (Must)
-As P2, I want TokenBar to read my local Codex CLI logs, so that I see Codex usage too.
-- AC1: AC1 to AC5 of PRD-US-02 apply to Codex logs.
-- AC2: The popover shows Claude Code and Codex as separate usage sources.
-
 **PRD-US-10 Read a case-method roast** (Must)
 As any user, I want a short joke about my usage, so that the app is fun to open.
 - AC1: Roasts are in a data file. Adding a roast needs no code change.
 - AC2: A roast can use placeholders for live values, for example the limit percentage.
 - AC3: TokenBar selects a roast that matches the current state (low, medium or high usage).
-- AC4: The user can turn off roasts in Settings.
+- AC4: The user can turn off roasts. In v0.1, the Serious bar style turns off roasts (DRD 2.5). From v0.2, Settings has a Roasts toggle.
 - AC5: Roasts follow the DRD voice rules. Roasts do not mention a real classmate, professor or section by name.
 
 Example roast (humor string, not STE): *"The protagonist has 38% of Opus left and a 9 AM case deadline. Discuss."*
+
+### 7.2 v0.2 alpha: Codex logs, limit alerts, share card
+
+**PRD-US-09 See Codex usage without a key** (Must)
+As P2, I want TokenBar to read my local Codex CLI logs, so that I see Codex usage too.
+- AC1: AC1 to AC5 of PRD-US-02 apply to Codex logs.
+- AC2: The popover shows Claude Code and Codex as separate usage sources.
 
 **PRD-US-11 See my limit and its reset time** (Must, when a limit source exists)
 As P2, I want to see the percentage of my limit and the reset time, so that I can plan my work.
@@ -209,7 +217,18 @@ As P2, I want a macOS notification before I hit a limit, so that a limit does no
 - AC3: TokenBar sends each alert a maximum of one time in each limit window.
 - AC4: The notification can include a roast. The user can turn this off.
 
-### 7.3 v0.3 beta: API keys, signed build, plan mode
+**PRD-US-21 Share today's café index** (Must)
+As any user, I want to copy an image of today's café index, so that I can post the joke in a class chat.
+- AC1: The popover footer has a **Share** button. **Share** copies an image and a text to the clipboard (DRD 7.7).
+- AC2: The card contains today's café-index value, the tuition benchmark (if available), the current roast and the repository link.
+- AC3: The card contains no user name, file paths, project names or prompt content. A test proves this.
+- AC4: The card shows a model name only if the roast uses `{model}`.
+- AC5: TokenBar renders the image with SwiftUI `ImageRenderer`. The feature adds no dependency.
+- AC6: In the Serious bar style, the card shows numbers only.
+- AC7: After the copy, the popover shows a one-line confirmation.
+- AC8: **Share** makes no network request. The user decides where to paste the card.
+
+### 7.3 v0.3 beta: API keys, no-warning install
 
 **PRD-US-13 Add an OpenAI admin key** (Must)
 As P3, I want to add my OpenAI admin key, so that I see my real API cost.
@@ -224,17 +243,10 @@ As P3, I want to add my Anthropic admin key, so that I see my real API cost.
 - AC1: AC1 to AC5 of PRD-US-13 apply, with the Anthropic API host.
 
 **PRD-US-15 Open the app with no security warning** (Must)
-As any user, I want a signed and notarized build, so that macOS opens the app with no warning.
-- AC1: The beta build is signed with a Developer ID and notarized by Apple.
-- AC2: A first launch on a clean Mac shows no **Open Anyway** step.
-
-**PRD-US-16 Use plan mode** (Must)
-As P1, I want to enter my plan and its price, so that I get value from TokenBar with no usage source.
-- AC1: The user can add one or more plans with a name and a monthly price that the user types.
-- AC2: TokenBar does not ship subscription prices. The user enters the price.
-- AC3: TokenBar shows the monthly fee and the daily share in café units.
-- AC4: The popover labels plan mode values "plan cost", not "usage".
-- AC5: Roasts in plan mode do not claim to know the user's usage.
+As any user, I want an install method with no security step, so that macOS opens the app with no warning.
+- AC1: After an install with npm (`tokenbar install`), a first launch on a clean Mac shows no **Open Anyway** step.
+- AC2: The README tells DMG users how to use **Open Anyway**.
+- AC3: TokenBar needs no Developer ID and no notarization for this story (Q4).
 
 **PRD-US-17 Give feedback** (Should)
 As an alpha tester, I want a feedback link in the app, so that I can report a problem quickly.
@@ -244,10 +256,11 @@ As an alpha tester, I want a feedback link in the app, so that I can report a pr
 ### 7.4 v1.0: class launch
 
 **PRD-US-18 Complete onboarding in two minutes** (Must)
-As P1 or P2, I want a short first-run setup, so that I see a value quickly.
+As P2 or P3, I want a short first-run setup, so that I see a value quickly.
 - AC1: The first run detects the available usage sources and shows them.
 - AC2: The first run states what TokenBar can see and what it cannot see.
-- AC3: In a test with 5 non-engineers, 4 or more reach a value in the menu bar in 2 minutes or less (target).
+- AC3: Test with 5 people from the target audience (AI-coding-tool users). A minimum of 2 are not software engineers by background. 4 or more reach a value in the menu bar in 2 minutes or less (target).
+- AC4: After detection, the first run asks the user to select a bar style: Funny or Serious. It shows a live preview of each style (DRD 4.5). No default exists.
 
 **PRD-US-19 Start at login** (Must)
 As any user, I want TokenBar to start when I log in, so that I do not need to open it.
@@ -262,13 +275,13 @@ As any user, I want to know when a new version exists, so that I get fixes.
 
 | Stage | Stories |
 |---|---|
-| v0.1 alpha | US-01 to US-08 |
-| v0.2 alpha | US-09 to US-12 |
-| v0.3 beta | US-13 to US-17 |
+| v0.1 alpha | US-01 to US-08, US-10 |
+| v0.2 alpha | US-09, US-11, US-12, US-21 |
+| v0.3 beta | US-13 to US-15, US-17 |
 | v1.0 | US-18 to US-20, and fixes from beta feedback |
 | Later | MCP server, opt-in class leaderboard, xAI usage |
 
-Create one Linear issue for each story. Use the story ID in the issue title.
+Create one Linear issue for each story. Use the story ID in the issue title. US-16 is cancelled (2026-10-08, Section 6). Do not reuse the ID.
 
 ## 8. Requirements that apply to all stories
 
@@ -279,7 +292,7 @@ Create one Linear issue for each story. Use the story ID in the issue title.
 | NFR-03 | TokenBar keeps API keys only in the Keychain (AGENTS.md 5.6). |
 | NFR-04 | TokenBar uses less than 1% average CPU when idle (target, to verify in TRD). |
 | NFR-05 | TokenBar works offline. Only API-key providers and the optional update check need the network. |
-| NFR-06 | All user-facing numbers show their unit and their type: API cost, API-equivalent cost or plan cost. |
+| NFR-06 | All user-facing numbers show their unit and their type: API cost or API-equivalent cost. |
 | NFR-07 | The README credits CodexBar as prior art. TokenBar copies no CodexBar code. |
 
 ## 9. Success metrics
@@ -290,13 +303,14 @@ TokenBar has no telemetry. Thus every metric below comes from a public count or 
 
 | Method | What it measures | Notes |
 |---|---|---|
-| GitHub Releases API, `download_count` of each DMG asset | Downloads, including Homebrew installs | The Homebrew cask downloads the DMG from GitHub Releases. Thus this count includes cask installs. One person can download more than one time. |
+| npm download counts API (`https://api.npmjs.org/downloads/point/<period>/tokenbar`) | Downloads of the npm package (primary channel) | Public, no key. `npm update` and `npx` also count, and mirrors and CI can add downloads. Thus the count is an upper bound for people. |
+| GitHub Releases API, `download_count` of each release asset | Downloads of the DMG (fallback channel) and of other assets | The Homebrew formula builds from the source tarball. The source tarball has no `download_count`. Thus this count does not include Homebrew installs. One person can download more than one time. |
 | Homebrew analytics | Not available | Homebrew public analytics cover official taps only (to verify). Do not depend on them for a personal tap. |
 | GitHub stars, issues, pull requests | Interest and contribution | Count only people who are not the maintainer. |
 | Opt-in survey (Google Form or Tally) | Active use, value, persona, NPS-style score | Linked from US-17 and from class channels. Send at day 7 and day 30 after launch. |
 | Class WhatsApp poll | Installs and weekly use in each section | One question: "Do you have TokenBar installed and open this week?" |
 | User interviews | Qualitative evidence | 30-minute calls. Record notes in a public case study with consent. |
-| Shared screenshots | Word of mouth | Count posts in class channels and LinkedIn that users choose to share. |
+| Shared screenshots and share cards | Word of mouth | Count posts in class channels and LinkedIn that users choose to share (PRD-US-21). |
 
 ### 9.2 Targets
 
@@ -306,12 +320,12 @@ The base is approximately 700 students in two classes (assumption from README au
 |---|---|---|---|---|
 | M1 | Alpha testers who install and use for 7 days | 8 | Direct contact | v0.2 |
 | M2 | Alpha bug reports or suggestions | 15 | GitHub Issues, survey | v0.3 |
-| M3 | DMG downloads in 30 days after class launch | 150 | GitHub Releases API | v1.0 |
+| M3 | npm downloads plus GitHub Release asset downloads in 30 days after class launch | 150 | npm download counts API, GitHub Releases API | v1.0 |
 | M4 | Self-reported weekly active users at day 30 | 50 | WhatsApp poll, survey | v1.0 |
 | M5 | Survey answers at day 30 | 30 | Survey | v1.0 |
 | M6 | Survey users who say TokenBar prevented a limit or bill surprise | 40% of P2 answers | Survey | v1.0 |
 | M7 | Café-unit or roast pull requests from other people | 5 | GitHub | v1.0 + 60 days |
-| M8 | GitHub stars | 100 | GitHub | v1.0 + 60 days |
+| M8 | GitHub stars (secondary) | 100 | GitHub | v1.0 + 60 days |
 | M9 | User interviews done | 8, with a minimum of 3 from P2 | Interview notes | v1.0 + 30 days |
 
 **Primary metric: M4.** It is the closest proxy for real use without telemetry.
@@ -331,13 +345,14 @@ The maintainer uses TokenBar to show Forward Deployed Engineer skills. Collect t
 |---|---|---|---|---|
 | 1. Private alpha | v0.1 | 3 to 5 technical friends who use Claude Code | 2 weeks | No crash for 7 days. Claude Code totals verified by a minimum of 3 testers. |
 | 2. Wider alpha | v0.2 | 8 to 15 testers, including Codex users and 2 non-engineers | 2 to 3 weeks | M1 met. Limit alerts work for a minimum of 3 testers. Roasts reviewed by 5 testers. |
-| 3. Beta | v0.3 | Same group plus 2 to 3 API-key users and 3 P1 users | 2 weeks | Signed build works on a clean Mac. Plan mode tested by 3 P1 users. US-18 AC3 test done. |
-| 4. Class launch | v1.0 | IESE MBA 2027 and 2028 | 1 day launch, 30-day follow-up | Launch done. Day-7 and day-30 survey sent. |
+| 3. Beta | v0.3 | Same group plus 2 to 3 API-key users | 2 weeks | npm install works on a clean Mac with no **Open Anyway** step. US-18 AC3 test done. |
+| 4. Class launch | v1.0 | The audience from step 0: IESE MBA 2027 and 2028, or an AI-builders group | 1 day launch, 30-day follow-up | Launch done. Day-7 and day-30 survey sent. |
 
 Class launch actions:
 
+0. Before you make the launch target final, run a one-question poll in the class WhatsApp: "Do you use Claude Code or Codex?" The answer decides the launch audience: the whole class, or AI builders (for example, the IESE AI Club). Record the result and the decision in this section. Result: not known yet.
 1. Prepare a one-page install guide with screenshots. State what TokenBar cannot see.
-2. Post in class WhatsApp groups with a short demo GIF and the Homebrew command.
+2. Post in the channels of the launch audience with a short demo GIF and the npm command.
 3. Ask a minimum of 5 alpha testers to share a screenshot of their café index on launch day.
 4. Offer a 15-minute install session for non-engineers (to confirm with the maintainer, Q6).
 5. Send the WhatsApp poll at day 7 and day 30. Send the survey at day 30.
@@ -347,14 +362,14 @@ Class launch actions:
 
 | ID | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
-| R1 | Most of the class uses only web chat, which v1 cannot see. | High | High | Plan mode (US-16). Honest onboarding (US-18). Measure success on P2 first. Keep Q1 open. |
+| R1 | Most of the class uses only web chat, which v1 cannot see. | High | High | Option B: v1 is for AI-coding-tool and API users (Section 6). Honest onboarding (US-18). The poll selects the launch audience (Section 10, step 0). Measure success on P2 first. |
 | R2 | Claude Code or Codex changes the local log format. | Medium | High | Version-tolerant parsers. Test fixtures for each known format. Show "source not readable" and do not show wrong numbers. |
 | R3 | No reliable limit source exists for a tool. | Medium | High | US-11 AC2: show usage only. Do not estimate. Document the limit source in the TRD. |
 | R4 | API prices change and the price table becomes old. | High | Medium | "Last checked" date per price (US-03 AC2). Show the date in the popover. |
 | R5 | A roast offends a classmate or professor. | Medium | Medium | Roast review by testers. No real names (US-10 AC5). Option to turn off roasts. |
 | R6 | Users think TokenBar sends their data. | Medium | High | No network in v0.1. Open source. Privacy section in onboarding. |
 | R7 | Low adoption cannot be measured without telemetry. | High | Medium | Section 9 methods. Accept that numbers are lower bounds. |
-| R8 | Apple Developer Program cost or delay blocks signing. | Medium | High | Decide Q4 before v0.3. Keep unsigned alpha path. |
+| R8 | Apple Developer Program cost or delay blocks signing. | Medium | High | Closed by Q4: no Developer ID for v0.x. npm is the primary channel. |
 | R9 | Users read API-equivalent cost as money that they spent. | Medium | Medium | Label rule NFR-06. Explain in the popover. |
 | R10 | Café-unit prices are wrong or old. | Medium | Low | Source note per unit. Community pull requests. README disclaimer. |
 | R11 | The maintainer has little time during the MBA. | High | Medium | Small scope. Agents build with Linear issues (AGENTS.md 6). Cut Should stories first. |
@@ -364,22 +379,23 @@ Class launch actions:
 
 | ID | Question | Needed by |
 |---|---|---|
-| Q1 | Do you accept Option C (plan mode) for web-chat users? Or do you prefer Option B (say that P1 is not a v1 user)? | v0.3 |
+| Q1 | Do you accept Option C or Option B for web-chat users (Section 6)? **Resolved 2026-10-08: Option B. P1 is not a v1 user. v1 is for people who use AI coding tools or LLM APIs.** | v0.3 |
 | Q2 | Is a reliable, local, privacy-safe limit source available for Claude Code and Codex? If not, do limit alerts stay in v0.2? | v0.2 |
 | Q3 | Which currency is the default: EUR or USD? Do you allow a user setting? | v0.1 |
-| Q4 | Do you pay for the Apple Developer Program for v0.3? Who owns the Developer ID? | v0.3 |
+| Q4 | Do you pay for the Apple Developer Program for v0.3? Who owns the Developer ID? **Decided 2026-10-08: no Developer ID for v0.x. Use npm as the primary channel.** Signing and notarization are "Later, optional": only if non-technical users become a target after the alpha. | v0.3 |
 | Q5 | Which survey tool do you use (Google Forms, Tally or other)? Is a third-party form compatible with the privacy promise? | v0.2 |
 | Q6 | Do you run an install session at class launch? Do you need approval from the class representatives or IESE to post in class channels? | v1.0 |
 | Q7 | Who reviews roasts before release? Do you want a "safe" default set and an opt-in "spicy" set? | v0.2 |
-| Q8 | Do you add a "copy share card" feature (an image of today's café index) to help word of mouth? It is not in the README. | v1.0 |
+| Q8 | Do you add a "copy share card" feature (an image of today's café index) to help word of mouth? **Resolved 2026-10-08: yes. The share card is a v0.2 Must (PRD-US-21, DRD 7.7).** | v0.2 |
 | Q9 | Do you target students outside IESE after v1.0? This changes the café units and the voice. | After v1.0 |
 | Q10 | Is the launch date fixed to a point in the academic calendar, for example the start of a term? | v0.3 |
+| Q11 | Is the launch audience the whole class or AI builders? **Decided 2026-10-08: the class WhatsApp poll decides (Section 10, step 0). Result not known yet.** | v1.0 |
 
 ## 13. Proposed changes to README.md
 
 These changes need approval from the maintainer. This PRD does not make them.
 
-1. The first paragraph says that TokenBar shows "Claude, ChatGPT and Grok usage". Change it to name the v1 sources: Claude Code, Codex and the optional OpenAI and Anthropic APIs.
-2. Add a "What TokenBar cannot see" note: ChatGPT web, claude.ai web and Grok.
-3. Add plan mode to the v1 feature table and to v0.3 in the roadmap, if Q1 is accepted.
+1. Done. The first paragraph names the v1 sources: Claude Code, Codex and the optional OpenAI and Anthropic APIs.
+2. Done. The README has a "What TokenBar cannot see" note: ChatGPT web, claude.ai web and Grok.
+3. Closed 2026-10-08. Q1 selected Option B, so the README needs no change for web-chat users.
 4. The example shows "62% of 5-hour limit" for Claude Code. Keep it only if Q2 confirms a limit source.

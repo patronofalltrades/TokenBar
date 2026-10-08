@@ -76,21 +76,25 @@ Sources/TokenBar/
   Providers/AnthropicAdminProvider.swift   (v0.3)
   Providers/OpenAIAdminProvider.swift      (v0.3)
   Humor/CafeIndex.swift
-  Humor/Roasts.swift                  (v0.2)
+  Humor/Roasts.swift
   Alerts/LimitAlerts.swift            (v0.2)
   UI/MenuBarLabel.swift
   UI/PopoverView.swift
   UI/SettingsView.swift               (v0.2)
+  UI/ShareCard.swift                  (v0.2) share card image and text
   UI/APIKeysView.swift                (v0.3)
   Resources/prices.json
   Resources/cafe-units.json
-  Resources/roasts.json               (v0.2)
+  Resources/roasts.json
   Resources/Info.plist                LSUIElement = true
 Tests/TokenBarTests/
   *Tests.swift                        one file for each source file with logic
   Fixtures/claude/*.jsonl             synthetic data only
   Fixtures/codex/*.jsonl              synthetic data only
   Fixtures/api/*.json                 synthetic API responses
+npm/package.json                      npm package "tokenbar" (TRD-T26)
+npm/bin/tokenbar.js                   install and uninstall command, Node built-ins only
+npm/test/*.test.js                    node --test
 scripts/build-app.sh                  assembles TokenBar.app from the SwiftPM binary
 scripts/make-dmg.sh                   hdiutil wrapper
 .github/workflows/ci.yml              build and test on each pull request
@@ -333,15 +337,18 @@ All humor files are JSON in `Sources/TokenBar/Resources/`. SwiftPM copies them w
 
 | File | Top-level keys | Item fields |
 |---|---|---|
-| `cafe-units.json` | `usd_to_eur`, `rate_updated`, `units` | DRD 7.6: `id`, `singular`, `plural`, `symbol`, `emoji`, `price_eur`, `price_note`, `source`, `updated` |
+| `cafe-units.json` | `usd_to_eur`, `rate_updated`, `units`, `tuition` | Units, DRD 7.6: `id`, `singular`, `plural`, `symbol`, `emoji`, `price_eur`, `price_note`, `source`, `updated`. `tuition` is one object, not a unit: `id` (`iese_mba_tuition`), `label`, `price_eur`, `source`, `updated`. |
 | `roasts.json` | `roasts` | DRD 7.2: `id`, `text`, `category`, `min_percent`, `max_percent`, `hours`, `weekdays`, `provider`, `locale` |
 
 Load rules:
 
 1. Decode with `Codable`. Reject the whole file if decoding fails. A unit test decodes the shipped files, so a bad pull request fails CI.
 2. A test checks that each `id` is unique and that each `price_eur` is > 0.
-3. A test checks that each roast placeholder is in the DRD list (`{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{time}`, `{cost}`, `{unit_value}`, `{unit_plural}`).
+3. A test checks that each roast placeholder is in the DRD list (`{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{time}`, `{cost}`, `{unit_value}`, `{unit_plural}`, `{tuition_percent}`, `{tuition_years}`).
 4. Store the roast rotation history (DRD 7.4) in `UserDefaults` as a list of the last 15 IDs.
+5. Store the tuition running total in `UserDefaults`: `tuitionFirstLaunch` (date), `tuitionSpendUSD` (`Decimal` as a string) and `tuitionCountedThrough` (date). These values are not secrets.
+6. On each refresh, add the cost of each complete day after `tuitionCountedThrough` and before today. Then set `tuitionCountedThrough` to yesterday.
+7. Spend since first launch = `tuitionSpendUSD` + the cost of today. Do not store the cost of today. A day older than the 35-day window is not counted.
 
 Skipped: loading user-supplied data files from disk. Add it if contributors ask to test units without a build.
 
@@ -369,14 +376,14 @@ A new host needs maintainer approval (AGENTS.md Section 9).
 
 ## 11. Permissions and sandbox decision
 
-**Decision: no App Sandbox. Hardened Runtime on. Developer ID distribution outside the Mac App Store.**
+**Decision: no App Sandbox. Ad-hoc signature. Distribution outside the Mac App Store: npm (primary), Homebrew formula (secondary), DMG (fallback). See Section 13.**
 
 Analysis:
 
 1. A sandboxed app cannot read `~/.claude` or `~/.codex`. A sandboxed app can read them only after the user selects the folder in an `NSOpenPanel` and the app stores a security-scoped bookmark.
 2. These folders are hidden. A non-engineer cannot easily select a hidden folder. This breaks the 2-minute onboarding target (PRD-US-18).
-3. The App Sandbox is required only for the Mac App Store. TokenBar ships on GitHub and Homebrew.
-4. Notarization requires Hardened Runtime, not the sandbox.
+3. The App Sandbox is required only for the Mac App Store. TokenBar ships with npm, a Homebrew formula and a DMG on GitHub Releases.
+4. A signed build is "Later, optional" (Section 13). If it starts, notarization requires Hardened Runtime, not the sandbox.
 5. CodexBar ships non-sandboxed for the same reason (`docs/sparkle.md`).
 
 Consequences:
@@ -405,15 +412,85 @@ Revisit if the maintainer wants the Mac App Store.
 
 **CI (`ci.yml`).** On each pull request: `macos-15` runner, select Xcode with Swift 6 (`sudo xcode-select -s /Applications/Xcode_<version>.app`; exact version UNVERIFIED on the runner image), `swift build`, `swift test`. No third-party actions except `actions/checkout`.
 
+**Distribution decision (2026-10-08, PRD Q4).** TokenBar v0.x has no Developer ID and no notarization. TokenBar does not join the Apple Developer Program ($99 each year). TokenBar uses three channels:
+
+| Channel | Command | Role | First launch |
+|---|---|---|---|
+| npm | `npm install -g tokenbar`, then `tokenbar install` | Primary | No Gatekeeper prompt (facts 1 to 3) |
+| Homebrew formula | `brew install patronofalltrades/tap/tokenbar` | Secondary | No Gatekeeper prompt. The formula builds from source. |
+| DMG | Download from GitHub Releases | Fallback | Gatekeeper blocks the app. The user clicks **Open Anyway**. |
+
+Facts for this decision (checked 2026-10-08):
+
+1. Gatekeeper checks a downloaded app at first launch only if the app has the `com.apple.quarantine` extended attribute. The attribute is opt-in. An app adds it to new files only if its `Info.plist` sets `LSFileQuarantineEnabled`. Command-line tools such as `curl` do not add it. Sources: [Eclectic Light](https://eclecticlight.co/2020/10/29/quarantine-and-the-quarantine-flag/), [Red Canary](https://redcanary.com/threat-detection-report/techniques/gatekeeper-bypass/).
+2. Local test on the maintainer's Mac (macOS 26, npm 11.19.1): files that `node` and `curl` wrote had no `com.apple.quarantine`. The global `node_modules` folder had no `com.apple.quarantine` on any file. Files had `com.apple.provenance`. This attribute does not start the first-launch prompt (UNVERIFIED by an Apple source; confirm in TRD-T26).
+3. Exception: a process can inherit quarantine flags from a parent app that sets `LSFileQuarantineEnabled`. Then the kernel adds the attribute to each file that the process makes. Source: [nubjs/nub PR 601](https://github.com/nubjs/nub/pull/601). Thus `tokenbar install` must check for the attribute (see the npm package below).
+4. Apple silicon runs only signed code. An ad-hoc signature is sufficient. The linker adds an ad-hoc signature to the executable, but this signature does not cover resources. An ad-hoc signature does not pass Gatekeeper. Source: [macOS Big Sur 11.0.1 Universal Apps Release Notes](https://developer.apple.com/documentation/macos-release-notes/macos-big-sur-11_0_1-universal-apps-release-notes).
+5. Homebrew casks add `com.apple.quarantine` to each download. Homebrew 5.0.0 deprecated `--no-quarantine`. Homebrew 7.0.4 has no `--no-quarantine` code. Sources: [Homebrew 5.0.0](https://brew.sh/2025/11/12/homebrew-5.0.0/), `Library/Homebrew/cask/download.rb` in Homebrew 7.0.4. Thus a cask for an unsigned app always needs **Open Anyway**. TokenBar has no cask.
+
 **Release (`release.yml`).** On a tag `v*`:
 
 1. `swift build -c release --arch arm64 --arch x86_64`. The universal binary is in `.build/apple/Products/Release/TokenBar` (path UNVERIFIED; check `--show-bin-path`).
 2. `scripts/build-app.sh` makes `TokenBar.app/Contents/{MacOS,Resources,Info.plist}`. It copies the SwiftPM resource bundle into `Contents/Resources`. Confirm that `Bundle.module` finds it there (UNVERIFIED; the generated accessor checks `Bundle.main.resourceURL`).
-3. Alpha: ad-hoc sign with `codesign --force --deep --sign - TokenBar.app`. Apple silicon needs at least an ad-hoc signature.
-4. `scripts/make-dmg.sh`: `hdiutil create -volname TokenBar -srcfolder TokenBar.app -format UDZO TokenBar-<version>.dmg`.
-5. Upload the DMG and its SHA-256 to a GitHub Release with `gh release create`.
+3. Ad-hoc sign the bundle with `codesign --force --sign - TokenBar.app`. This signature seals `Info.plist` and the resources (fact 4). Do not use `--deep`, because the bundle has one executable.
+4. Verify the signature with `codesign --verify --strict --verbose=2 TokenBar.app`.
+5. `scripts/make-dmg.sh`: `hdiutil create -volname TokenBar -srcfolder TokenBar.app -format UDZO TokenBar-<version>.dmg`.
+6. Make the npm app archive with `ditto -c -k --keepParent TokenBar.app npm/TokenBar.zip`.
+7. Write `SHA256SUMS` with `shasum -a 256` for the DMG and `TokenBar.zip`.
+8. Upload the DMG, `TokenBar.zip` and `SHA256SUMS` to a GitHub Release with `gh release create`. Put the SHA-256 values in the release notes.
+9. Publish the npm package (see "npm publish" below).
 
-**Signed build (v0.3, needs PRD Q4).**
+**npm package (`npm/`, TRD-T26).**
+
+- `npm/package.json`: `"name": "tokenbar"`, `"bin": {"tokenbar": "bin/tokenbar.js"}`, `"os": ["darwin"]`, `"engines": {"node": ">=18"}`, a `files` list and a `repository` URL. The `repository` URL must match the GitHub repository exactly, with the same case. Provenance needs this match.
+- The package has no dependencies. `bin/tokenbar.js` uses only Node built-in modules.
+- The package has no `preinstall`, `install` or `postinstall` script. pnpm 10 does not run dependency lifecycle scripts by default, and `--ignore-scripts` stops them ([pnpm 10.0.0](https://newreleases.io/project/npm/pnpm/release/10.0.0)). npm also advises against install scripts ([npm scripts](https://docs.npmjs.com/cli/v11/using-npm/scripts)).
+- Decision: the package contains the prebuilt universal app as `TokenBar.zip`. The command does not download the app from GitHub Releases. Reasons: no new network host, no download code, and the npm provenance covers the app bytes. A zip made with `ditto` keeps the bundle structure, file modes and signature files.
+- Updates: `npm update -g tokenbar`, then `tokenbar install`.
+
+`tokenbar install` does these steps:
+
+1. Stop with an error if the Mac is not macOS 14 or later.
+2. Quit TokenBar if it runs.
+3. Extract `TokenBar.zip` into a temporary folder with `/usr/bin/ditto -x -k`.
+4. Run `codesign --verify --strict` on the extracted app. Stop if it fails.
+5. Replace `~/Applications/TokenBar.app` with the extracted app. Make `~/Applications` if it does not exist.
+6. Check the app for `com.apple.quarantine` with `xattr -p`. If the attribute exists, show the **Open Anyway** steps. Do not remove the attribute.
+7. Open the app with `open ~/Applications/TokenBar.app`.
+
+`tokenbar uninstall` quits TokenBar and removes `~/Applications/TokenBar.app`. It does not remove settings or Keychain items. It shows the user where these are.
+
+`npx tokenbar install` must also work. It uses the same steps.
+
+**npm publish (supply-chain controls).**
+
+1. Turn on two-factor authentication for the npm account.
+2. Publish only from `release.yml` on a GitHub-hosted runner. Never publish from a laptop.
+3. Use npm trusted publishing (OIDC). It needs npm CLI 11.5.1 or later, Node 22.14.0 or later, `permissions: id-token: write` and a GitHub-hosted runner. Source: [npm trusted publishers](https://docs.npmjs.com/trusted-publishers).
+4. Run `npm publish --provenance --access public`. Trusted publishing makes provenance by default, but keep the flag as an explicit check. Source: [npm provenance](https://docs.npmjs.com/generating-provenance-statements).
+5. After the first trusted publish, set the package to "Require two-factor authentication and disallow tokens".
+6. Do not store an npm token in GitHub secrets.
+
+UNVERIFIED: npm can need an existing package before you add a trusted publisher. If so, ask the maintainer. Do not publish from a laptop to make the package.
+
+**Homebrew formula (TRD-T11).** Formula `Formula/tokenbar.rb` in `patronofalltrades/homebrew-tap`:
+
+- `url`: the GitHub source tarball of the tag. Add its `sha256`.
+- `depends_on macos: :sonoma` and `uses_from_macos "swift" => :build`. Homebrew core Swift formulae (for example `swiftformat`) use this line and need no full Xcode.
+- `install`: `system "swift", "build", *std_swift_args`. Then run `scripts/build-app.sh` and `codesign --force --sign -`. Then `prefix.install "TokenBar.app"`.
+- `caveats`: tell the user to copy the app with `cp -R "$(brew --prefix)/opt/tokenbar/TokenBar.app" ~/Applications/`.
+
+Formula limits:
+
+1. The Homebrew 7 sandbox blocks reads of the home folder ([Homebrew 7.0.0](https://brew.sh/2026/09/13/homebrew-7.0.0/)). Thus the formula cannot write to `~/Applications`. The user copies the app after each install and each `brew upgrade`.
+2. Homebrew 6 and later require the user to trust a third-party tap before Homebrew runs its code ([Homebrew 6.0.0](https://brew.sh/2026/06/11/homebrew-6.0.0/)). The README must show `brew trust --tap patronofalltrades/tap` before the install command. Homebrew 7.0.4 `cmd/trust.rb` accepts this syntax.
+3. The tap has no bottles. Each install builds from source and needs Command Line Tools with Swift 6.
+4. A SwiftUI build with only Command Line Tools is UNVERIFIED. Test it on a Mac with no Xcode in TRD-T11.
+5. Homebrew core does not accept a formula whose main output is a `.app` bundle ([Acceptable Formulae](https://docs.brew.sh/Acceptable-Formulae)). The formula stays in the personal tap.
+
+Update the formula by hand for alpha. Skipped: automatic tap updates; they need a cross-repo token.
+
+**Signed build (Later, optional).** Do this only if non-technical users become a target after the alpha. It needs the Apple Developer Program and maintainer approval.
 
 1. Import the Developer ID Application certificate from GitHub secrets into a temporary keychain (`security create-keychain`, `security import`).
 2. `codesign --force --options runtime --timestamp --sign "Developer ID Application: …" TokenBar.app`.
@@ -421,12 +498,11 @@ Revisit if the maintainer wants the Mac App Store.
 4. `xcrun stapler staple TokenBar.dmg`.
 5. Store secrets only in GitHub Actions secrets. Changes to this workflow need approval (AGENTS.md Section 9).
 
-**Homebrew.** Cask `Casks/tokenbar.rb` in `patronofalltrades/homebrew-tap` with `version`, `sha256`, `url` (GitHub Release DMG), `app "TokenBar.app"` and `depends_on macos: ">= :sonoma"`. Update the cask by hand for alpha. Skipped: automatic tap updates; they need a cross-repo token. Risk: Homebrew rules for unsigned casks can change (UNVERIFIED for third-party taps).
-
 **Auto-update decision: no Sparkle.** Sparkle needs a dependency, an EdDSA key, an appcast and a signed build. CodexBar disables Sparkle for unsigned and Homebrew builds anyway (`docs/sparkle.md`). TokenBar uses:
 
-1. Homebrew users: `brew upgrade` (PRD-US-20 AC1).
-2. DMG users: an opt-in daily check. `GET https://api.github.com/repos/patronofalltrades/TokenBar/releases/latest`. Compare `tag_name` with `CFBundleShortVersionString`. If newer, show "Update available" in the popover footer with a link to the release page. No download, no install.
+1. npm users: `npm update -g tokenbar`, then `tokenbar install`.
+2. Homebrew users: `brew upgrade` (PRD-US-20 AC1), then copy the app again (formula limit 1).
+3. Users who turn on the update check: one check each day at most. `GET https://api.github.com/repos/patronofalltrades/TokenBar/releases/latest`. Compare `tag_name` with `CFBundleShortVersionString`. If newer, show "Update available" in the popover footer with a link to the release page. No download, no install.
 
 Add Sparkle only if users fail to update and the build is signed.
 
@@ -448,12 +524,14 @@ Rules: one issue = one branch = one pull request. "Owns" lists the files the iss
 | TRD-T03 | Incremental JSONL tail reader | T01 | `Core/JSONLTailReader.swift`, tests | Handles append, partial line, truncation, inode change (Section 7). Tests pass. |
 | TRD-T04 | Price table and cost engine | T02 | `Core/CostEngine.swift`, `Resources/prices.json`, tests | Section 6 rules 1–5. Data file test. Real prices with `source` URLs for current Claude models. |
 | TRD-T05 | Claude Code provider (tokens) | T02, T03 | `Providers/ClaudeCodeProvider.swift`, `Fixtures/claude/*`, tests | Section 5.1 fields and deduplication. `SECRET-MARKER` test passes. Cold scan time recorded. |
-| TRD-T06 | Café index data and converter | T01 | `Humor/CafeIndex.swift`, `Resources/cafe-units.json`, tests | DRD 7.6 selection rules 1–9. Data file test. |
+| TRD-T06 | Café index data and converter | T01 | `Humor/CafeIndex.swift`, `Resources/cafe-units.json`, tests | DRD 7.6 selection rules 1–9. Data file test. The data file has the `iese_mba_tuition` entry with `price_eur` > 0. Calculates `{tuition_percent}` and `{tuition_years}` (DRD 7.6). No `{tuition_years}` with less than 7 days of data. Running total in `UserDefaults` (Section 9, rules 5–7), tested with a test-only suite. |
 | TRD-T07 | Usage store and refresh loop | T02 | `Core/UsageStore.swift`, tests | 30 s loop, low-power interval, keeps last snapshot on error. Tested with a stub provider. |
-| TRD-T08 | Menu bar label and notch mode | T06, T07 | `UI/MenuBarLabel.swift`, tests | DRD 2.2–2.4 states. Fixed width. Notch default (Section 8). Label text function tested. |
-| TRD-T09 | Popover view | T04, T06, T07 | `UI/PopoverView.swift` | DRD Section 3 layout. Shows cost, "price unknown", last update time, prices verified date. |
-| TRD-T10 | App bundle, DMG and release workflow (unsigned) | T01 | `scripts/build-app.sh`, `scripts/make-dmg.sh`, `.github/workflows/release.yml` | A tag produces a universal DMG on GitHub Releases. App launches after "Open Anyway". `Bundle.module` loads resources. |
-| TRD-T11 | Homebrew cask (alpha) | T10 | `Casks/tokenbar.rb` in the tap repository | `brew install --cask patronofalltrades/tap/tokenbar` installs the alpha. |
+| TRD-T08 | Menu bar label and notch mode | T06, T07 | `UI/MenuBarLabel.swift`, tests | DRD 2.2–2.4 states. Fixed width. Notch default (Section 8). Funny and Serious bar styles (DRD 2.5). The first run asks for the bar style, with no default (DRD 4.5). Both styles show the limit value in Warning and Limit hit. Label text function tested for both styles. |
+| TRD-T09 | Popover view | T04, T06, T07, T14 | `UI/PopoverView.swift` | DRD Section 3 layout. Shows cost, "price unknown", last update time, prices verified date, roast line. Funny style shows the tuition benchmark line (DRD 7.6). |
+| TRD-T10 | App bundle, DMG and release workflow (ad-hoc signed) | T01 | `scripts/build-app.sh`, `scripts/make-dmg.sh`, `.github/workflows/release.yml` | A tag produces a universal DMG, `TokenBar.zip` and `SHA256SUMS` on GitHub Releases (Section 13). The bundle has an ad-hoc signature (`codesign --force --sign -`). `codesign --verify --strict` passes. App launches after "Open Anyway". `Bundle.module` loads resources. |
+| TRD-T26 | npm package and `tokenbar install` command | T10 | `npm/package.json`, `npm/bin/tokenbar.js`, `npm/test/*.test.js` (`node --test`); shared edit: `.github/workflows/release.yml` (publish job) | Section 13 "npm package" and "npm publish". No lifecycle scripts. Publish with provenance from GitHub Actions only. `npm i -g` and `npx` work. Install and uninstall tested on a clean user account. App launches with no Gatekeeper prompt. |
+| TRD-T14 | Roast data and selector | T01 | `Humor/Roasts.swift`, `Resources/roasts.json`, tests | DRD 7.2–7.4. Placeholder test. Deterministic with injected random source. |
+| TRD-T11 | Homebrew formula (build from source) | T10 | `Formula/tokenbar.rb` in the tap repository | Section 13 "Homebrew formula". `brew install patronofalltrades/tap/tokenbar` builds and installs the alpha. Build tested on a Mac with only Command Line Tools. The copied app launches with no Gatekeeper prompt. |
 
 ### v0.2 alpha
 
@@ -461,9 +539,9 @@ Rules: one issue = one branch = one pull request. "Owns" lists the files the iss
 |---|---|---|---|---|
 | TRD-T12 | Codex provider (tokens and limits) | T02, T03 | `Providers/CodexProvider.swift`, `Fixtures/codex/*`, tests | Section 5.2. Both log shapes. No double count. Weekly limit from newest line. |
 | TRD-T13 | Claude limit bridge (status line) | T05 | `App/main.swift`, `App/StatuslineBridge.swift`, `Providers/ClaudeCodeLimits.swift`, tests; shared edit: remove `@main` in `App/TokenBarApp.swift` | Section 5.1 bridge steps 1–4. Writes only `rate_limits`. Reset and Stale rules tested. |
-| TRD-T14 | Roast data and selector | T01 | `Humor/Roasts.swift`, `Resources/roasts.json`, tests | DRD 7.2–7.4. Placeholder test. Deterministic with injected random source. |
 | TRD-T15 | Limit alerts | T07 | `Alerts/LimitAlerts.swift`, tests | 80% and 95% defaults. One alert for each threshold in each window (PRD-US-12). Permission asked on first setup. |
-| TRD-T16 | Settings window | T07 | `UI/SettingsView.swift` | DRD Section 5 (General, Alerts tabs). Status line snippet with Copy button. Command-drag tip. |
+| TRD-T16 | Settings window | T07 | `UI/SettingsView.swift` | DRD Section 5 (General, Alerts tabs). **Settings > General > Bar style** picker: Funny or Serious (DRD 2.5). Serious sets Roasts and Café index to off. Status line snippet with Copy button. Command-drag tip. |
+| TRD-T27 | Share card | T06, T09, T14 | `UI/ShareCard.swift`, tests; shared edit: **Share** button in `UI/PopoverView.swift` footer | DRD 7.7 rules 1–7. Render with SwiftUI `ImageRenderer`. No dependency. Copy the image and the text to the clipboard. Card has no user name, paths, project names or prompt content. Model name only if the roast uses `{model}`. Serious style: numbers only. Card text function tested, including a `SECRET-MARKER` test. No network request. |
 
 ### v0.3 beta
 
@@ -474,12 +552,12 @@ Rules: one issue = one branch = one pull request. "Owns" lists the files the iss
 | TRD-T19 | Anthropic Admin provider | T02, T17, T18 | `Providers/AnthropicAdminProvider.swift`, `Fixtures/api/anthropic-*.json`, tests | Section 5.3. Pagination. Cents to dollars. 15-minute interval. |
 | TRD-T20 | OpenAI Admin provider | T02, T17, T18 | `Providers/OpenAIAdminProvider.swift`, `Fixtures/api/openai-*.json`, tests | Section 5.4. Envelope keys confirmed with a real key and noted in this TRD. |
 | TRD-T21 | API key screen | T16, T17 | `UI/APIKeysView.swift` | DRD 4.3: secure field, Test button, admin-key note. |
-| TRD-T22 | Signing and notarization | T10, PRD Q4 | shared edit: `.github/workflows/release.yml` | Notarized, stapled DMG opens with no Gatekeeper warning. Needs approval. |
+| TRD-T22 | Signing and notarization (Later, optional) | T10 | shared edit: `.github/workflows/release.yml` | Start only if non-technical users become a target after the alpha (PRD Q4). Notarized, stapled DMG opens with no Gatekeeper warning. Needs approval. |
 | TRD-T23 | Opt-in update check | T18 | `Core/UpdateCheck.swift`, tests | Off by default. One request a day at most. Version compare tested. |
-| TRD-T24 | Cask for signed build | T22 | `Casks/tokenbar.rb` in the tap repository | Cask points to the notarized DMG. |
-| TRD-T25 | Plan mode (only if PRD Q1 accepted) | T06, T16 | `Humor/PlanMode.swift`, tests | PRD plan mode. Not a `UsageProvider`: it has no usage source. |
+| TRD-T24 | Cask for signed build (Later, optional) | T22 | `Casks/tokenbar.rb` in the tap repository | Start only after T22. Cask points to the notarized DMG. |
+| TRD-T25 | Cancelled 2026-10-08 (plan mode cut, PRD Q1) | — | — | — |
 
-Parallel waves: Wave 1: T01. Wave 2: T02, T03, T06, T10, T14, T17, T18. Wave 3: T04, T05, T07, T11, T12, T19, T20, T23. Wave 4: T08, T09, T13, T15, T16. Wave 5: T21, T22, T25. Wave 6: T24.
+Parallel waves: Wave 1: T01. Wave 2: T02, T03, T06, T10, T14, T17, T18. Wave 3: T04, T05, T07, T11, T12, T19, T20, T23, T26. Wave 4: T08, T09, T13, T15, T16. Wave 5: T21, T27. Not in a wave (Later, optional): T22, then T24.
 
 ## 15. Risks
 
@@ -491,7 +569,7 @@ Parallel waves: Wave 1: T01. Wave 2: T02, T03, T06, T10, T14, T17, T18. Wave 3: 
 | TR4 | Cold scan of 1.3 GB Codex logs is slow. | 35-day window, marker prefilter, measure in T12. Add a disk cache only if needed. |
 | TR5 | Prices change and the table is wrong. | `last_verified` shown in the UI. Community pull requests. |
 | TR6 | Most students have no admin key. | State it in onboarding. Admin APIs stay optional. |
-| TR7 | Unsigned alpha scares non-engineers. | README "Open Anyway" steps. Signed build for v1.0. |
+| TR7 | Unsigned alpha scares non-engineers. | npm and Homebrew installs show no Gatekeeper prompt (Section 13). README "Open Anyway" steps for the DMG. Signed build: Later, optional (TRD-T22). |
 | TR8 | The TokenBar icon hides behind the notch. | Compact default, fixed width, Command-drag tip (Section 8). |
 | TR9 | A parser bug stores prompt content. | Field-only `Decodable` structs and the `SECRET-MARKER` test. |
 
@@ -503,6 +581,6 @@ Parallel waves: Wave 1: T01. Wave 2: T02, T03, T06, T10, T14, T17, T18. Wave 3: 
 | TQ2 | Is the status line bridge acceptable as the Claude limit source? It answers PRD Q2 for Claude Code. Codex limits are in its logs. | Maintainer |
 | TQ3 | Default refresh interval: 30 s (proposal) or 60 s? | Maintainer |
 | TQ4 | Is the 35-day window enough for the popover views in the DRD? | DRD owner |
-| TQ5 | Does the release workflow need a Homebrew tap token for automatic cask updates after v1.0? | Maintainer |
+| TQ5 | Does the release workflow need a tap token for automatic formula updates after v1.0? Is the `brew trust --tap` step acceptable for the launch audience? | Maintainer |
 | TQ6 | Which Xcode version does CI pin? It must ship Swift 6 and Swift Testing. | First agent on T01 |
 | TQ7 | Does TokenBar also read `~/Library/Application Support/Claude/*/.claude/projects` (Claude Desktop sessions)? CodexBar does. Not checked on this Mac. | Maintainer |
