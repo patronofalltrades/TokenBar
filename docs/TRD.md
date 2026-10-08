@@ -264,11 +264,12 @@ Known: CodexBar reads a prepaid balance and daily spend from `https://management
 API-equivalent cost = Σ over token classes (tokens × price for that model and class) ÷ 1,000,000.
 
 1. (Later) Use `reportedCostUSD` if an admin API provider supplies it. Do not calculate a second value. v1 has no such provider.
-2. Else look up the model in `prices.json`. Try an exact `id` match first. Then try the longest `id` that is a prefix of the model name. This matches dated IDs such as `claude-haiku-4-5-20251001`.
+2. Else look up the model in `prices.json`. Try an exact `id` match first. Then try an `id` followed by a date suffix only, for example `claude-haiku-4-5-20251001` or `gpt-5.5-2026-04-23`. A different suffix is not a match. Thus `gpt-5.5-pro` does not get the `gpt-5.5` price.
 3. If no match exists, the cost for that record is `nil`. The popover shows "price unknown" and the token count. Do not guess.
 4. Use `Decimal` for money. Do not use `Double`.
 5. A class with no price in the file costs 0. For example, OpenAI has no cache-write price.
 6. Convert the USD result to EUR with `usd_to_eur` from `prices.json`. All costs in the UI are EUR. The UI shows them as `≈ €3.40`.
+7. A model can have a `long_context` price set with `above_tokens`. The prompt size is the sum of `input`, `cacheRead`, `cacheWrite5m` and `cacheWrite1h`. If the prompt size is more than `above_tokens`, all token classes of that record use the `long_context` prices. Examples: OpenAI above 272K input tokens, Claude Haiku 5.5 above 100K.
 
 `Resources/prices.json` (values below are **EXAMPLE values, not real prices**):
 
