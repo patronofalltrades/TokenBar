@@ -85,7 +85,6 @@ Sources/TokenBar/
   Resources/prices.json
   Resources/cafe-units.json
   Resources/roasts.json
-  Resources/Info.plist                LSUIElement = true
 Tests/TokenBarTests/
   *Tests.swift                        one file for each source file with logic
   Fixtures/claude/*.jsonl             synthetic data only
@@ -437,7 +436,7 @@ Facts for this decision (checked 2026-10-08):
 **Release (`release.yml`).** On a tag `v*`:
 
 1. `swift build -c release --arch arm64`. The arm64 binary is in `.build/arm64-apple-macosx/release/TokenBar` (path UNVERIFIED; check `--show-bin-path`).
-2. `scripts/build-app.sh` makes `TokenBar.app/Contents/{MacOS,Resources,Info.plist}`. It copies the SwiftPM resource bundle into `Contents/Resources`. Confirm that `Bundle.module` finds it there (UNVERIFIED; the generated accessor checks `Bundle.main.resourceURL`).
+2. `scripts/build-app.sh` makes `TokenBar.app/Contents/{MacOS,Resources,Info.plist}`. The `Info.plist` sets `LSUIElement` to true. It copies the SwiftPM resource bundle into `Contents/Resources`. Confirm that `Bundle.module` finds it there (UNVERIFIED; the generated accessor checks `Bundle.main.resourceURL`).
 3. Ad-hoc sign the bundle with `codesign --force --sign - TokenBar.app`. This signature seals `Info.plist` and the resources (fact 4). Do not use `--deep`, because the bundle has one executable.
 4. Verify the signature with `codesign --verify --strict --verbose=2 TokenBar.app`.
 5. Make the npm app archive with `ditto -c -k --keepParent TokenBar.app npm/TokenBar.zip`.
@@ -527,7 +526,7 @@ Stages (PRD Section 10): v0.1 alpha in early November 2026, v0.2 alpha in mid-De
 
 | ID | Title | Depends on | Owns | Acceptance criteria |
 |---|---|---|---|---|
-| TRD-T01 | Package skeleton and menu bar shell | — | `Package.swift`, `App/TokenBarApp.swift`, `Resources/Info.plist`, `.github/workflows/ci.yml` | `swift build` and `swift test` pass in CI. App shows a `MenuBarExtra` with placeholder text. No Dock icon. |
+| TRD-T01 | Package skeleton and menu bar shell | — | `Package.swift`, `App/TokenBarApp.swift`, `.github/workflows/ci.yml` | `swift build` and `swift test` pass in CI. App shows a `MenuBarExtra` with placeholder text. No Dock icon: the app sets the `.accessory` activation policy, because a SwiftPM binary has no `Info.plist`. T10 writes `LSUIElement` into the bundle `Info.plist`. |
 | TRD-T02 | Core models and `UsageProvider` protocol | T01 | `Core/Models.swift`, `Core/UsageProvider.swift` | Types match Section 4. Compiles with Swift 6 strict concurrency. |
 | TRD-T03 | Incremental JSONL tail reader | T01 | `Core/JSONLTailReader.swift`, tests | Handles append, partial line, truncation, inode change (Section 7). Tests pass. |
 | TRD-T04 | Price table and cost engine | T02 | `Core/CostEngine.swift`, `Resources/prices.json`, tests | Section 6 rules 2–6. Data file test. Real prices with `source` URLs for current Claude models. `usd_to_eur` rate with `fx_updated` and `fx_note`. Costs returned in EUR. |
