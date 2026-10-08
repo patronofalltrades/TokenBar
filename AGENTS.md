@@ -6,11 +6,13 @@ Read this file completely before you change the repository.
 
 ## 1. Project summary
 
-TokenBar is a macOS menu bar app. It shows LLM usage and converts the cost into funny IESE units.
+TokenBar is a macOS menu bar app. It shows LLM usage and converts the cost into funny MBA units, for example cafés con leche in Barcelona.
 
 - Product scope: [docs/PRD.md](docs/PRD.md)
 - Technical scope: [docs/TRD.md](docs/TRD.md)
 - Design scope: [docs/DRD.md](docs/DRD.md)
+- Decision log: [docs/DECISIONS.md](docs/DECISIONS.md)
+- Workflow and task owners: [docs/WORKFLOW.md](docs/WORKFLOW.md)
 
 If this file and a requirements document do not agree, stop. Ask the maintainer.
 
@@ -63,10 +65,11 @@ If your tool does not load skills automatically, read the `SKILL.md` files in `.
 | Language | Swift 6 |
 | UI | SwiftUI `MenuBarExtra` |
 | Minimum OS | macOS 14 (Sonoma) |
+| Hardware | Apple silicon (arm64) only. No Intel or universal build. |
 | Project | Swift Package Manager |
 | Tests | Swift Testing |
-| Secrets | macOS Keychain |
-| Release | GitHub Actions. npm package `tokenbar` (primary). Homebrew formula that builds from source (secondary). DMG on GitHub Releases (fallback). Ad-hoc signature only. No Developer ID in v0.x (TRD Section 13). |
+| Secrets | macOS Keychain. v1 has no API keys. The rule applies when API keys come back (Later). |
+| Release | GitHub Actions. The alpha ships on npm only (package `tokenbar`). The maintainer decides on the DMG and the Homebrew formula after the alpha. Ad-hoc signature only. No Developer ID in v0.x (TRD Section 13). |
 
 Do not add a third-party dependency without approval from the maintainer. Use the Swift standard library and Apple frameworks first.
 
@@ -77,7 +80,7 @@ Do not add a third-party dependency without approval from the maintainer. Use th
 3. Prices, café-index units and roasts are data, not code. Keep them in `Sources/TokenBar/Resources/*.json`. Each price must have a source URL and a "last verified" date.
 4. Do not read prompt content or response content from logs. Read only token counts, model names, timestamps, limit percentages and limit reset times.
 5. Do not send usage data off the Mac. Do not add telemetry or analytics.
-6. Keep API keys only in the Keychain. Do not write keys to files, logs or `UserDefaults`.
+6. Keep API keys only in the Keychain. Do not write keys to files, logs or `UserDefaults`. v1 has no API keys. This rule applies when API keys come back (Later).
 
 ## 6. Concurrent work with other agents
 
@@ -89,6 +92,7 @@ More than one agent works on this repository at the same time. Agents can come f
 2. Before you start, set the issue to **In Progress**. Add a comment with your agent name and model.
 3. If the issue is already **In Progress** for a different agent, do not start. Tell the maintainer.
 4. When you open the pull request, link it to the issue.
+5. Do not merge your own pull request. The maintainer merges after a Claude pre-review and a green CI run ([docs/WORKFLOW.md](docs/WORKFLOW.md)).
 
 ### 6.2 Branches and worktrees
 
