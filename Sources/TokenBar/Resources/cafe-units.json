@@ -1,0 +1,55 @@
+{
+  "units": [
+    {
+      "id": "cafe_con_leche",
+      "singular": "café con leche",
+      "plural": "cafés con leche",
+      "symbol": "cup.and.saucer.fill",
+      "emoji": "☕",
+      "price_eur": 1.80,
+      "price_note": "community estimate — verify",
+      "source": "Typical Barcelona café bar. Verify.",
+      "updated": "2026-10-08"
+    },
+    {
+      "id": "pa_amb_tomaquet",
+      "singular": "pa amb tomàquet",
+      "plural": "pa amb tomàquets",
+      "symbol": "fork.knife",
+      "emoji": "🍅",
+      "price_eur": 3.50,
+      "price_note": "community estimate — verify",
+      "source": "Typical Barcelona bar. Verify.",
+      "updated": "2026-10-08"
+    },
+    {
+      "id": "bravas_bar_tomas",
+      "singular": "Bar Tomàs patatas bravas",
+      "plural": "Bar Tomàs patatas bravas",
+      "symbol": "flame.fill",
+      "emoji": "🥔",
+      "price_eur": 6.00,
+      "price_note": "community estimate — verify",
+      "source": "Bar Tomàs, Sarrià. Verify.",
+      "updated": "2026-10-08"
+    },
+    {
+      "id": "menu_del_dia",
+      "singular": "menú del día",
+      "plural": "menús del día",
+      "symbol": "takeoutbag.and.cup.and.straw.fill",
+      "emoji": "🍽️",
+      "price_eur": 15.00,
+      "price_note": "community estimate — verify",
+      "source": "Typical Barcelona lunch menu. Verify.",
+      "updated": "2026-10-08"
+    }
+  ],
+  "tuition": {
+    "id": "iese_mba_tuition",
+    "label": "MBA tuition",
+    "price_eur": 117000,
+    "source": "IESE Business School, full-time MBA, September 2027 intake, total program fee. https://www.iese.edu/mba/admissions-fees/ Verify.",
+    "updated": "2026-10-08"
+  }
+}
