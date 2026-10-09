@@ -138,7 +138,7 @@ Each release lists the SHA-256 checksum of each file. The npm package has a prov
 | Later | API keys: OpenAI Admin API and Anthropic Admin API usage. |
 | Later | Spanish language. |
 | Later | MCP server, so that an AI assistant can query your usage. |
-| Later | Opt-in class leaderboard ("Top Token Burner, Section B"). |
+| Later | Opt-in class leaderboard ("Top Token Burner, Section B"). [Roadmap](docs/LEADERBOARD.md). |
 | Later | xAI (Grok) usage, when xAI supplies a usage source. |
 | Later, optional | Signed and notarized build. Only if non-technical users become a target after the alpha. |
 
