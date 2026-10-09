@@ -25,6 +25,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
       - run: npm install -g 'npm@^11.5.1'
       - run: |
           cp TokenBar.zip LICENSE npm/
@@ -32,3 +33,8 @@ jobs:
           npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version
           # npm 11 stops a prerelease version (v0.1.0-alpha.1) without --tag. The alpha is the only channel, so use latest.
           npm publish --provenance --access public --tag latest
+        env:
+          # BOOTSTRAP ONLY (IES-218). npm adds a trusted publisher only to a package that exists.
+          # The first publish uses this short-lived token. Remove this env block, the secret and the token
+          # after the trusted publisher is set. npm tries OIDC first, then the token.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
