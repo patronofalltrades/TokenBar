@@ -5,6 +5,7 @@ import Foundation
 struct DisplayBuilder {
     let prices: PriceTable
     let cafe: CafeData
+    let water: WaterData
     var defaults = UserDefaults.standard
     var calendar = Calendar.current
 
@@ -15,16 +16,14 @@ struct DisplayBuilder {
                now: Date, roasts: inout RoastSelector, tuition: TuitionTotal) -> DisplaySnapshot {
         let today = calendar.startOfDay(for: now)
         let weekStart = now.addingTimeInterval(-7 * 24 * 3600)
-        let style = defaults.string(forKey: SettingsKey.barStyle).flatMap(BarStyle.init)
-        let funny = style == .funny
-        let cafeOn = funny && setting(SettingsKey.cafeIndexEnabled)
-        let roastsOn = funny && setting(SettingsKey.roastsEnabled)
+        let index = IndexChoice.saved(in: defaults)
+        let roastsOn = index != nil && defaults.object(forKey: SettingsKey.roastsEnabled) as? Bool ?? true
 
         // A missing source folder means "not installed". It is not an error (DRD 2.4).
         var rows: [DisplaySnapshot.ProviderRow] = []
         var records: [UsageRecord] = []
         var dailyCosts: [Date: Decimal] = [:]
-        var costToday: Decimal = 0, costWeek: Decimal = 0
+        var costToday: Decimal = 0, costWeek: Decimal = 0, outputToday = 0
         for id in ProviderID.allCases {
             let error = errors[id]
             let installed = error.map { !Self.isNotInstalled($0) } ?? (snapshots[id] != nil)
@@ -35,6 +34,7 @@ struct DisplayBuilder {
                 let cost = prices.costEUR(record)
                 if record.timestamp >= weekStart, cost == nil { unpriced = true }
                 if record.timestamp >= today {
+                    outputToday += record.tokens.output
                     rowCost = (rowCost ?? 0) + (cost ?? 0)
                     costToday += cost ?? 0
                 }
@@ -63,17 +63,24 @@ struct DisplayBuilder {
             else if percent >= 80 { .warning }
             else { .normal }
 
-        // One café unit, kept for the day (DRD 7.6).
+        // One index only (D41). One café unit, kept for the day (DRD 7.6).
         var pick: CafeIndex.Pick?
-        if cafeOn {
+        if index == .cafe {
             let stored = defaults.dictionary(forKey: Self.cafeUnitKey)
             let kept = stored?["day"] as? Date == today ? stored?["id"] as? String : nil
             pick = CafeIndex.pick(costEUR: costToday, units: cafe.units, keptID: kept)
             if let pick { defaults.set(["day": today, "id": pick.unit.id], forKey: Self.cafeUnitKey) }
         }
         let spend = hasData ? tuition.update(now: now, dailyCostsEUR: dailyCosts, todayEUR: costToday) : nil
+        let waterML = index == .water && outputToday > 0 ? water.ml(outputTokens: outputToday) : nil
+        let tuitionSpend = index == .tuition ? spend : nil
+        let line: (text: String, symbol: String, emoji: String)? =
+            if let pick { ("Today = \(pick.text)", pick.unit.symbol, pick.unit.emoji) }
+            else if let tuitionSpend { (CafeIndex.tuitionLine(spendEUR: tuitionSpend, tuition: cafe.tuition), "graduationcap.fill", "🎓") }
+            else if let waterML { (water.line(ml: waterML), Self.waterSymbol, "💧") }
+            else { nil }
 
-        // Menu bar (DRD 2.4 and 2.5). Both styles show the limit value in Warning and Limit hit.
+        // Menu bar (DRD 2.4 and 2.5). Each choice shows the limit value in Warning and Limit hit.
         let reset = top?.limit.resetsAt.map { Self.shortDuration($0.timeIntervalSince(now)) }
         let (text, symbol): (String, String) = switch state {
         case .noData: ("", "circle.dashed")
@@ -82,6 +89,8 @@ struct DisplayBuilder {
         case .warning: ("\(Int(percent))%", "exclamationmark.triangle.fill")
         case .normal:
             if let pick { (Self.barValue(pick.value), pick.unit.symbol) }
+            else if let tuitionSpend { (CafeIndex.tuitionBarValue(spendEUR: tuitionSpend, tuition: cafe.tuition), Self.tuitionSymbol) }
+            else if let waterML { (WaterData.barValue(waterML), Self.waterSymbol) }
             else if let top { ("\(Int(top.limit.usedPercent))%", "circle.lefthalf.filled") }
             else { (Self.shortEUR(costToday), "circle.lefthalf.filled") }
         }
@@ -97,19 +106,27 @@ struct DisplayBuilder {
                 daysOfData: first.flatMap { calendar.dateComponents([.day], from: calendar.startOfDay(for: $0), to: today).day } ?? 0,
                 model: last?.model, provider: last.map { Self.name($0.provider) }, reset: reset,
                 unitValue: pick?.value, unitPlural: pick?.name,
-                tuitionPercent: spend.map { CafeIndex.tuitionPercent(spendEUR: $0, tuition: cafe.tuition) },
-                tuitionYears: tuition.years(now: now, dailyCostsEUR: dailyCosts, tuition: cafe.tuition)))
+                tuitionPercent: tuitionSpend.map { CafeIndex.tuitionPercent(spendEUR: $0, tuition: cafe.tuition) },
+                tuitionYears: index == .tuition ? tuition.years(now: now, dailyCostsEUR: dailyCosts, tuition: cafe.tuition) : nil,
+                water: waterML.map(WaterData.amount)))
         }
 
         return DisplaySnapshot(
-            state: state, barStyle: style, menuBarText: text, menuBarSymbol: symbol, rows: rows,
+            state: state, index: index, menuBarText: text, menuBarSymbol: symbol, rows: rows,
             costTodayEUR: costToday, costWeekEUR: costWeek,
-            cafeLine: pick.map { "Today = \($0.text)" }, cafeSymbol: pick?.unit.symbol, cafeEmoji: pick?.unit.emoji,
-            tuitionLine: cafeOn ? spend.map { CafeIndex.tuitionLine(spendEUR: $0, tuition: cafe.tuition) } : nil,
+            indexLine: line?.text, indexSymbol: line?.symbol, indexEmoji: line?.emoji,
+            indexDetail: tuitionSpend.flatMap { spend in
+                (tuition.defaults.object(forKey: TuitionTotal.firstLaunchKey) as? Date).flatMap {
+                    CafeIndex.burnLine(spendEUR: spend, days: now.timeIntervalSince($0) / 86_400, tuition: cafe.tuition,
+                                       year: calendar.component(.year, from: now))
+                }
+            },
             roast: roast, lastRefresh: lastRefresh, pricesVerified: prices.lastVerified)
     }
 
-    private func setting(_ key: String) -> Bool { defaults.object(forKey: key) as? Bool ?? true }
+    /// Menu bar only. `graduationcap.fill` is 3 pt wider, so "0.04" does not fit 52 pt. The popover uses the cap.
+    static let tuitionSymbol = "building.columns.fill"
+    static let waterSymbol = "drop.fill"
 
     static func isNotInstalled(_ error: any Error) -> Bool {
         if case ClaudeCodeProvider.Failure.notFound = error { return true }

@@ -9,11 +9,11 @@ private func limit(_ percent: Double, name: String = "5-hour", resetsAt: Date? =
     .init(name: name, usedPercent: percent, resetsAt: resetsAt, observedAt: observed)
 }
 
-private func snapshot(_ limits: [DisplaySnapshot.Limit], style: BarStyle? = .funny, roast: String? = "Discuss.") -> DisplaySnapshot {
+private func snapshot(_ limits: [DisplaySnapshot.Limit], index: IndexChoice? = .cafe, roast: String? = "Discuss.") -> DisplaySnapshot {
     let row = DisplaySnapshot.ProviderRow(provider: .claudeCode, installed: true, errorText: nil, limits: limits,
                                           costTodayEUR: nil, hasUnpricedModels: false)
-    return DisplaySnapshot(state: .warning, barStyle: style, menuBarText: "", menuBarSymbol: "", rows: [row],
-                           costTodayEUR: 0, costWeekEUR: 0, cafeLine: nil, cafeSymbol: nil, tuitionLine: nil, roast: roast,
+    return DisplaySnapshot(state: .warning, index: index, menuBarText: "", menuBarSymbol: "", rows: [row],
+                           costTodayEUR: 0, costWeekEUR: 0, indexLine: nil, indexSymbol: nil, roast: roast,
                            lastRefresh: t0, pricesVerified: "")
 }
 
@@ -96,9 +96,9 @@ private func withAlerts(_ body: (UserDefaults) -> Void) {
     }
 }
 
-@Test func seriousAndRoastsOffHaveNoRoast() {
-    let serious = LimitAlerts.evaluate(snapshot([limit(96)], style: .serious), now: t0, settings: .init(), sent: [])
-    #expect(serious?.body == "Resets in 38 min.")
+@Test func noIndexAndRoastsOffHaveNoRoast() {
+    let none = LimitAlerts.evaluate(snapshot([limit(96)], index: nil), now: t0, settings: .init(), sent: [])
+    #expect(none?.body == "Resets in 38 min.")
     let off = LimitAlerts.evaluate(snapshot([limit(96)]), now: t0, settings: .init(roasts: false), sent: [])
     #expect(off?.body == "Resets in 38 min.")
 }

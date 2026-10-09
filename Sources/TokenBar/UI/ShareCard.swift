@@ -15,16 +15,16 @@ enum ShareCard {
     /// "TokenBar · github.com/patronofalltrades/TokenBar".
     static let footer = "TokenBar · " + (Links.repository.host() ?? "") + Links.repository.path()
 
-    /// The card lines, without the footer. Serious: numbers only (DRD 7.7 rule 7).
-    /// No bar style yet counts as Serious, the same as in `DisplayBuilder`.
+    /// The card lines, without the footer: the selected index only (D41).
+    /// No index yet gives the numbers card (DRD 7.7 rule 7), the same as in `DisplayBuilder`.
     static func lines(_ s: DisplaySnapshot, locale: Locale = .current) -> [Line] {
-        guard s.barStyle == .funny else {
+        guard s.index != nil else {
             return [Line(text: "Today \(PopoverFormat.euro(s.costTodayEUR, locale: locale))", symbol: "eurosign.circle"),
                     Line(text: "Week \(PopoverFormat.euro(s.costWeekEUR, locale: locale)) (API-equivalent)", symbol: "calendar")]
         }
         var lines: [Line] = []
-        if let cafe = s.cafeLine { lines.append(Line(text: cafe, symbol: s.cafeSymbol, emoji: s.cafeEmoji)) }
-        if let tuition = s.tuitionLine { lines.append(Line(text: tuition, symbol: "graduationcap", emoji: "🎓")) }
+        if let line = s.indexLine { lines.append(Line(text: line, symbol: s.indexSymbol, emoji: s.indexEmoji)) }
+        if let detail = s.indexDetail { lines.append(Line(text: detail, symbol: "calendar")) }
         if let roast = s.roast { lines.append(Line(text: "“\(roast)”", isRoast: true)) }
         return lines
     }
@@ -82,5 +82,6 @@ struct ShareCardView: View {
     }
 }
 
-#Preview("Funny") { ShareCardView(lines: ShareCard.lines(PopoverSamples.normal)) }
-#Preview("Serious") { ShareCardView(lines: ShareCard.lines(PopoverSamples.serious)) }
+#Preview("Café") { ShareCardView(lines: ShareCard.lines(PopoverSamples.normal)) }
+#Preview("Water") { ShareCardView(lines: ShareCard.lines(PopoverSamples.water)) }
+#Preview("Tuition") { ShareCardView(lines: ShareCard.lines(PopoverSamples.tuition)) }

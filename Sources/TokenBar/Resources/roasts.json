@@ -189,6 +189,30 @@
       "text": "Claude and Codex both used today. Diversified portfolio. Your finance professor would approve of the risk profile, not the cost.",
       "category": "provider",
       "locale": "en"
+    },
+    {
+      "id": "water-01",
+      "text": "Your prompts drank {water} of water today. Somewhere a cooling tower is writing its own case study.",
+      "category": "water",
+      "locale": "en"
+    },
+    {
+      "id": "water-02",
+      "text": "{water} of fresh water evaporated so a model could summarize a case you did not read. Discuss the externalities.",
+      "category": "water",
+      "locale": "en"
+    },
+    {
+      "id": "water-03",
+      "text": "{water} today. The sustainability elective would like a word. Several, actually. All of them about you.",
+      "category": "water",
+      "locale": "en"
+    },
+    {
+      "id": "water-04",
+      "text": "A data center sweated {water} for your slides today. The slides are still not MECE.",
+      "category": "water",
+      "locale": "en"
     }
   ]
 }

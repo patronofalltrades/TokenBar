@@ -21,8 +21,8 @@ private let madrid: Calendar = {
 private let noon = madrid.date(from: DateComponents(year: 2026, month: 10, day: 8, hour: 12))!
 
 private func record(_ provider: ProviderID = .claudeCode, eur: Double, at date: Date = noon.addingTimeInterval(-3600),
-                    model: String = "m") -> UsageRecord {
-    UsageRecord(provider: provider, model: model, timestamp: date, tokens: TokenCounts(input: Int(eur * 1_000_000)))
+                    model: String = "m", output: Int = 0) -> UsageRecord {
+    UsageRecord(provider: provider, model: model, timestamp: date, tokens: TokenCounts(input: Int(eur * 1_000_000), output: output))
 }
 
 private func limit(_ percent: Double, resets: Date? = nil, name: String = "5-hour") -> LimitWindow {
@@ -41,9 +41,9 @@ private final class Fixture {
     let defaults: UserDefaults
     var roasts: RoastSelector
 
-    init(style: BarStyle? = .serious) {
+    init(index: IndexChoice? = nil) {
         defaults = UserDefaults(suiteName: suite)!
-        defaults.set(style?.rawValue, forKey: SettingsKey.barStyle)
+        defaults.set(index?.rawValue, forKey: SettingsKey.index)
         roasts = RoastSelector(roasts: try! Roast.shipped(), randomIndex: { _ in 0 }, defaults: defaults)
     }
 
@@ -51,7 +51,8 @@ private final class Fixture {
 
     func build(_ snapshots: [ProviderSnapshot], errors: [ProviderID: any Error] = [.codex: codexMissing],
                now: Date = noon) -> DisplaySnapshot {
-        let builder = DisplayBuilder(prices: prices, cafe: try! CafeData.shipped(), defaults: defaults, calendar: madrid)
+        let builder = DisplayBuilder(prices: prices, cafe: try! CafeData.shipped(), water: try! WaterData.shipped(),
+                                     defaults: defaults, calendar: madrid)
         return builder.build(snapshots: Dictionary(uniqueKeysWithValues: snapshots.map { ($0.provider, $0) }),
                              errors: errors, lastRefresh: now, now: now, roasts: &roasts,
                              tuition: TuitionTotal(defaults: defaults, calendar: madrid))
@@ -65,11 +66,11 @@ private final class Fixture {
     #expect(s.state == .noData)
     #expect(s.menuBarSymbol == "circle.dashed" && s.menuBarText.isEmpty)
     #expect(s.rows.allSatisfy { !$0.installed && $0.errorText == nil })
-    #expect(s.tuitionLine == nil && s.roast == nil)
+    #expect(s.indexLine == nil && s.roast == nil)
 }
 
 @Test func installedProviderWithoutDataIsNoData() {
-    let s = Fixture(style: .funny).build([snapshot()])
+    let s = Fixture(index: .cafe).build([snapshot()])
     #expect(s.state == .noData)
     #expect(s.rows.first { $0.provider == .claudeCode }?.installed == true)
 }
@@ -87,17 +88,17 @@ private final class Fixture {
     #expect(mixed.rows[0].errorText != nil && mixed.rows[1].errorText == nil)
 }
 
-@Test(arguments: [BarStyle.funny, .serious])
-func warningShowsTheLimitInBothStyles(style: BarStyle) {
-    let s = Fixture(style: style).build([snapshot([record(eur: 6.12)], limits: [limit(87.9)])])
+@Test(arguments: [IndexChoice?.none, .cafe, .tuition, .water])
+func warningShowsTheLimitForEachIndex(index: IndexChoice?) {
+    let s = Fixture(index: index).build([snapshot([record(eur: 6.12)], limits: [limit(87.9)])])
     #expect(s.state == .warning)
     #expect(s.menuBarText == "87%" && s.menuBarSymbol == "exclamationmark.triangle.fill")
 }
 
-@Test(arguments: [BarStyle.funny, .serious])
-func limitHitShowsTimeToReset(style: BarStyle) {
+@Test(arguments: [IndexChoice?.none, .cafe, .tuition, .water])
+func limitHitShowsTimeToReset(index: IndexChoice?) {
     let resets = noon.addingTimeInterval(108 * 60)
-    let s = Fixture(style: style).build([snapshot([record(eur: 6.12)], limits: [limit(100, resets: resets), limit(30, name: "weekly")])])
+    let s = Fixture(index: index).build([snapshot([record(eur: 6.12)], limits: [limit(100, resets: resets), limit(30, name: "weekly")])])
     #expect(s.state == .limitHit)
     #expect(s.menuBarText == "1h48" && s.menuBarSymbol == "hourglass")
     #expect(MenuBarLabel.voiceOverLabel(s, now: noon) == "TokenBar. Claude Code limit reached. Resets in 1 hour, 48 minutes.")
@@ -109,7 +110,7 @@ func limitHitShowsTimeToReset(style: BarStyle) {
     #expect(s.state == .normal && s.menuBarText == "0%")
 }
 
-// MARK: - Auto metric and styles
+// MARK: - Auto metric and indexes
 
 @Test func autoMetricIsTheHighestLimit() {
     let s = Fixture().build([snapshot([record(eur: 3.4)], limits: [limit(30)]), snapshot(limits: [limit(62, name: "weekly")], of: .codex)],
@@ -124,48 +125,94 @@ func limitHitShowsTimeToReset(style: BarStyle) {
     #expect(s.costTodayEUR == Decimal(string: "3.4"))
 }
 
-@Test func seriousHasNoJokes() {
+@Test func noIndexYetHasNoJokes() {
     let s = Fixture().build([snapshot([record(eur: 6.12)], limits: [limit(62)])])
-    #expect(s.barStyle == .serious)
-    #expect(s.cafeLine == nil && s.cafeSymbol == nil && s.tuitionLine == nil && s.roast == nil)
+    #expect(s.index == nil)
+    #expect(s.indexLine == nil && s.indexSymbol == nil && s.roast == nil)
     #expect(s.pricesVerified == "2026-10-08" && s.lastRefresh == noon)
 }
 
-@Test func noStyleYetShowsThePrimaryMetric() {
-    let s = Fixture(style: nil).build([snapshot([record(eur: 6.12)], limits: [limit(62)])])
-    #expect(s.barStyle == nil && s.menuBarText == "62%" && s.roast == nil)
+@Test func noIndexYetShowsThePrimaryMetric() {
+    let s = Fixture().build([snapshot([record(eur: 6.12)], limits: [limit(62)])])
+    #expect(s.index == nil && s.menuBarText == "62%" && s.roast == nil)
 }
 
-@Test func funnyShowsTheCafeValue() {
-    let s = Fixture(style: .funny).build([snapshot([record(eur: 6.12)], limits: [limit(62)])])
+@Test func cafeShowsOnlyTheCafeValue() {
+    let s = Fixture(index: .cafe).build([snapshot([record(eur: 6.12, output: 200_000)], limits: [limit(62)])])
     #expect(s.menuBarText == "3.4" && s.menuBarSymbol == "cup.and.saucer.fill")
-    #expect(s.cafeLine == "Today = 3.4 cafés con leche" && s.cafeSymbol == "cup.and.saucer.fill")
-    #expect(s.tuitionLine?.hasSuffix("tuition, in tokens") == true)
+    #expect(s.indexLine == "Today = 3.4 cafés con leche" && s.indexSymbol == "cup.and.saucer.fill" && s.indexEmoji == "☕")
     #expect(s.roast != nil)
     #expect(MenuBarLabel.voiceOverLabel(s, now: noon) == "TokenBar. Claude Code, 62 percent of 5-hour limit. Today, 3.4 cafés con leche.")
 }
 
-@Test func funnySettingsTurnJokesOff() {
-    let f = Fixture(style: .funny)
-    f.defaults.set(false, forKey: SettingsKey.cafeIndexEnabled)
+/// €46.80 of €117,000 is 0.04%. On the first day, the spend since install is today's cost.
+@Test func tuitionShowsTheShareOfTuition() {
+    let s = Fixture(index: .tuition).build([snapshot([record(eur: 46.80, output: 200_000)], limits: [limit(62)])])
+    #expect(s.menuBarText == "0.04" && s.menuBarSymbol == "building.columns.fill")
+    #expect(s.indexLine == "0.04% of your MBA tuition, in tokens (since install)" && s.indexEmoji == "🎓")
+    #expect(MenuBarLabel.voiceOverLabel(s, now: noon)
+            == "TokenBar. Claude Code, 62 percent of 5-hour limit. 0.04% of your MBA tuition, in tokens (since install).")
+    #expect(s.indexDetail == nil)  // less than 1 day since install
+}
+
+/// One day after install: €46.80 a day, €116,906 left ≈ 6.8 years, so 2026 + 7.
+@Test func tuitionShowsTheBurnYearAfterOneDay() {
+    let f = Fixture(index: .tuition)
+    _ = f.build([snapshot([record(eur: 46.80)])])
+    let tomorrow = noon.addingTimeInterval(24 * 3600)
+    let s = f.build([snapshot([record(eur: 46.80), record(eur: 0.01, at: tomorrow.addingTimeInterval(-60))])], now: tomorrow)
+    #expect(s.indexDetail == "At this pace, you'll burn through it by the year 2033.")
+    #expect(ShareCard.text(s).contains("by the year 2033."))
+    // Other indexes have no second line.
+    #expect(Fixture(index: .cafe).build([snapshot([record(eur: 46.80)])]).indexDetail == nil)
+}
+
+/// 200k output tokens × 0.1125 mL = 22.5 L. Input tokens do not count.
+@Test func waterShowsLitresFromOutputTokens() {
+    let f = Fixture(index: .water)
+    let s = f.build([snapshot([record(eur: 6.12, output: 150_000), record(eur: 1, output: 50_000),
+                               record(eur: 9, at: noon.addingTimeInterval(-24 * 3600), output: 900_000)], limits: [limit(62)])])
+    #expect(s.menuBarText == "22 L" && s.menuBarSymbol == "drop.fill")
+    #expect(s.indexLine == "Today ≈ 22 L of water · 15 bottles (1.5 L)" && s.indexEmoji == "💧")
+    #expect(MenuBarLabel.voiceOverLabel(s, now: noon)
+            == "TokenBar. Claude Code, 62 percent of 5-hour limit. Today, about 22 L of water · 15 bottles (1.5 L).")
+    // No output today: the primary metric, as without an index.
+    #expect(Fixture(index: .water).build([snapshot([record(eur: 6.12)], limits: [limit(62)])]).menuBarText == "62%")
+}
+
+/// Each index fills only its own placeholders, so a roast never shows a second index (D41).
+@Test(arguments: IndexChoice.allCases)
+func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
+    let f = Fixture(index: index)
+    f.roasts = RoastSelector(roasts: [Roast(id: "cafe", text: "{unit_value}", category: .career, locale: "en"),
+                                      Roast(id: "tuition", text: "{tuition_percent}", category: .career, locale: "en"),
+                                      Roast(id: "water", text: "{water}", category: .water, locale: "en")],
+                             randomIndex: { _ in 0 }, defaults: f.defaults)
+    let s = f.build([snapshot([record(eur: 6.12, output: 200_000)], limits: [limit(62)])])
+    let expected: [IndexChoice: String] = [.cafe: "3.4", .tuition: "0.01%", .water: "22 L"]
+    #expect(s.roast == expected[index])
+}
+
+@Test func roastsToggleTurnsRoastsOff() {
+    let f = Fixture(index: .cafe)
     f.defaults.set(false, forKey: SettingsKey.roastsEnabled)
     let s = f.build([snapshot([record(eur: 6.12)], limits: [limit(62)])])
-    #expect(s.menuBarText == "62%" && s.cafeLine == nil && s.tuitionLine == nil && s.roast == nil)
+    #expect(s.menuBarText == "3.4" && s.indexLine != nil && s.roast == nil)
 }
 
 @Test func errorHasNoRoast() {
-    let s = Fixture(style: .funny).build([snapshot([record(eur: 6.12)])], errors: [.claudeCode: ReadError(), .codex: codexMissing])
+    let s = Fixture(index: .cafe).build([snapshot([record(eur: 6.12)])], errors: [.claudeCode: ReadError(), .codex: codexMissing])
     #expect(s.state == .error && s.roast == nil)
 }
 
 @Test func cafeUnitStaysForTheDay() {
-    let f = Fixture(style: .funny)
+    let f = Fixture(index: .cafe)
     #expect(f.build([snapshot([record(eur: 6.12)])]).menuBarText == "3.4")  // café con leche is closest to 3
     // A fresh pick for €10.50 is pa amb tomàquet (3.0). The café con leche stays while it is in range.
-    #expect(f.build([snapshot([record(eur: 10.5)])]).cafeLine == "Today = 5.8 cafés con leche")
+    #expect(f.build([snapshot([record(eur: 10.5)])]).indexLine == "Today = 5.8 cafés con leche")
     let tomorrow = noon.addingTimeInterval(24 * 3600)
     let next = f.build([snapshot([record(eur: 10.5, at: tomorrow)])], now: tomorrow)
-    #expect(next.cafeLine == "Today = 3.0 pa amb tomàquets" && next.cafeSymbol == "fork.knife")
+    #expect(next.indexLine == "Today = 3.0 pa amb tomàquets" && next.indexSymbol == "fork.knife")
 }
 
 // MARK: - Costs
@@ -208,6 +255,9 @@ func limitHitShowsTimeToReset(style: BarStyle) {
         ("999", units.max { $0.priceEUR < $1.priceEUR }!.symbol),  // above the range: the most expensive unit
     ]
     labels += units.flatMap { [("9.9", $0.symbol), ("20", $0.symbol)] }
+    // The longest Tuition Meter and Water Footprint values (D41).
+    labels += ["<.01", "0.04", "99.9", "999"].map { ($0, DisplayBuilder.tuitionSymbol) }
+    labels += ["0.1 L", "9.9 L", "999 L", "9.9kL", "99kL"].map { ($0, DisplayBuilder.waterSymbol) }
     for (text, symbol) in labels {
         let image = try #require(NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: font.pointSize, weight: .regular)))

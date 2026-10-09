@@ -34,7 +34,9 @@ struct MenuBarLabel: View {
     nonisolated static func voiceOverLabel(_ s: DisplaySnapshot, now: Date) -> String {
         let top = DisplayBuilder.topLimit(in: s.rows)
         let name = top.map { DisplayBuilder.name($0.provider) } ?? ""
-        let today = s.cafeLine.map { $0.replacingOccurrences(of: " =", with: ",") + "." }
+        let today = s.indexLine.map {
+            $0.replacingOccurrences(of: " =", with: ",").replacingOccurrences(of: " ≈", with: ", about") + "."
+        }
             ?? "Today, about \(s.costTodayEUR.formatted(.number.precision(.fractionLength(2)).locale(Locale(identifier: "en_US_POSIX")))) euros."
         let limit = top.map { "\(name), \(Int($0.limit.usedPercent)) percent of \($0.limit.name) limit." } ?? ""
         let parts: [String] = switch s.state {

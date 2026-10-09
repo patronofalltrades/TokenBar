@@ -58,7 +58,7 @@ struct LimitAlerts {
     static func evaluate(_ snapshot: DisplaySnapshot, now: Date, settings: Settings, sent: [Sent]) -> Alert? {
         // DRD 6.2 rule 2: a maximum of 3 notifications in 60 minutes.
         guard sent.filter({ now.timeIntervalSince($0.sentAt) < 3600 }).count < 3 else { return nil }
-        let roast = snapshot.barStyle == .funny && settings.roasts ? snapshot.roast : nil
+        let roast = snapshot.index != nil && settings.roasts ? snapshot.roast : nil
 
         let candidates = snapshot.rows.flatMap { row in
             row.limits.compactMap { limit -> Alert? in

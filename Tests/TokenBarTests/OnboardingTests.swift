@@ -30,8 +30,8 @@ struct OnboardingTests {
     }
 
     @Test func claudeLimitsStepOnlyWithClaudeCode() {
-        #expect(Onboarding.steps(.init(claudeCode: true, codex: false)) == [.welcome, .barStyle, .claudeLimits, .menuBar, .finish])
-        #expect(Onboarding.steps(.init(claudeCode: false, codex: true)) == [.welcome, .barStyle, .menuBar, .finish])
+        #expect(Onboarding.steps(.init(claudeCode: true, codex: false)) == [.welcome, .index, .claudeLimits, .menuBar, .finish])
+        #expect(Onboarding.steps(.init(claudeCode: false, codex: true)) == [.welcome, .index, .menuBar, .finish])
     }
 
     /// D40: the menu bar visibility step is mandatory.
@@ -39,38 +39,56 @@ struct OnboardingTests {
     func menuBarStepIsAlwaysThere(claudeCode: Bool, codex: Bool) {
         let steps = Onboarding.steps(.init(claudeCode: claudeCode, codex: codex))
         #expect(steps.contains(.menuBar))
-        #expect(steps.firstIndex(of: .barStyle)! < steps.firstIndex(of: .menuBar)!)
+        #expect(steps.firstIndex(of: .index)! < steps.firstIndex(of: .menuBar)!)
         #expect(steps.last == .finish)
     }
 
-    @Test func neededUntilAValidStyleIsSaved() {
+    @Test func neededUntilAValidIndexIsSaved() {
         #expect(Onboarding.isNeeded(defaults: defaults))
-        defaults.set("loud", forKey: SettingsKey.barStyle)
+        defaults.set("numbers", forKey: SettingsKey.index)
         #expect(Onboarding.isNeeded(defaults: defaults))
-        defaults.set("funny", forKey: SettingsKey.barStyle)
+        defaults.set("water", forKey: SettingsKey.index)
         #expect(!Onboarding.isNeeded(defaults: defaults))
     }
 
-    @Test func finishSavesStyleAndRegisters() {
+    /// D41: a Serious user picks again. A Funny user keeps the café index.
+    @Test func oldBarStyleDecidesIfOnboardingShows() {
+        defaults.set("serious", forKey: "barStyle")
+        #expect(Onboarding.isNeeded(defaults: defaults))
+        defaults.set("funny", forKey: "barStyle")
+        defaults.removeObject(forKey: SettingsKey.index)
+        #expect(!Onboarding.isNeeded(defaults: defaults))
+    }
+
+    @Test(arguments: IndexChoice.allCases)
+    func finishSavesEachChoiceAndRegisters(choice: IndexChoice) {
         var registered = 0
-        Onboarding.finish(style: .serious, launchAtLogin: true, defaults: defaults) { registered += 1 }
+        Onboarding.finish(index: choice, launchAtLogin: true, defaults: defaults) { registered += 1 }
         #expect(registered == 1)
-        #expect(defaults.string(forKey: SettingsKey.barStyle) == "serious")
-        #expect(defaults.object(forKey: SettingsKey.roastsEnabled) as? Bool == false)
+        #expect(IndexChoice.saved(in: defaults) == choice)
+        #expect(defaults.object(forKey: SettingsKey.roastsEnabled) == nil)
         #expect(!Onboarding.isNeeded(defaults: defaults))
     }
 
     @Test func finishWithoutLoginItemDoesNotRegister() {
         var registered = 0
-        Onboarding.finish(style: .funny, launchAtLogin: false, defaults: defaults) { registered += 1 }
+        Onboarding.finish(index: .cafe, launchAtLogin: false, defaults: defaults) { registered += 1 }
         #expect(registered == 0)
-        #expect(defaults.string(forKey: SettingsKey.barStyle) == "funny")
+        #expect(defaults.string(forKey: SettingsKey.index) == "cafe")
     }
 
     @Test func registerFailureIsQuiet() {
         struct Denied: Error {}
-        Onboarding.finish(style: .funny, launchAtLogin: true, defaults: defaults) { throw Denied() }
-        #expect(defaults.string(forKey: SettingsKey.barStyle) == "funny")
+        Onboarding.finish(index: .cafe, launchAtLogin: true, defaults: defaults) { throw Denied() }
+        #expect(defaults.string(forKey: SettingsKey.index) == "cafe")
+    }
+
+    /// Step 2 shows the real menu bar image of each choice. Each one fits 52 pt.
+    @Test func eachChoiceHasAMenuBarPreview() {
+        let previews = IndexChoice.allCases.map(Onboarding.preview)
+        #expect(previews.map(\.sample) == ["3.4", "0.04", "22 L"])
+        #expect(previews.map(\.symbol) == ["cup.and.saucer.fill", "building.columns.fill", "drop.fill"])
+        for p in previews { #expect(MenuBarLabel.image(symbol: p.symbol, text: p.sample).size.width == MenuBarLabel.width) }
     }
 
     /// Set ONBOARDING_PNG_DIR to save each step as a PNG for a visual check.
@@ -81,7 +99,7 @@ struct OnboardingTests {
         ]
         for (name, detection) in cases {
             for (i, step) in Onboarding.steps(detection).enumerated() {
-                let view = OnboardingView(detection: detection, step: i, style: i == 0 ? nil : .funny)
+                let view = OnboardingView(detection: detection, step: i, choice: i == 0 ? nil : .water)
                 #expect(ImageRenderer(content: view).nsImage != nil)
                 if let dir = ProcessInfo.processInfo.environment["ONBOARDING_PNG_DIR"] {
                     let host = NSHostingView(rootView: view)

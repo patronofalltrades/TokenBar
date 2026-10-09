@@ -3,7 +3,7 @@ import Foundation
 /// One roast from `roasts.json` (DRD 7.2).
 struct Roast: Codable, Equatable, Sendable {
     enum Category: String, Codable, Sendable, CaseIterable {
-        case zero, low, mid, high, limit, late, weekday, spend, career, tuition, provider
+        case zero, low, mid, high, limit, late, weekday, spend, career, tuition, provider, water
     }
 
     /// The order agrees with `Calendar` weekday numbers 1...7.
@@ -11,7 +11,7 @@ struct Roast: Codable, Equatable, Sendable {
 
     static let knownPlaceholders: Set<String> = [
         "percent", "remaining", "model", "provider", "reset", "time",
-        "cost", "unit_value", "unit_plural", "tuition_percent", "tuition_years",
+        "cost", "unit_value", "unit_plural", "tuition_percent", "tuition_years", "water",
     ]
 
     let id: String
@@ -93,6 +93,7 @@ struct RoastState {
     var unitPlural: String?
     var tuitionPercent: String?         // for example "0.04%"
     var tuitionYears: String?           // for example "412 years"; nil with less than 7 days of data
+    var water: String?                  // for example "22 L"; set only for the Water Footprint
 
     var minuteOfDay: Int {
         let c = calendar.dateComponents([.hour, .minute], from: now)
@@ -124,6 +125,7 @@ struct RoastState {
         case .career: return true
         case .tuition: return daysOfData >= 7
         case .provider: return !providersToday.isEmpty
+        case .water: return water != nil
         }
     }
 
@@ -141,6 +143,7 @@ struct RoastState {
             "unit_plural": unitPlural,
             "tuition_percent": tuitionPercent,
             "tuition_years": tuitionYears,
+            "water": water,
         ]
         return values.compactMapValues { $0 }
     }

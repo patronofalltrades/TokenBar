@@ -97,9 +97,32 @@ enum CafeIndex {
         fixed(rounded(spendEUR / tuition.priceEUR * 100, 2), 2) + "%"
     }
 
-    /// The popover line, Funny style only (DRD 7.6 rule 1).
+    /// The menu bar value of the Tuition Meter. "0.04%" does not fit 52 pt with any symbol, so the bar has no "%":
+    /// "0.04", "12.3", "123". Below 0.005% it shows "<.01".
+    static func tuitionBarValue(spendEUR: Decimal, tuition: Tuition) -> String {
+        let percent = spendEUR / tuition.priceEUR * 100
+        guard percent >= Decimal(string: "0.005")! else { return "<.01" }
+        let places = percent < Decimal(string: "9.995")! ? 2 : percent < Decimal(string: "99.95")! ? 1 : 0
+        return fixed(rounded(percent, places), places)
+    }
+
+    /// The popover line of the Tuition Meter (DRD 7.6 rule 1).
     static func tuitionLine(spendEUR: Decimal, tuition: Tuition) -> String {
-        "\(tuitionPercent(spendEUR: spendEUR, tuition: tuition)) of your \(tuition.label), in tokens"
+        "\(tuitionPercent(spendEUR: spendEUR, tuition: tuition)) of your \(tuition.label), in tokens (since install)"
+    }
+
+    /// The second Tuition Meter line (D41): the year when the spend since install reaches tuition, at the
+    /// average daily spend since install. Nil below 1 day of data or at zero spend.
+    static func burnLine(spendEUR: Decimal, days: Double, tuition: Tuition, year: Int) -> String? {
+        guard days >= 1, spendEUR > 0 else { return nil }
+        guard spendEUR < tuition.priceEUR else { return "Tuition fully burned. The tokens graduated before you did." }
+        let spend = NSDecimalNumber(decimal: spendEUR).doubleValue
+        let remaining = NSDecimalNumber(decimal: tuition.priceEUR).doubleValue - spend
+        let target = Double(year) + (remaining / (spend / days) / 365.25).rounded()
+        guard target <= 99_999 else { return "At this pace, you'll burn through it by the year 99,999+. Bring snacks." }
+        // A separator only from 5 digits: "2031", "12,345". "2,031" looks odd.
+        let shown = Int(target).formatted(.number.grouping(target >= 10_000 ? .automatic : .never).locale(Locale(identifier: "en_US")))
+        return "At this pace, you'll burn through it by the year \(shown)."
     }
 
     /// Formats a rounded value with a fixed number of decimals and a "." separator.

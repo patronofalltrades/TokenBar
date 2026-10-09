@@ -90,13 +90,15 @@ struct PopoverView: View {
                 Text("Week \(PopoverFormat.euro(snapshot.costWeekEUR))")
             }
             .font(.title3).monospacedDigit()
-            if let cafe = snapshot.cafeLine {
-                Label(cafe, systemImage: snapshot.cafeSymbol ?? "cup.and.saucer.fill")
+            if let line = snapshot.indexLine {
+                Label(line, systemImage: snapshot.indexSymbol ?? "cup.and.saucer.fill")
                     .font(.callout)
-                    .accessibilityLabel("Today's cost, \(PopoverFormat.euro(snapshot.costTodayEUR)), equals \(cafe)")
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel(snapshot.index == .cafe
+                        ? "Today's cost, \(PopoverFormat.euro(snapshot.costTodayEUR)), equals \(line)" : line)
             }
-            if let tuition = snapshot.tuitionLine {
-                Label(tuition, systemImage: "graduationcap").font(.callout)
+            if let detail = snapshot.indexDetail {
+                Text(detail).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -347,20 +349,30 @@ enum PopoverSamples {
         limits: [.init(name: "weekly", usedPercent: 18, resetsAt: later(60 * 96), observedAt: ago(10))],
         costTodayEUR: 2.20, hasUnpricedModels: true)
 
+    /// The index line and the menu bar value of each choice, for the samples.
+    private static let lines: [IndexChoice: (line: String, symbol: String, emoji: String, bar: String)] = [
+        .cafe: ("Today = 3.4 cafés con leche", "cup.and.saucer.fill", "☕", "3.4"),
+        .tuition: ("0.04% of your MBA tuition, in tokens (since install)", "graduationcap.fill", "🎓", "0.04"),
+        .water: ("Today ≈ 22 L of water · 15 bottles (1.5 L)", DisplayBuilder.waterSymbol, "💧", "22 L"),
+    ]
+
     private static func snapshot(_ state: DisplaySnapshot.State, rows: [DisplaySnapshot.ProviderRow],
-                                 style: BarStyle = .funny, roast: String?) -> DisplaySnapshot {
-        let funny = style == .funny
+                                 index: IndexChoice = .cafe, roast: String?) -> DisplaySnapshot {
+        let line = lines[index]
         return DisplaySnapshot(
-            state: state, barStyle: style, menuBarText: "62%", menuBarSymbol: "gauge.with.dots.needle.33percent",
+            state: state, index: index, menuBarText: line?.bar ?? "62%", menuBarSymbol: index == .tuition ? DisplayBuilder.tuitionSymbol : line?.symbol ?? "circle.lefthalf.filled",
             rows: rows, costTodayEUR: 6.10, costWeekEUR: 21.80,
-            cafeLine: funny ? "Today = 3.4 cafés con leche" : nil, cafeSymbol: funny ? "cup.and.saucer.fill" : nil,
-            cafeEmoji: funny ? "☕" : nil,
-            tuitionLine: funny ? "0.04% of your MBA tuition, in tokens" : nil,
-            roast: funny ? roast : nil, lastRefresh: ago(2), pricesVerified: "2026-10-08")
+            indexLine: line?.line, indexSymbol: line?.symbol, indexEmoji: line?.emoji,
+            indexDetail: index == .tuition ? "At this pace, you'll burn through it by the year 4210." : nil,
+            roast: roast, lastRefresh: ago(2), pricesVerified: "2026-10-08")
     }
 
     static let normal = snapshot(.normal, rows: [claude(62), codex],
                                  roast: "The protagonist has 38% of Opus left and a 9 AM deadline. Discuss.")
+    static let tuition = snapshot(.normal, rows: [claude(62), codex], index: .tuition,
+                                  roast: "0.04% of your MBA tuition, paid in tokens. The ROI case writes itself.")
+    static let water = snapshot(.normal, rows: [claude(62), codex], index: .water,
+                                roast: "Your prompts drank 22 L of water today. Somewhere a cooling tower is writing its own case study.")
     static let warning = snapshot(.warning, rows: [claude(87), codex],
                                   roast: "87% used before lunch. The case writes itself.")
     static let limitHit = snapshot(.limitHit, rows: [claude(100, weekly: 64), codex],
@@ -368,24 +380,24 @@ enum PopoverSamples {
     static let error = snapshot(.error, rows: [
         claude(0, error: "TokenBar cannot read the Claude Code logs. The log format possibly changed."), codex,
     ], roast: nil)
-    static let serious = snapshot(.normal, rows: [claude(62), codex], style: .serious, roast: "unused")
     static let noData = DisplaySnapshot(
-        state: .noData, barStyle: nil, menuBarText: "", menuBarSymbol: "cup.and.saucer",
+        state: .noData, index: nil, menuBarText: "", menuBarSymbol: "cup.and.saucer",
         rows: ProviderID.allCases.map {
             .init(provider: $0, installed: false, errorText: nil, limits: [], costTodayEUR: nil, hasUnpricedModels: false)
         },
-        costTodayEUR: 0, costWeekEUR: 0, cafeLine: nil, cafeSymbol: nil, tuitionLine: nil, roast: nil,
+        costTodayEUR: 0, costWeekEUR: 0, indexLine: nil, indexSymbol: nil, roast: nil,
         lastRefresh: nil, pricesVerified: "2026-10-08")
 
     static let all: [(name: String, snapshot: DisplaySnapshot)] = [
-        ("normal", normal), ("warning", warning), ("limitHit", limitHit),
-        ("noData", noData), ("error", error), ("serious", serious),
+        ("cafe", normal), ("tuition", tuition), ("water", water),
+        ("warning", warning), ("limitHit", limitHit), ("noData", noData), ("error", error),
     ]
 }
 
-#Preview("Normal") { PopoverView(snapshot: PopoverSamples.normal, now: PopoverSamples.now) }
+#Preview("Café") { PopoverView(snapshot: PopoverSamples.normal, now: PopoverSamples.now) }
 #Preview("Warning") { PopoverView(snapshot: PopoverSamples.warning, now: PopoverSamples.now) }
 #Preview("Limit hit") { PopoverView(snapshot: PopoverSamples.limitHit, now: PopoverSamples.now) }
 #Preview("No data") { PopoverView(snapshot: PopoverSamples.noData, now: PopoverSamples.now) }
 #Preview("Error") { PopoverView(snapshot: PopoverSamples.error, now: PopoverSamples.now) }
-#Preview("Serious") { PopoverView(snapshot: PopoverSamples.serious, now: PopoverSamples.now) }
+#Preview("Tuition") { PopoverView(snapshot: PopoverSamples.tuition, now: PopoverSamples.now) }
+#Preview("Water") { PopoverView(snapshot: PopoverSamples.water, now: PopoverSamples.now) }

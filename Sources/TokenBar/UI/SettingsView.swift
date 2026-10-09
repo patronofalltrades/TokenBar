@@ -8,16 +8,6 @@ struct SettingsView: View {
     static let statusLineSnippet =
         #"{"statusLine": {"type": "command", "command": "~/Applications/TokenBar.app/Contents/MacOS/TokenBar --statusline"}}"#
 
-    /// DRD 2.5 rule 3. Serious sets Roasts and Café index to off.
-    /// Funny does not set them to on. The user turns them on again.
-    static func select(_ style: BarStyle, in defaults: UserDefaults = .standard) {
-        defaults.set(style.rawValue, forKey: SettingsKey.barStyle)
-        if style == .serious {
-            defaults.set(false, forKey: SettingsKey.roastsEnabled)
-            defaults.set(false, forKey: SettingsKey.cafeIndexEnabled)
-        }
-    }
-
     var body: some View {
         TabView {
             GeneralSettings().tabItem { Label("General", systemImage: "gearshape") }
@@ -29,9 +19,8 @@ struct SettingsView: View {
 }
 
 struct GeneralSettings: View {
-    @AppStorage(SettingsKey.barStyle) private var barStyle: BarStyle?
+    @AppStorage(SettingsKey.index) private var index: IndexChoice?
     @AppStorage(SettingsKey.roastsEnabled) private var roastsEnabled = true
-    @AppStorage(SettingsKey.cafeIndexEnabled) private var cafeIndexEnabled = true
     @State private var loginStatus = SMAppService.mainApp.status
     @State private var loginFailed = false
     /// Starts as not connected, so that a render in tests does not read the real settings file. `.task` reads it.
@@ -40,13 +29,12 @@ struct GeneralSettings: View {
 
     var body: some View {
         Form {
-            Picker("Bar style", selection: Binding(get: { barStyle }, set: { if let style = $0 { SettingsView.select(style) } })) {
-                Text("Funny").tag(BarStyle?.some(.funny))
-                Text("Serious").tag(BarStyle?.some(.serious))
+            // DRD 2.5: one index only.
+            Picker("Index", selection: $index) {
+                ForEach(IndexChoice.allCases, id: \.self) { Text($0.title).tag(IndexChoice?.some($0)) }
             }
             .pickerStyle(.radioGroup)
             Toggle("Roasts", isOn: $roastsEnabled)
-            Toggle("Café index", isOn: $cafeIndexEnabled)
             Toggle("Launch at login", isOn: Binding(get: { loginStatus == .enabled }, set: { setLaunchAtLogin($0) }))
             if loginStatus == .requiresApproval {
                 Text("Allow TokenBar in System Settings > General > Login Items.").font(.caption)

@@ -6,10 +6,9 @@ import Testing
 private let gb = Locale(identifier: "en_GB")
 private let secret = "SECRET-MARKER"
 
-@Test func funnyCardText() {
+@Test func cafeCardText() {
     #expect(ShareCard.text(PopoverSamples.normal, locale: gb) == """
         ☕ Today = 3.4 cafés con leche
-        🎓 0.04% of your MBA tuition, in tokens
 
         “The protagonist has 38% of Opus left and a 9 AM deadline. Discuss.”
 
@@ -17,8 +16,34 @@ private let secret = "SECRET-MARKER"
         """)
 }
 
-@Test func seriousCardShowsNumbersOnly() {
-    #expect(ShareCard.text(PopoverSamples.serious, locale: gb) == """
+@Test func tuitionCardText() {
+    #expect(ShareCard.text(PopoverSamples.tuition, locale: gb) == """
+        🎓 0.04% of your MBA tuition, in tokens (since install)
+        At this pace, you'll burn through it by the year 4210.
+
+        “0.04% of your MBA tuition, paid in tokens. The ROI case writes itself.”
+
+        TokenBar · github.com/patronofalltrades/TokenBar
+        """)
+}
+
+@Test func waterCardText() {
+    #expect(ShareCard.text(PopoverSamples.water, locale: gb) == """
+        💧 Today ≈ 22 L of water · 15 bottles (1.5 L)
+
+        “Your prompts drank 22 L of water today. Somewhere a cooling tower is writing its own case study.”
+
+        TokenBar · github.com/patronofalltrades/TokenBar
+        """)
+}
+
+private let noIndex = DisplaySnapshot(
+    state: .normal, index: nil, menuBarText: "", menuBarSymbol: "", rows: [], costTodayEUR: 6.10, costWeekEUR: 21.80,
+    indexLine: "café", indexSymbol: nil, roast: "roast", lastRefresh: nil, pricesVerified: "")
+
+/// No index yet: numbers only, also when a snapshot has index lines.
+@Test func noIndexCardShowsNumbersOnly() {
+    #expect(ShareCard.text(noIndex, locale: gb) == """
         Today ≈ €6.10
         Week ≈ €21.80 (API-equivalent)
 
@@ -26,25 +51,16 @@ private let secret = "SECRET-MARKER"
         """)
 }
 
-/// Serious is numbers only, also when a snapshot has funny lines.
-@Test func seriousCardIgnoresFunnyLines() {
-    let s = DisplaySnapshot(
-        state: .normal, barStyle: .serious, menuBarText: "", menuBarSymbol: "", rows: [], costTodayEUR: 1, costWeekEUR: 2,
-        cafeLine: "café", cafeSymbol: nil, tuitionLine: "tuition", roast: "roast", lastRefresh: nil, pricesVerified: "")
-    let text = ShareCard.text(s, locale: gb)
-    #expect(!text.contains("café") && !text.contains("tuition") && !text.contains("roast"))
-}
-
-/// DRD 7.7 rule 5: only the café line, the tuition line, the roast and the costs go onto the card.
+/// DRD 7.7 rule 5: only the index line, the roast and the costs go onto the card.
 @Test func cardLeaksNoOtherSnapshotText() {
     let row = DisplaySnapshot.ProviderRow(
         provider: .claudeCode, installed: true, errorText: "/Users/\(secret)/project \(secret)",
         limits: [.init(name: secret, usedPercent: 50, resetsAt: nil, observedAt: .now)],
         costTodayEUR: 1, hasUnpricedModels: false)
-    for style in [BarStyle.funny, .serious, nil] {
+    for index in IndexChoice.allCases + [nil] {
         let s = DisplaySnapshot(
-            state: .normal, barStyle: style, menuBarText: secret, menuBarSymbol: secret, rows: [row],
-            costTodayEUR: 1, costWeekEUR: 2, cafeLine: nil, cafeSymbol: secret, tuitionLine: nil, roast: nil,
+            state: .normal, index: index, menuBarText: secret, menuBarSymbol: secret, rows: [row],
+            costTodayEUR: 1, costWeekEUR: 2, indexLine: nil, indexSymbol: secret, roast: nil,
             lastRefresh: .now, pricesVerified: secret)
         #expect(!ShareCard.text(s).contains(secret))
         #expect(!ShareCard.lines(s).contains { $0.text.contains(secret) })
@@ -57,7 +73,7 @@ func modelOnlyThroughRoast(text: String, shows: Bool) throws {
     let suite = "ShareCardTests.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
-    defaults.set(BarStyle.funny.rawValue, forKey: SettingsKey.barStyle)
+    defaults.set(IndexChoice.cafe.rawValue, forKey: SettingsKey.index)
     let prices = try PriceTable.decode(Data(#"""
         {"last_verified": "2026-10-08", "usd_to_eur": 1, "fx_updated": "2026-10-08", "fx_note": "n",
          "models": [{"id": "\#(secret)", "input": 1, "source": "s", "last_verified": "2026-10-08"}]}
@@ -66,7 +82,7 @@ func modelOnlyThroughRoast(text: String, shows: Bool) throws {
     let record = UsageRecord(provider: .claudeCode, model: secret, timestamp: now, tokens: TokenCounts(input: 5_000_000))
     var roasts = RoastSelector(roasts: [Roast(id: "r", text: text, category: .career, locale: "en")],
                                randomIndex: { _ in 0 }, defaults: defaults)
-    let s = DisplayBuilder(prices: prices, cafe: try CafeData.shipped(), defaults: defaults).build(
+    let s = DisplayBuilder(prices: prices, cafe: try CafeData.shipped(), water: try WaterData.shipped(), defaults: defaults).build(
         snapshots: [.claudeCode: ProviderSnapshot(provider: .claudeCode, records: [record], limits: [], updatedAt: now)],
         errors: [:], lastRefresh: now, now: now, roasts: &roasts, tuition: TuitionTotal(defaults: defaults))
     let card = ShareCard.text(s)
@@ -75,14 +91,14 @@ func modelOnlyThroughRoast(text: String, shows: Bool) throws {
 }
 
 @MainActor @Test func imageIs360PointsWideAtScale2() throws {
-    for sample in [PopoverSamples.normal, PopoverSamples.serious] {
+    for sample in [PopoverSamples.normal, PopoverSamples.tuition, PopoverSamples.water, noIndex] {
         let image = try #require(ShareCard.image(sample))
         #expect(image.width == 720)
         #expect(image.height > 100 && image.height < 720)
         // Set SHARE_CARD_PNG_DIR to save the images for a visual check.
         if let dir = ProcessInfo.processInfo.environment["SHARE_CARD_PNG_DIR"] {
             try NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])?
-                .write(to: URL(fileURLWithPath: dir).appendingPathComponent("share-card-\(sample.barStyle!.rawValue).png"))
+                .write(to: URL(fileURLWithPath: dir).appendingPathComponent("share-card-\(sample.index?.rawValue ?? "none").png"))
         }
     }
 }

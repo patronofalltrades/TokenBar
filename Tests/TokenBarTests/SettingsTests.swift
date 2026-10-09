@@ -13,35 +13,38 @@ struct SettingsTests {
         defaults.removePersistentDomain(forName: suite)
     }
 
-    @Test func seriousTurnsOffRoastsAndCafeIndex() {
-        SettingsView.select(.serious, in: defaults)
-        #expect(defaults.string(forKey: SettingsKey.barStyle) == "serious")
-        #expect(defaults.object(forKey: SettingsKey.roastsEnabled) as? Bool == false)
-        #expect(defaults.object(forKey: SettingsKey.cafeIndexEnabled) as? Bool == false)
+    /// D41: funny becomes café, serious asks again in onboarding. The old keys go away.
+    @Test(arguments: [("funny", IndexChoice?.some(.cafe)), ("serious", nil), ("loud", nil)])
+    func migratesTheOldBarStyleOneTime(old: String, expected: IndexChoice?) {
+        defaults.set(old, forKey: "barStyle")
+        defaults.set(false, forKey: "cafeIndexEnabled")
+        defaults.set(false, forKey: SettingsKey.roastsEnabled)
+        #expect(IndexChoice.saved(in: defaults) == expected)
+        #expect(defaults.object(forKey: "barStyle") == nil && defaults.object(forKey: "cafeIndexEnabled") == nil)
+        #expect(defaults.object(forKey: SettingsKey.roastsEnabled) as? Bool == false)  // the user choice stays
+        defaults.set("water", forKey: SettingsKey.index)
+        #expect(IndexChoice.saved(in: defaults) == .water)  // one time only
     }
 
-    @Test func funnyDoesNotTurnTogglesOn() {
-        SettingsView.select(.serious, in: defaults)
-        SettingsView.select(.funny, in: defaults)
-        #expect(defaults.string(forKey: SettingsKey.barStyle) == "funny")
-        #expect(defaults.object(forKey: SettingsKey.roastsEnabled) as? Bool == false)
-        #expect(defaults.object(forKey: SettingsKey.cafeIndexEnabled) as? Bool == false)
+    @Test func migrationKeepsANewChoice() {
+        defaults.set("tuition", forKey: SettingsKey.index)
+        defaults.set("funny", forKey: "barStyle")
+        #expect(IndexChoice.saved(in: defaults) == .tuition)
     }
 
-    @Test func funnyOnEmptyDefaultsWritesOnlyTheStyle() {
-        SettingsView.select(.funny, in: defaults)
-        #expect(defaults.object(forKey: SettingsKey.roastsEnabled) == nil)
-        #expect(defaults.object(forKey: SettingsKey.cafeIndexEnabled) == nil)
+    @Test func noChoiceStaysNil() {
+        #expect(IndexChoice.saved(in: defaults) == nil)
+        #expect(IndexChoice.allCases.map(\.title) == ["Café Index", "Tuition Meter", "Water Footprint"])
     }
 
-    @Test(arguments: [SettingsKey.roastsEnabled, SettingsKey.cafeIndexEnabled,
+    @Test(arguments: [SettingsKey.roastsEnabled,
                       SettingsKey.alert95Enabled, SettingsKey.alertLimitEnabled])
     func toggleIsOnWhenKeyIsMissing(key: String) {
         #expect(AppStorage(wrappedValue: true, key, store: defaults).wrappedValue)
     }
 
-    @Test func barStyleIsNilWhenKeyIsMissing() {
-        #expect(AppStorage<BarStyle?>(SettingsKey.barStyle, store: defaults).wrappedValue == nil)
+    @Test func indexIsNilWhenKeyIsMissing() {
+        #expect(AppStorage<IndexChoice?>(SettingsKey.index, store: defaults).wrappedValue == nil)
     }
 
     @Test func snippetIsExactAndValidJSON() throws {
