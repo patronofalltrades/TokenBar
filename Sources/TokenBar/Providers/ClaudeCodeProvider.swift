@@ -60,7 +60,8 @@ actor ClaudeCodeProvider: UsageProvider {
         return ProviderSnapshot(
             provider: id,
             records: records.values.map(\.record),
-            limits: try ClaudeCodeLimits.read(from: limitsFile),
+            // Limits are optional (D-bridge opt-in). A bad limits file must not hide the token data.
+            limits: (try? ClaudeCodeLimits.read(from: limitsFile)) ?? [],
             updatedAt: now
         )
     }
