@@ -518,6 +518,12 @@ Selection order:
 | water-01 | water | `Your prompts drank {water} of water today. Somewhere a cooling tower is writing its own case study.` |
 | water-02 | water | `{water} of fresh water evaporated so a model could summarize a case you did not read. Discuss the externalities.` |
 | water-03 | water | `{water} today. The sustainability elective would like a word. Several, actually. All of them about you.` |
+| water-04 | water | `{water} of water so your AI could write a LinkedIn post that starts with 'Humbled and honored'.` |
+| water-05 | water | `{water} of water for a cover letter that opens with 'I have always been passionate about consulting'.` |
+| water-06 | water | `Your AI drank {water} prepping your case interview. The interviewer will ask you to size the bottled water market.` |
+| water-07 | water | `{water} for a 30-slide deck you will present in 4 minutes. Nobody reads the appendix. Not even the AI.` |
+| water-08 | water | `Your AI sweated {water} today. You sweated more in your last cold call.` |
+| water-09 | water | `{water} today. More than you drank in a week of coffee chats, and the AI got zero referrals either.` |
 
 The `provider-01` line uses a fixed number as a joke. Do not present it as data. If the TRD supplies a line count, replace the number with a placeholder.
 
