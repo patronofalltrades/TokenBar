@@ -180,8 +180,8 @@ Use the documented Claude Code status line input. The status line command receiv
 
 Bridge design (v0.2, issue TRD-T13). The bridge is an opt-in setup (PRD Q2). Without it, the Claude Code row shows tokens and cost only.
 
-1. The user sets `"statusLine": {"type": "command", "command": "/Applications/TokenBar.app/Contents/MacOS/TokenBar --statusline"}` in `~/.claude/settings.json`. TokenBar shows this snippet with a Copy button. TokenBar does not edit `settings.json`.
-2. In `--statusline` mode, the binary reads stdin. It decodes only `rate_limits`. It writes `{"five_hour":…,"seven_day":…,"observed_at":…}` atomically to `~/Library/Application Support/TokenBar/claude-limits.json`. It prints one short line, for example `62% 5h`, and exits. It does not start the UI.
+1. The user sets `"statusLine": {"type": "command", "command": "~/Applications/TokenBar.app/Contents/MacOS/TokenBar --statusline"}` in `~/.claude/settings.json`. TokenBar shows this snippet with a Copy button. TokenBar does not edit `settings.json`.
+2. In `--statusline` mode, the binary reads stdin. It decodes only `rate_limits`. It writes `{"five_hour":…,"seven_day":…,"observed_at":…}` atomically to `~/Library/Application Support/TokenBar/claude-limits.json`. It prints one short line, for example `TokenBar · 5h 62% · wk 24%`, and exits with code 0. It does not start the UI. Input without `rate_limits` writes nothing. Claude Code drops a window after its `resets_at` time, so the bridge keeps the old window from the file. The bridge ignores `rate_limits.spend_limit` (Claude apps gateway only).
 3. Do not use `cat > file`. The full input contains `session_name`, an AI-generated title from the prompt, and paths. TokenBar must not store these.
 4. Settings > General shows the snippet, a **Copy** button and a warning: the snippet replaces an existing custom Claude Code status line (DRD 5). The user decides. Skipped: a chaining wrapper. Add it if alpha testers ask.
 
@@ -191,7 +191,7 @@ Rejected alternative: `GET https://api.anthropic.com/api/oauth/usage` with the O
 
 **Failure modes.** Directory absent → provider shows "Claude Code not found". Malformed line → skip the line, count it, continue. Partial last line (file in write) → keep the bytes until the next newline. File truncated or replaced (size < offset, or inode changed) → reparse that file. Unknown model → count tokens, cost is unknown (Section 6).
 
-**Verification status.** Log fields: verified on this Mac. Status line `rate_limits`: verified in official docs, not yet tested end to end.
+**Verification status.** Log fields: verified on this Mac. Status line `rate_limits`: verified in official docs on 2026-10-09 (TRD-T13). The bridge binary was tested with synthetic input, not yet with a live Claude Code session.
 
 ### 5.2 Codex CLI (local logs)
 
