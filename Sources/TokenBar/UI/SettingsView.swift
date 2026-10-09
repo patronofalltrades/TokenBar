@@ -1,0 +1,116 @@
+import AppKit
+import ServiceManagement
+import SwiftUI
+
+/// The Settings window content (DRD 5). Put it in a SwiftUI `Settings` scene.
+struct SettingsView: View {
+    /// TRD 5.1. The status line bridge (TRD-T13) reads this exact command. Do not change it here only.
+    static let statusLineSnippet =
+        #"{"statusLine": {"type": "command", "command": "~/Applications/TokenBar.app/Contents/MacOS/TokenBar --statusline"}}"#
+
+    /// DRD 2.5 rule 3. Serious sets Roasts and Café index to off.
+    /// Funny does not set them to on. The user turns them on again.
+    static func select(_ style: BarStyle, in defaults: UserDefaults = .standard) {
+        defaults.set(style.rawValue, forKey: SettingsKey.barStyle)
+        if style == .serious {
+            defaults.set(false, forKey: SettingsKey.roastsEnabled)
+            defaults.set(false, forKey: SettingsKey.cafeIndexEnabled)
+        }
+    }
+
+    var body: some View {
+        TabView {
+            GeneralSettings().tabItem { Label("General", systemImage: "gearshape") }
+            AlertSettings().tabItem { Label("Alerts", systemImage: "bell") }
+            AboutSettings().tabItem { Label("About", systemImage: "info.circle") }
+        }
+        .frame(width: 480)
+    }
+}
+
+struct GeneralSettings: View {
+    @AppStorage(SettingsKey.barStyle) private var barStyle: BarStyle?
+    @AppStorage(SettingsKey.roastsEnabled) private var roastsEnabled = true
+    @AppStorage(SettingsKey.cafeIndexEnabled) private var cafeIndexEnabled = true
+    @State private var loginStatus = SMAppService.mainApp.status
+    @State private var loginFailed = false
+
+    var body: some View {
+        Form {
+            Picker("Bar style", selection: Binding(get: { barStyle }, set: { if let style = $0 { SettingsView.select(style) } })) {
+                Text("Funny").tag(BarStyle?.some(.funny))
+                Text("Serious").tag(BarStyle?.some(.serious))
+            }
+            .pickerStyle(.radioGroup)
+            Toggle("Roasts", isOn: $roastsEnabled)
+            Toggle("Café index", isOn: $cafeIndexEnabled)
+            Toggle("Launch at login", isOn: Binding(get: { loginStatus == .enabled }, set: { setLaunchAtLogin($0) }))
+            if loginStatus == .requiresApproval {
+                Text("Allow TokenBar in System Settings > General > Login Items.").font(.caption)
+            }
+            if loginFailed {
+                Text("Could not change this setting. Open TokenBar from the app in Applications and try again.").font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Claude limits (optional)") {
+                Text("Add this line to your Claude Code settings file (~/.claude/settings.json). TokenBar then shows your 5-hour and weekly Claude limits.")
+                Label("This replaces your current Claude Code status line.", systemImage: "exclamationmark.triangle")
+                HStack(alignment: .top) {
+                    Text(SettingsView.statusLineSnippet)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                    Button("Copy") {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(SettingsView.statusLineSnippet, forType: .string)
+                    }
+                    .accessibilityLabel("Copy status line")
+                }
+            }
+
+            Section {
+                Text("Tip: Hold ⌘ and drag TokenBar to the right to keep it visible.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func setLaunchAtLogin(_ on: Bool) {
+        do {
+            if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+            loginFailed = false
+        } catch {
+            loginFailed = true
+        }
+        loginStatus = SMAppService.mainApp.status
+    }
+}
+
+struct AlertSettings: View {
+    @AppStorage(SettingsKey.alert95Enabled) private var alert95Enabled = true
+    @AppStorage(SettingsKey.alertLimitEnabled) private var alertLimitEnabled = true
+
+    var body: some View {
+        Form {
+            Toggle("Alert at 95% of a limit", isOn: $alert95Enabled)
+            Toggle("Alert when a limit is reached", isOn: $alertLimitEnabled)
+        }
+        .formStyle(.grouped)
+    }
+}
+
+struct AboutSettings: View {
+    private let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
+
+    var body: some View {
+        Form {
+            LabeledContent("Version", value: version)
+            LabeledContent("License", value: "MIT")
+            Link("TokenBar on GitHub", destination: Links.repository)
+            Link("Send feedback", destination: Links.feedback)
+            Text("TokenBar is not affiliated with any business school, Anthropic, OpenAI or xAI.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .formStyle(.grouped)
+    }
+}
