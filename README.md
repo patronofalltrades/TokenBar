@@ -42,7 +42,7 @@ The humor is part of the product, not decoration. A number that makes you laugh 
 | Feature | Description |
 |---|---|
 | Menu bar usage | Shows one usage number next to the notch. |
-| Claude Code usage | Reads local Claude Code session logs. You do not need an API key. An optional status line setup adds the 5-hour and weekly limits. Without it, TokenBar shows tokens and cost only. |
+| Claude Code usage | Reads local Claude Code session logs. You do not need an API key. An optional status line setup adds the 5-hour and weekly limits. Click **Connect** in Settings. TokenBar edits `~/.claude/settings.json` with a backup, and your current status line keeps working. Without it, TokenBar shows tokens and cost only. |
 | Codex usage | Reads local Codex CLI session logs, including limits. You do not need an API key. |
 | MBA cost conversions | Shows your cost in euros, then converts it into Barcelona units, for example cafés con leche. |
 | Case-method roasts | Shows short jokes in the style of a business school case. |

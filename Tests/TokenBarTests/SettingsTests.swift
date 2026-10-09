@@ -52,6 +52,13 @@ struct SettingsTests {
         #expect(json?["statusLine"]?["command"] == "~/Applications/TokenBar.app/Contents/MacOS/TokenBar --statusline")
     }
 
+    @Test func claudeStatusText() {
+        let now = Date(timeIntervalSince1970: 1_791_000_000)
+        #expect(GeneralSettings.statusText(.notConnected, now: now) == "Not connected")
+        #expect(GeneralSettings.statusText(.connectedWaiting, now: now) == "Connected. Waiting for the next Claude Code reply.")
+        #expect(GeneralSettings.statusText(.connected(updatedAt: now.addingTimeInterval(-180)), now: now).hasPrefix("Connected · updated 3 min"))
+    }
+
     @Test func tabsRender() {
         #expect(ImageRenderer(content: SettingsView()).nsImage != nil)
         #expect(ImageRenderer(content: GeneralSettings().frame(width: 480)).nsImage != nil)

@@ -10,7 +10,49 @@ enum StatuslineBridge {
 
     static func main() {
         let input = (try? FileHandle.standardInput.readToEnd()) ?? Data()
-        print(run(input: input, file: ClaudeCodeLimits.defaultFile, now: Date()))
+        let line = run(input: input, file: ClaudeCodeLimits.defaultFile, now: Date())
+        print(chain(input: input, previousFile: ClaudeConnect.defaultPreviousFile) ?? line)
+    }
+
+    /// Runs the status line that was active before Connect (D39) with the same input, and returns its output.
+    /// Returns nil if no status line is saved, or on a non-zero exit, empty output or timeout. Never throws.
+    static func chain(input: Data, previousFile: URL) -> String? {
+        guard let saved = try? Data(contentsOf: previousFile),
+              let command = (try? JSONSerialization.jsonObject(with: saved) as? [String: Any])?["command"] as? String
+        else { return nil }
+
+        // A file, not a pipe, for stdout: a pipe read can block if a child process keeps the pipe open.
+        let out = FileManager.default.temporaryDirectory.appending(path: "tokenbar-chain-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: out) }
+        guard FileManager.default.createFile(atPath: out.path, contents: nil),
+              let stdout = try? FileHandle(forWritingTo: out) else { return nil }
+        defer { try? stdout.close() }
+
+        let stdin = Pipe()
+        let process = Process()
+        process.executableURL = URL(filePath: "/bin/sh")
+        process.arguments = ["-c", command]
+        process.standardInput = stdin
+        process.standardOutput = stdout
+        process.standardError = FileHandle.nullDevice
+        signal(SIGPIPE, SIG_IGN)  // A command that does not read stdin must not stop TokenBar.
+        guard (try? process.run()) != nil else { return nil }
+
+        let writer = stdin.fileHandleForWriting
+        DispatchQueue.global().async {
+            try? writer.write(contentsOf: input)
+            try? writer.close()
+        }
+        let deadline = Date().addingTimeInterval(2)
+        while process.isRunning, Date() < deadline { usleep(10_000) }
+        if process.isRunning {
+            process.terminate()
+            return nil
+        }
+
+        guard process.terminationStatus == 0, var text = try? String(contentsOf: out, encoding: .utf8) else { return nil }
+        while text.last?.isNewline == true { text.removeLast() }
+        return text.isEmpty ? nil : text
     }
 
     /// Writes the limits file and returns the line for Claude Code to show. Never throws.

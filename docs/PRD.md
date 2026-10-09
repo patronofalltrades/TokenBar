@@ -217,8 +217,8 @@ As P2, I want to see the percentage of my limit and the reset time, so that I ca
 - AC1: For each limit source, the popover shows the percentage used and the time to reset.
 - AC2: If no limit source exists for a tool, TokenBar shows usage only. It does not estimate a limit.
 - AC3: The TRD documents each limit source and its reliability.
-- AC4: Claude Code limits come from an opt-in status line setup (Q2). Settings shows the snippet with a Copy button.
-- AC5: Settings warns that the snippet replaces an existing custom Claude Code status line.
+- AC4: Claude Code limits come from an opt-in status line setup (Q2). Settings has a **Connect** button (D39) and the manual snippet with a Copy button.
+- AC5: **Connect** keeps an existing custom Claude Code status line. TokenBar runs it and shows its output (D39).
 - AC6: Without the setup, TokenBar shows Claude Code tokens and cost only.
 
 **PRD-US-12 Get a limit alert** (Must, when a limit source exists)

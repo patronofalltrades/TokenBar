@@ -34,6 +34,9 @@ struct GeneralSettings: View {
     @AppStorage(SettingsKey.cafeIndexEnabled) private var cafeIndexEnabled = true
     @State private var loginStatus = SMAppService.mainApp.status
     @State private var loginFailed = false
+    /// Starts as not connected, so that a render in tests does not read the real settings file. `.task` reads it.
+    @State private var claudeStatus = ClaudeConnect.Status.notConnected
+    @State private var connectError: String?
 
     var body: some View {
         Form {
@@ -53,19 +56,32 @@ struct GeneralSettings: View {
             }
 
             Section("Claude limits (optional)") {
-                Text("Add this line to your Claude Code settings file (~/.claude/settings.json). TokenBar then shows your 5-hour and weekly Claude limits.")
-                Text("Claude Code runs the status line only after you trust the workspace, and not when disableAllHooks is true.")
-                    .font(.caption).foregroundStyle(.secondary)
-                Label("This replaces your current Claude Code status line.", systemImage: "exclamationmark.triangle")
-                HStack(alignment: .top) {
-                    Text(SettingsView.statusLineSnippet)
-                        .font(.system(.caption, design: .monospaced))
-                        .textSelection(.enabled)
-                    Button("Copy") {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(SettingsView.statusLineSnippet, forType: .string)
+                Text("Connect Claude Code to see your 5-hour and weekly Claude limits.")
+                HStack {
+                    Text(Self.statusText(claudeStatus, now: .now))
+                    Spacer()
+                    if claudeStatus == .notConnected {
+                        Button("Connect") { update { try ClaudeConnect.connect() } }
+                    } else {
+                        Button("Disconnect") { update { try ClaudeConnect.disconnect() } }
                     }
-                    .accessibilityLabel("Copy status line")
+                }
+                if let connectError {
+                    Text(connectError).font(.caption).foregroundStyle(.red)
+                }
+                Text("Your current Claude Code status line keeps working. Restart open Claude Code sessions. Claude Code runs it only in trusted folders and not when disableAllHooks is true.")
+                    .font(.caption).foregroundStyle(.secondary)
+                DisclosureGroup("Show manual setup") {
+                    HStack(alignment: .top) {
+                        Text(SettingsView.statusLineSnippet)
+                            .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
+                        Button("Copy") {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(SettingsView.statusLineSnippet, forType: .string)
+                        }
+                        .accessibilityLabel("Copy status line")
+                    }
                 }
             }
 
@@ -74,6 +90,31 @@ struct GeneralSettings: View {
             }
         }
         .formStyle(.grouped)
+        .task {
+            // The bridge writes the limits file in a different process. Read the status again each 30 s.
+            while !Task.isCancelled {
+                claudeStatus = ClaudeConnect.status()
+                try? await Task.sleep(for: .seconds(30))
+            }
+        }
+    }
+
+    static func statusText(_ status: ClaudeConnect.Status, now: Date) -> String {
+        switch status {
+        case .notConnected: "Not connected"
+        case .connectedWaiting: "Connected. Waiting for the next Claude Code reply."
+        case .connected(let updatedAt): "Connected · updated \(RelativeDateTimeFormatter().localizedString(for: updatedAt, relativeTo: now))"
+        }
+    }
+
+    private func update(_ change: () throws -> Void) {
+        do {
+            try change()
+            connectError = nil
+        } catch {
+            connectError = error.localizedDescription
+        }
+        claudeStatus = ClaudeConnect.status()
     }
 
     private func setLaunchAtLogin(_ on: Bool) {
