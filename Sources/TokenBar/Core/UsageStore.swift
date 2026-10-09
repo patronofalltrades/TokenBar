@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// Holds the last good snapshot of each provider and refreshes all providers every 60 s (TRD 7).
+/// Holds the last good snapshot of each provider. `AppModel` calls `refresh()` every 60 s (TRD 7).
 @MainActor @Observable
 final class UsageStore {
     enum Period { case today, week }
@@ -20,14 +20,6 @@ final class UsageStore {
         self.providers = providers
         self.calendar = calendar
         self.now = now
-    }
-
-    /// Runs until the task is cancelled. Call it from the app task.
-    func run() async {
-        while !Task.isCancelled {
-            await refresh()
-            try? await Task.sleep(for: .seconds(60), tolerance: .seconds(10))
-        }
     }
 
     /// Reads all providers at the same time. A failed provider keeps its last snapshot.

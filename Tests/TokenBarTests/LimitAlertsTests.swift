@@ -13,7 +13,7 @@ private func snapshot(_ limits: [DisplaySnapshot.Limit], style: BarStyle? = .fun
     let row = DisplaySnapshot.ProviderRow(provider: .claudeCode, installed: true, errorText: nil, limits: limits,
                                           costTodayEUR: nil, hasUnpricedModels: false)
     return DisplaySnapshot(state: .warning, barStyle: style, menuBarText: "", menuBarSymbol: "", rows: [row],
-                           costTodayEUR: 0, costWeekEUR: 0, cafeLine: nil, tuitionLine: nil, roast: roast,
+                           costTodayEUR: 0, costWeekEUR: 0, cafeLine: nil, cafeSymbol: nil, tuitionLine: nil, roast: roast,
                            lastRefresh: t0, pricesVerified: "")
 }
 

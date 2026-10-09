@@ -127,7 +127,7 @@ func limitHitShowsTimeToReset(style: BarStyle) {
 @Test func seriousHasNoJokes() {
     let s = Fixture().build([snapshot([record(eur: 6.12)], limits: [limit(62)])])
     #expect(s.barStyle == .serious)
-    #expect(s.cafeLine == nil && s.tuitionLine == nil && s.roast == nil)
+    #expect(s.cafeLine == nil && s.cafeSymbol == nil && s.tuitionLine == nil && s.roast == nil)
     #expect(s.pricesVerified == "2026-10-08" && s.lastRefresh == noon)
 }
 
@@ -139,7 +139,7 @@ func limitHitShowsTimeToReset(style: BarStyle) {
 @Test func funnyShowsTheCafeValue() {
     let s = Fixture(style: .funny).build([snapshot([record(eur: 6.12)], limits: [limit(62)])])
     #expect(s.menuBarText == "3.4" && s.menuBarSymbol == "cup.and.saucer.fill")
-    #expect(s.cafeLine == "Today = 3.4 cafés con leche")
+    #expect(s.cafeLine == "Today = 3.4 cafés con leche" && s.cafeSymbol == "cup.and.saucer.fill")
     #expect(s.tuitionLine?.hasPrefix("🎓 ") == true)
     #expect(s.roast != nil)
     #expect(MenuBarLabel.voiceOverLabel(s, now: noon) == "TokenBar. Claude Code, 62 percent of 5-hour limit. Today, 3.4 cafés con leche.")
@@ -165,7 +165,7 @@ func limitHitShowsTimeToReset(style: BarStyle) {
     #expect(f.build([snapshot([record(eur: 10.5)])]).cafeLine == "Today = 5.8 cafés con leche")
     let tomorrow = noon.addingTimeInterval(24 * 3600)
     let next = f.build([snapshot([record(eur: 10.5, at: tomorrow)])], now: tomorrow)
-    #expect(next.cafeLine == "Today = 3.0 pa amb tomàquets")
+    #expect(next.cafeLine == "Today = 3.0 pa amb tomàquets" && next.cafeSymbol == "fork.knife")
 }
 
 // MARK: - Costs
@@ -213,6 +213,7 @@ func limitHitShowsTimeToReset(style: BarStyle) {
             .withSymbolConfiguration(.init(pointSize: font.pointSize, weight: .regular)))
         let textWidth = text.isEmpty ? 0 : NSAttributedString(string: text, attributes: [.font: font]).size().width + MenuBarLabel.spacing
         #expect(image.size.width + textWidth <= MenuBarLabel.width, "\(symbol) \(text): \(image.size.width + textWidth) pt")
+        #expect(MenuBarLabel.image(symbol: symbol, text: text).size.width == MenuBarLabel.width)
     }
 }
 

@@ -67,6 +67,13 @@ func sampleRendersAt320Points(name: String) throws {
     #expect(PopoverFormat.barColor(100) == .red)
 }
 
+@Test func stillAvailableShowsWhatIsLeft() {
+    let weekly = DisplaySnapshot.Limit(name: "weekly", usedPercent: 18, resetsAt: nil, observedAt: now)
+    let fiveHour = DisplaySnapshot.Limit(name: "5-hour", usedPercent: 40.6, resetsAt: nil, observedAt: now)
+    #expect(PopoverFormat.stillAvailable(.codex, weekly) == "Codex still available: 82% left this week")
+    #expect(PopoverFormat.stillAvailable(.claudeCode, fiveHour) == "Claude Code still available: 60% left in this 5-hour window")
+}
+
 @Test func links() {
     #expect(Links.feedback.host == "tally.so")
     #expect(Links.repository.host == "github.com")
