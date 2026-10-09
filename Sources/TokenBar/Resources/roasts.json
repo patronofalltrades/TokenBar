@@ -174,7 +174,7 @@
     },
     {
       "id": "tuition-02",
-      "text": "{tuition_percent} of your MBA tuition, paid in tokens. The ROI case writes itself.",
+      "text": "Your finance professor would call this a sunk cost. Your AI calls it a Tuesday.",
       "category": "tuition",
       "locale": "en"
     },

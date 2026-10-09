@@ -151,9 +151,9 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
 @Test func tuitionShowsTheShareOfTuition() {
     let s = Fixture(index: .tuition).build([snapshot([record(eur: 46.80, output: 200_000)], limits: [limit(62)])])
     #expect(s.menuBarText == "0.04%" && s.menuBarSymbol == "tuition")
-    #expect(s.indexLine == "0.04% of your MBA tuition, in tokens (since install)" && s.indexEmoji == "🎓")
+    #expect(s.indexLine == "0.04% of your MBA tuition, in tokens" && s.indexEmoji == "🎓")
     #expect(MenuBarLabel.voiceOverLabel(s, now: noon)
-            == "TokenBar. Claude Code, 62 percent of 5-hour limit. 0.04% of your MBA tuition, in tokens (since install).")
+            == "TokenBar. Claude Code, 62 percent of 5-hour limit. 0.04% of your MBA tuition, in tokens.")
     #expect(s.indexDetail == nil)  // less than 1 day since install
 }
 

@@ -99,8 +99,9 @@ private func withSelector(_ roasts: [Roast], seed: UInt64 = 1, _ body: (inout Ro
     #expect(fires(.spend) { $0.costEUR = 20.01 })
     #expect(!fires(.spend) { $0.costEUR = 20 })
     #expect(fires(.career) { _ in })
-    #expect(fires(.tuition) { $0.daysOfData = 7 })
-    #expect(!fires(.tuition) { $0.daysOfData = 6 })
+    #expect(fires(.tuition) { $0.daysOfData = 7; $0.tuitionPercent = "0.04%" })
+    #expect(!fires(.tuition) { $0.daysOfData = 6; $0.tuitionPercent = "0.04%" })
+    #expect(!fires(.tuition) { $0.daysOfData = 7 })               // not the Tuition Meter
     #expect(fires(.provider) { $0.providersToday = ["codex"] })
     #expect(!fires(.provider) { _ in })
     #expect(fires(.water) { $0.water = "22 L" })
@@ -201,6 +202,7 @@ private func withSelector(_ roasts: [Roast], seed: UInt64 = 1, _ body: (inout Ro
     withSelector([roast("tuition-1", "{tuition_years}", .tuition)]) { selector in
         var t = state()
         t.daysOfData = 7
+        t.tuitionPercent = "0.04%"
         #expect(selector.roast(for: t) == nil)
         t.tuitionYears = "412 years"
         #expect(selector.roast(for: t) == "412 years")

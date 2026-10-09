@@ -123,7 +123,7 @@ struct RoastState {
             }
         case .spend: return (costEUR ?? 0) > 20
         case .career: return true
-        case .tuition: return daysOfData >= 7
+        case .tuition: return daysOfData >= 7 && tuitionPercent != nil  // Tuition Meter only
         case .provider: return !providersToday.isEmpty
         case .water: return water != nil
         }

@@ -354,7 +354,7 @@ enum PopoverSamples {
     /// The headline, the second line, the calculation and the menu bar value of each choice, for the samples.
     private static let lines: [IndexChoice: (line: String, detail: String, math: String, symbol: String, emoji: String, bar: String)] = [
         .cafe: ("3.4 cafés con leche today", "12 this week", CafeIndex.cafeMath(costEUR: Decimal(string: "6.12")!, unit: sampleUnit), "cafe", "☕", "3.4"),
-        .tuition: ("0.04% of your MBA tuition, in tokens (since install)", "At this pace, you'll burn through it by the year 4210.",
+        .tuition: ("0.04% of your MBA tuition, in tokens", "At this pace, you'll burn through it by the year 4210.",
                    CafeIndex.tuitionMath(spendEUR: Decimal(string: "45.60")!, tuition: sampleTuition),
                    "tuition", "🎓", "0.04%"),
         .water: ("22 L of water today", "15 bottles (1.5 L) · 98 L this week",
@@ -373,7 +373,7 @@ enum PopoverSamples {
     static let normal = snapshot(.normal, rows: [claude(62), codex],
                                  roast: "The protagonist has 38% of Opus left and a 9 AM deadline. Discuss.")
     static let tuition = snapshot(.normal, rows: [claude(62), codex], index: .tuition,
-                                  roast: "0.04% of your MBA tuition, paid in tokens. The ROI case writes itself.")
+                                  roast: "Your finance professor would call this a sunk cost. Your AI calls it a Tuesday.")
     static let water = snapshot(.normal, rows: [claude(62), codex], index: .water,
                                 roast: "Your prompts drank 22 L of water today. Somewhere a cooling tower is writing its own case study.")
     static let warning = snapshot(.warning, rows: [claude(87), codex],
