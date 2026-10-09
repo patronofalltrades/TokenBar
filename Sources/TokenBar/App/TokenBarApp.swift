@@ -38,6 +38,9 @@ struct TokenBarApp: App {
     init() {
         // `swift run` has no Info.plist, so LSUIElement has no effect there. The accessory policy hides the Dock icon.
         NSApplication.shared.setActivationPolicy(.accessory)
+        // The task runs after launch, so the window can come to the front. Refresh shows the new bar style at once.
+        let model = model
+        Task { Onboarding.showIfNeeded { Task { await model.refresh() } } }
     }
 
     var body: some Scene {
