@@ -8,7 +8,7 @@ struct JSONLTailReader: Sendable {
         var device: dev_t
         var inode: ino_t
         var offset: UInt64
-        var partial = Data()
+        var partial: [UInt8] = []
     }
 
     private var files: [String: FileState] = [:]
@@ -44,15 +44,32 @@ struct JSONLTailReader: Sendable {
         }
         guard size != state.offset || restarted else { return false }
 
-        let handle = try FileHandle(forReadingFrom: url)
-        defer { try? handle.close() }
-        try handle.seek(toOffset: state.offset)
-        while let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty {
-            state.offset += UInt64(chunk.count)
-            // The last piece is the bytes after the last newline: empty or a partial line.
-            var pieces = (state.partial + chunk).split(separator: 0x0A, omittingEmptySubsequences: false)
-            state.partial = Data(pieces.removeLast())
-            for line in pieces where !line.isEmpty { try body(Data(line)) }
+        // POSIX reads into one reused buffer. FileHandle gave a new autoreleased Data for each chunk.
+        let fd = open(path, O_RDONLY)
+        guard fd >= 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+        defer { close(fd) }
+        let buffer = UnsafeMutableRawBufferPointer.allocate(byteCount: chunkSize, alignment: 1)
+        defer { buffer.deallocate() }
+        let base = buffer.baseAddress!
+
+        while true {
+            let count = pread(fd, base, chunkSize, off_t(state.offset))
+            if count < 0 { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+            if count == 0 { break }
+            state.offset += UInt64(count)
+            var start = 0
+            while let match = memchr(base + start, 0x0A, count - start) {
+                let end = base.distance(to: match)
+                if state.partial.isEmpty {
+                    if end > start { try body(Data(bytes: base + start, count: end - start)) }
+                } else {
+                    state.partial.append(contentsOf: buffer[start..<end])
+                    try body(Data(state.partial))
+                    state.partial = []
+                }
+                start = end + 1
+            }
+            state.partial.append(contentsOf: buffer[start..<count])
         }
         files[path] = state
         return restarted

@@ -97,4 +97,21 @@ import Testing
         #expect(try read().lines == ["partial"])
         try FileManager.default.removeItem(at: url)
     }
+
+    @Test mutating func handlesNewlineAtChunkEndAndLongLines() throws {
+        reader = JSONLTailReader(chunkSize: 4)
+        // "abc\n" ends exactly at the first chunk end. The second line is longer than two chunks.
+        // Only "\n" ends a line, so "\r" stays in the line.
+        try write("abc\n0123456789\nxy\r\n")
+        #expect(try read().lines == ["abc", "0123456789", "xy\r"])
+        try FileManager.default.removeItem(at: url)
+    }
+
+    @Test mutating func throwingBodyKeepsOldState() throws {
+        try write("a\nb\n")
+        struct Stop: Error {}
+        #expect(throws: Stop.self) { try reader.readNewLines(at: url) { _ in throw Stop() } }
+        #expect(try read().lines == ["a", "b"])
+        try FileManager.default.removeItem(at: url)
+    }
 }
