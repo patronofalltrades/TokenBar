@@ -77,23 +77,25 @@ struct DisplayBuilder {
         let waterML = index == .water && outputToday > 0 ? water.ml(outputTokens: outputToday) : nil
         let tuitionSpend = index == .tuition ? spend : nil
         // The popover headline and its second line (DRD 3.1). They show also at zero, unlike the menu bar value.
-        let line: (text: String, detail: String?, symbol: String, emoji: String)?
+        let line: (text: String, detail: String?, math: String, symbol: String, emoji: String)?
         switch hasData ? index : nil {
         case .cafe:
             let day = pick ?? CafeIndex.format(0, unit: cafe.units[0])
             let week = CafeIndex.format(costWeek / day.unit.priceEUR, unit: day.unit)
-            line = ("\(day.text) today", "\(week.value) this week", IndexChoice.cafe.rawValue, day.unit.emoji)
+            line = ("\(day.text) today", "\(week.value) this week", CafeIndex.cafeMath(costEUR: costToday, unit: day.unit),
+                    IndexChoice.cafe.rawValue, day.unit.emoji)
         case .tuition:
             let first = tuition.defaults.object(forKey: TuitionTotal.firstLaunchKey) as? Date
             line = (CafeIndex.tuitionLine(spendEUR: spend ?? 0, tuition: cafe.tuition),
                     first.flatMap { CafeIndex.burnLine(spendEUR: spend ?? 0, days: now.timeIntervalSince($0) / 86_400,
                                                        tuition: cafe.tuition, year: calendar.component(.year, from: now)) },
+                    CafeIndex.tuitionMath(spendEUR: spend ?? 0, tuition: cafe.tuition),
                     IndexChoice.tuition.rawValue, "🎓")
         case .water:
             let ml = water.ml(outputTokens: outputToday)
             let week = "\(WaterData.amount(water.ml(outputTokens: outputWeek))) this week"
             line = ("\(WaterData.amount(ml)) of water today", ml > 0 ? "\(water.equivalent(ml: ml)) · \(week)" : week,
-                    IndexChoice.water.rawValue, "💧")
+                    water.math(outputTokens: outputToday), IndexChoice.water.rawValue, "💧")
         case nil: line = nil
         }
 
@@ -131,7 +133,7 @@ struct DisplayBuilder {
         return DisplaySnapshot(
             state: state, index: index, menuBarText: text, menuBarSymbol: symbol, rows: rows,
             indexLine: line?.text, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
-            roast: roast, lastRefresh: lastRefresh)
+            indexMath: line?.math, roast: roast, lastRefresh: lastRefresh)
     }
 
     static func isNotInstalled(_ error: any Error) -> Bool {

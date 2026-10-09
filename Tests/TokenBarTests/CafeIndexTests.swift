@@ -222,3 +222,12 @@ private struct Clock {
     let perDay = tuition.priceEUR / 365
     #expect(c.total.years(now: c.day(10), dailyCostsEUR: c.costs(0...9, perDay), tuition: tuition) == "1 year")
 }
+
+/// D47: the calculation lines.
+@Test func mathLines() throws {
+    #expect(CafeIndex.cafeMath(costEUR: Decimal(string: "6.12")!, unit: unit("cafe_con_leche")) == "€6.12 of tokens ÷ €1.80 per café con leche")
+    #expect(CafeIndex.tuitionMath(spendEUR: Decimal(string: "45.6")!, tuition: tuition) == "€45.60 of tokens since install ÷ €114,000 MBA tuition")
+    #expect(CafeIndex.euro(0) == "€0.00")
+    #expect(CafeIndex.euro(Decimal(string: "1234.6")!) == "€1,235")
+    #expect(try WaterData.shipped().math(outputTokens: 195_556) == "195,556 output tokens × 0.1125 mL each (Mistral estimate)")
+}

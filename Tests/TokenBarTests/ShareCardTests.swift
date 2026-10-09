@@ -9,6 +9,7 @@ private let secret = "SECRET-MARKER"
     #expect(ShareCard.text(PopoverSamples.normal) == """
         ☕ 3.4 cafés con leche today
         12 this week
+        €6.12 of tokens ÷ €1.80 per café con leche
 
         “The protagonist has 38% of Opus left and a 9 AM deadline. Discuss.”
 
@@ -20,6 +21,7 @@ private let secret = "SECRET-MARKER"
     #expect(ShareCard.text(PopoverSamples.tuition) == """
         🎓 0.04% of your MBA tuition, in tokens (since install)
         At this pace, you'll burn through it by the year 4210.
+        €45.60 of tokens since install ÷ €114,000 MBA tuition
 
         “0.04% of your MBA tuition, paid in tokens. The ROI case writes itself.”
 
@@ -31,6 +33,7 @@ private let secret = "SECRET-MARKER"
     #expect(ShareCard.text(PopoverSamples.water) == """
         💧 22 L of water today
         15 bottles (1.5 L) · 98 L this week
+        195,556 output tokens × 0.1125 mL each (Mistral estimate)
 
         “Your prompts drank 22 L of water today. Somewhere a cooling tower is writing its own case study.”
 

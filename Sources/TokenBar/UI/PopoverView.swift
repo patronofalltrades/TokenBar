@@ -93,6 +93,10 @@ struct PopoverView: View {
                     Text(detail).font(.callout)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                if let math = snapshot.indexMath {
+                    Text(math).font(.caption.monospacedDigit())
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if PopoverFormat.notCounted(snapshot) {
                     Text("Some models not counted").font(.caption2)
                 }
@@ -343,12 +347,18 @@ enum PopoverSamples {
         limits: [.init(name: "weekly", usedPercent: 18, resetsAt: later(60 * 96), observedAt: ago(10))],
         hasUnpricedModels: true)
 
-    /// The headline, the second line and the menu bar value of each choice, for the samples.
-    private static let lines: [IndexChoice: (line: String, detail: String, symbol: String, emoji: String, bar: String)] = [
-        .cafe: ("3.4 cafés con leche today", "12 this week", "cafe", "☕", "3.4"),
+    private static let cafeData = try! CafeData.shipped()  // the shipped file has a test
+    private static let sampleUnit = cafeData.units.first { $0.id == "cafe_con_leche" }!
+    private static let sampleTuition = cafeData.tuition
+
+    /// The headline, the second line, the calculation and the menu bar value of each choice, for the samples.
+    private static let lines: [IndexChoice: (line: String, detail: String, math: String, symbol: String, emoji: String, bar: String)] = [
+        .cafe: ("3.4 cafés con leche today", "12 this week", CafeIndex.cafeMath(costEUR: Decimal(string: "6.12")!, unit: sampleUnit), "cafe", "☕", "3.4"),
         .tuition: ("0.04% of your MBA tuition, in tokens (since install)", "At this pace, you'll burn through it by the year 4210.",
+                   CafeIndex.tuitionMath(spendEUR: Decimal(string: "45.60")!, tuition: sampleTuition),
                    "tuition", "🎓", "0.04%"),
-        .water: ("22 L of water today", "15 bottles (1.5 L) · 98 L this week", "water", "💧", "22 L"),
+        .water: ("22 L of water today", "15 bottles (1.5 L) · 98 L this week",
+                 "195,556 output tokens × 0.1125 mL each (Mistral estimate)", "water", "💧", "22 L"),
     ]
 
     private static func snapshot(_ state: DisplaySnapshot.State, rows: [DisplaySnapshot.ProviderRow],
@@ -357,7 +367,7 @@ enum PopoverSamples {
         return DisplaySnapshot(
             state: state, index: index, menuBarText: line?.bar ?? "62%", menuBarSymbol: line?.symbol ?? "circle.lefthalf.filled",
             rows: rows, indexLine: line?.line, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
-            roast: roast, lastRefresh: ago(2))
+            indexMath: line?.math, roast: roast, lastRefresh: ago(2))
     }
 
     static let normal = snapshot(.normal, rows: [claude(62), codex],
