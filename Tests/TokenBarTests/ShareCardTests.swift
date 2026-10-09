@@ -19,11 +19,11 @@ private let secret = "SECRET-MARKER"
 
 @Test func tuitionCardText() {
     #expect(ShareCard.text(PopoverSamples.tuition) == """
-        🎓 0.04% of your MBA tuition, in tokens (since install)
+        🎓 0.04% of your MBA tuition, in tokens
         At this pace, you'll burn through it by the year 4210.
         €45.60 of tokens since install ÷ €114,000 MBA tuition
 
-        “0.04% of your MBA tuition, paid in tokens. The ROI case writes itself.”
+        “Your finance professor would call this a sunk cost. Your AI calls it a Tuesday.”
 
         TokenBar · github.com/patronofalltrades/TokenBar
         """)

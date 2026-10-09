@@ -110,7 +110,7 @@ func formatsValue(value: String, expected: String) {
 @Test func tuitionPercentAndLine() {
     let spend = tuition.priceEUR * Decimal(string: "0.0004")!
     #expect(CafeIndex.tuitionPercent(spendEUR: spend, tuition: tuition) == "0.04%")
-    #expect(CafeIndex.tuitionLine(spendEUR: spend, tuition: tuition) == "0.04% of your MBA tuition, in tokens (since install)")
+    #expect(CafeIndex.tuitionLine(spendEUR: spend, tuition: tuition) == "0.04% of your MBA tuition, in tokens")
     #expect(CafeIndex.tuitionPercent(spendEUR: 0, tuition: tuition) == "0.00%")
 }
 

@@ -100,7 +100,7 @@ The user selects one index in onboarding (Section 4.5). The user can change it i
 | Index | Normal state | Popover line | Data |
 |---|---|---|---|
 | Café Index | `☕ 3.4` | `☕ 3.4 cafés con leche today`, and a small line: `12 this week` | Today's cost (Section 7.6) |
-| Tuition Meter | `🎓 0.04%` | `🎓 0.04% of your MBA tuition, in tokens (since install)`, and a small line: `At this pace, you'll burn through it by the year 2033.` | The tuition benchmark: spend since install (Section 7.6) |
+| Tuition Meter | `🎓 0.04%` | `🎓 0.04% of your MBA tuition, in tokens`, and a small line: `At this pace, you'll burn through it by the year 2033.` | The tuition benchmark: spend since install (Section 7.6) |
 | Water Footprint | `💧 22 L` | `💧 22 L of water today`, and a small line: `15 bottles (1.5 L) · 98 L this week` | Today's output tokens (Section 7.8) |
 
 Under the small line, the popover and the share card show the calculation of the headline (D47):
@@ -483,7 +483,7 @@ Placeholders: `{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{
 | `weekday` | Monday before 10:00, Friday after 18:00, or Saturday and Sunday. |
 | `spend` | Cost today is above €20. |
 | `career` | Any time. Recruiting, consulting and banking jokes. |
-| `tuition` | 7 or more days of data. Uses the tuition benchmark (Section 7.6). |
+| `tuition` | 7 or more days of data, and the Tuition Meter is the selected index (D48). Uses the tuition benchmark (Section 7.6). |
 | `provider` | A provider-specific condition, for example Codex use only. |
 | `water` | Water Footprint selected and output tokens today. Uses `{water}` (Section 7.8). |
 
@@ -533,7 +533,7 @@ Selection order:
 | career-04 | career | `The model gave you three frameworks and a 2x2. You are now ready for consulting.` |
 | provider-01 | provider | `Codex wrote 400 lines today. Your commit message was "fix".` |
 | tuition-01 | tuition | `At your current burn rate, your tokens will cover your MBA tuition in {tuition_years}. The financing office is not impressed.` |
-| tuition-02 | tuition | `{tuition_percent} of your MBA tuition, paid in tokens. The ROI case writes itself.` |
+| tuition-02 | tuition | `Your finance professor would call this a sunk cost. Your AI calls it a Tuesday.` (D48) |
 | tuition-03 | tuition | `You have now spent {tuition_percent} of an MBA on asking a model to explain the MBA.` |
 | provider-02 | provider | `Claude and Codex both used today. Diversified portfolio. Your finance professor would approve of the risk profile, not the cost.` |
 | water-01 | water | `Your prompts drank {water} of water today. Somewhere a cooling tower is writing its own case study.` |
@@ -600,7 +600,7 @@ TokenBar calculates two values from it:
 
 Rules:
 
-1. Show the tuition benchmark as the popover line of the Tuition Meter only (D41). Format: `🎓 {tuition_percent} of your {label}, in tokens (since install)`. Example: `🎓 0.04% of your MBA tuition, in tokens (since install)`. Code takes the label from the data file. Code has no hardcoded "IESE" string.
+1. Show the tuition benchmark as the popover line of the Tuition Meter only (D41). Format: `🎓 {tuition_percent} of your {label}, in tokens`. Example: `🎓 0.04% of your MBA tuition, in tokens`. Code takes the label from the data file. Code has no hardcoded "IESE" string.
 5. Tuition Meter menu bar value, in 68 pt: `0.04%` and `9.99%` below 10, `12.3%` below 100, else `123%`. Below 0.005%, show `<.01%`. `<0.01%` does not fit 68 pt.
 6. Tuition Meter burn line, under the tuition line in the popover and on the share card. Year = current year + (tuition − spend since install) ÷ (spend since install ÷ days since install) ÷ 365.25, rounded to a whole year. Text: `At this pace, you'll burn through it by the year 2033.`
    - Less than 1 day since install, or zero spend: no line.

@@ -138,7 +138,7 @@ enum CafeIndex {
     }
 
     static func tuitionLine(spendEUR: Decimal, tuition: Tuition) -> String {
-        "\(tuitionPercent(spendEUR: spendEUR, tuition: tuition)) of your \(tuition.label), in tokens (since install)"
+        "\(tuitionPercent(spendEUR: spendEUR, tuition: tuition)) of your \(tuition.label), in tokens"
     }
 
     /// The second Tuition Meter line (D41): the year when the spend since install reaches tuition, at the
