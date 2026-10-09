@@ -140,7 +140,7 @@ func limitHitShowsTimeToReset(style: BarStyle) {
     let s = Fixture(style: .funny).build([snapshot([record(eur: 6.12)], limits: [limit(62)])])
     #expect(s.menuBarText == "3.4" && s.menuBarSymbol == "cup.and.saucer.fill")
     #expect(s.cafeLine == "Today = 3.4 cafés con leche" && s.cafeSymbol == "cup.and.saucer.fill")
-    #expect(s.tuitionLine?.hasPrefix("🎓 ") == true)
+    #expect(s.tuitionLine?.hasSuffix("tuition, in tokens") == true)
     #expect(s.roast != nil)
     #expect(MenuBarLabel.voiceOverLabel(s, now: noon) == "TokenBar. Claude Code, 62 percent of 5-hour limit. Today, 3.4 cafés con leche.")
 }
