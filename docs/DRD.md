@@ -632,7 +632,7 @@ The share card lets the user post the joke in a class chat. It is the main word-
 5. The card does not contain the user name, file paths, project names or prompt content. It shows model names only if the roast uses `{model}`.
 6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat." The confirmation replaces the "Prices verified" line for 3 seconds.
 7. Before the user selects an index, there is no card. The popover has no **Share** button (D42).
-8. The image is 360 pt wide, at scale 2, with the light appearance. It looks like a café receipt: cream paper, espresso text, a dashed rule after each line and a monospaced footer (D44). The clipboard text uses the emoji of the index: the café unit emoji (Section 7.6), `🎓` or `💧`.
+8. The image is 360 pt wide, at scale 2, with the light appearance. It looks like a receipt: white paper, near-black text, the first line in IESE red, a dashed rule after each line and a monospaced footer (D45). The clipboard text uses the emoji of the index: the café unit emoji (Section 7.6), `🎓` or `💧`.
 
 ```
 ┌──────────────────────────────┐
@@ -674,28 +674,31 @@ Rules:
 
 ### 8.1 Color
 
-Use the café palette (`UI/Theme.swift`, D44). Each popover color has a light value and a dark value. Ink text at all three levels has a WCAG AA contrast of 4.5:1 or more on paper and on the latte surface, in both modes.
+Use the IESE palette (`UI/Theme.swift`, D45): IESE red, white and near-black #1E1E1E, from the iese.edu style sheet. Each popover color has a light value and a dark value. Ink text at all three levels has a WCAG AA contrast of 4.5:1 or more on paper, in both modes.
 
 | Use | Color | Light (sRGB) | Dark (sRGB) |
 |---|---|---|---|
-| Popover and onboarding background | `Theme.paper` | 0.97, 0.94, 0.90 (cream) | 0.13, 0.09, 0.06 (espresso) |
-| Primary text | `Theme.ink` (15:1 on paper) | 0.13, 0.08, 0.06 | 0.97, 0.94, 0.90 |
+| Popover and onboarding background | `Theme.paper` | 1, 1, 1 (white) | 0.118, 0.118, 0.118 (#1E1E1E) |
+| Primary text | `Theme.ink` (16:1 on paper) | 0.118, 0.118, 0.118 | 0.96, 0.96, 0.96 |
 | Secondary text, reset times | `Theme.secondary`: ink at 75% | | |
 | Tertiary text, "Prices verified" | `Theme.tertiary`: ink at 65% | | |
-| Hairlines, index headline surface | `Theme.latte` | 0.89, 0.84, 0.75 | 0.26, 0.18, 0.13 |
-| Accent: selection, toggles, buttons | `Theme.accent` (crema amber) | 0.62, 0.40, 0.12 | 0.76, 0.53, 0.22 |
+| Hairlines | `Theme.rule` | 0.85, 0.85, 0.85 | 0.28, 0.28, 0.28 |
+| Index headline surface, with white text (5:1) | `Theme.red` (IESE red) | 0.878, 0, 0 | same |
+| Title "TokenBar", selection, toggles, buttons | `Theme.accent` | 0.878, 0, 0 | 1.00, 0.27, 0.27 |
 | Bar track | `Color.secondary.opacity(0.2)` | | |
-| Bar fill below 80% | `Theme.coffee` | 0.42, 0.27, 0.17 (espresso) | 0.80, 0.70, 0.60 (latte) |
+| Bar fill below 80% | `Theme.bar` | 0.118, 0.118, 0.118 | 0.92, 0.92, 0.92 |
 | Bar fill 80–99% | `Theme.warning` (orange) | 0.86, 0.40, 0.02 | 1.00, 0.58, 0.12 |
-| Bar fill 100% | `Theme.danger` (red) | 0.75, 0.10, 0.12 | 1.00, 0.30, 0.30 |
+| Bar fill 100% | `Theme.danger` (dark red) | 0.70, 0, 0 | 1.00, 0.30, 0.30 |
 | Roast text | `Theme.secondary`, italic, in typographic quotes. No quote icon. | | |
-| Share card background and text | `Theme.cream` and `Theme.espresso`, light only (Section 7.7) | 0.97, 0.94, 0.90 and 0.13, 0.08, 0.06 | same |
+| Share card | `Theme.cardPaper` (white) and `Theme.cardInk`, light only (Section 7.7). The first line is `Theme.red`. | | same |
 | Menu bar item | Template image. No color. | | |
+
+Pure #FF0000 gives white text only 4:1, below WCAG AA for small text. Thus `Theme.red` is a little darker.
 
 Rules:
 
 1. Use `Theme.hairline` between popover sections. Do not use `Divider`.
-2. The index headline has a quiet latte surface, as a café tab.
+2. The index headline is a solid IESE red surface with white text.
 3. The paper fills the full popover. No window material shows at the edge.
 4. The three bar colors have an sRGB distance of 0.3 or more in each mode. A test checks the distance.
 
