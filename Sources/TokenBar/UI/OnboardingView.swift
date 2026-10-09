@@ -114,7 +114,7 @@ struct OnboardingView: View {
             }
             Spacer(minLength: 0)
             HStack {
-                Text("Step \(index + 1) of \(steps.count)").font(.caption).foregroundStyle(.secondary)
+                Text("Step \(index + 1) of \(steps.count)").font(.caption).foregroundStyle(Theme.secondary)
                 Spacer()
                 if index > 0 { Button("Back") { index -= 1 } }
                 if step == .finish {
@@ -130,6 +130,7 @@ struct OnboardingView: View {
         .padding(24)
         .frame(width: 440, alignment: .topLeading)
         .frame(minHeight: 340, alignment: .top)
+        .onPaper()
         .symbolRenderingMode(.hierarchical)
     }
 
@@ -149,14 +150,14 @@ struct OnboardingView: View {
             Text("TokenBar cannot see web chat, such as claude.ai or ChatGPT. It sees only Claude Code and Codex on this Mac.")
                 .fixedSize(horizontal: false, vertical: true)
             Text("Your data stays on this Mac. TokenBar reads token counts, not your prompts.")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(Theme.secondary)
         }
     }
 
     private func found(_ name: String, _ isFound: Bool) -> some View {
         Label(isFound ? "\(name): found" : "\(name): not found",
               systemImage: isFound ? "checkmark.circle.fill" : "circle.dashed")
-            .foregroundStyle(isFound ? .primary : .secondary)
+            .foregroundStyle(isFound ? Theme.ink : Theme.secondary)
     }
 
     // DRD 4.5. Each option shows the real menu bar image.
@@ -168,7 +169,7 @@ struct OnboardingView: View {
                 option(value, sample: preview.sample, detail: preview.detail)
             }
             Text("TokenBar shows one index. Warnings always show the real number. You can change the index or turn off roasts later in Settings.")
-                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .font(.caption).foregroundStyle(Theme.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -183,7 +184,7 @@ struct OnboardingView: View {
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 5))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(value.title).font(.headline)
-                    Text(detail).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    Text(detail).foregroundStyle(Theme.secondary).fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
                 Image(systemName: selected ? "largecircle.fill.circle" : "circle")
@@ -191,7 +192,7 @@ struct OnboardingView: View {
             .padding(8)
             .contentShape(Rectangle())
             .overlay(RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(selected ? Color.accentColor : Color.secondary.opacity(0.3), lineWidth: selected ? 2 : 1))
+                .strokeBorder(selected ? Theme.accent : Color.secondary.opacity(0.3), lineWidth: selected ? 2 : 1))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -219,7 +220,7 @@ struct OnboardingView: View {
                 Text(connectError).font(.caption).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
             }
             Text("Your current Claude Code status line keeps working. Restart open Claude Code sessions. You can connect or disconnect later in Settings.")
-                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .font(.caption).foregroundStyle(Theme.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -244,7 +245,7 @@ struct OnboardingView: View {
             Text("Click TokenBar in the menu bar to see your usage.")
                 .fixedSize(horizontal: false, vertical: true)
             Toggle("Open TokenBar at login", isOn: $launchAtLogin)
-            Text("You can change all of this later in Settings.").font(.caption).foregroundStyle(.secondary)
+            Text("You can change all of this later in Settings.").font(.caption).foregroundStyle(Theme.secondary)
         }
     }
 }

@@ -632,7 +632,7 @@ The share card lets the user post the joke in a class chat. It is the main word-
 5. The card does not contain the user name, file paths, project names or prompt content. It shows model names only if the roast uses `{model}`.
 6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat." The confirmation replaces the "Prices verified" line for 3 seconds.
 7. Before the user selects an index, there is no card. The popover has no **Share** button (D42).
-8. The image is 360 pt wide, at scale 2, with a white background and the light appearance. The clipboard text uses the emoji of the index: the café unit emoji (Section 7.6), `🎓` or `💧`.
+8. The image is 360 pt wide, at scale 2, with the light appearance. It looks like a café receipt: cream paper, espresso text, a dashed rule after each line and a monospaced footer (D44). The clipboard text uses the emoji of the index: the café unit emoji (Section 7.6), `🎓` or `💧`.
 
 ```
 ┌──────────────────────────────┐
@@ -674,18 +674,30 @@ Rules:
 
 ### 8.1 Color
 
-Use semantic system colors only. They adapt to light mode, dark mode and Increase Contrast.
+Use the café palette (`UI/Theme.swift`, D44). Each popover color has a light value and a dark value. Ink text at all three levels has a WCAG AA contrast of 4.5:1 or more on paper and on the latte surface, in both modes.
 
-| Use | Color |
-|---|---|
-| Primary text | `Color.primary` |
-| Secondary text, reset times | `Color.secondary` |
-| Bar track | `Color.secondary.opacity(0.2)` |
-| Bar fill below 80% | `Color.accentColor` |
-| Bar fill 80–99% | `Color.orange` |
-| Bar fill 100% | `Color.red` |
-| Roast text | `Color.secondary` |
-| Menu bar item | Template image. No color. |
+| Use | Color | Light (sRGB) | Dark (sRGB) |
+|---|---|---|---|
+| Popover and onboarding background | `Theme.paper` | 0.97, 0.94, 0.90 (cream) | 0.13, 0.09, 0.06 (espresso) |
+| Primary text | `Theme.ink` (15:1 on paper) | 0.13, 0.08, 0.06 | 0.97, 0.94, 0.90 |
+| Secondary text, reset times | `Theme.secondary`: ink at 75% | | |
+| Tertiary text, "Prices verified" | `Theme.tertiary`: ink at 65% | | |
+| Hairlines, index headline surface | `Theme.latte` | 0.89, 0.84, 0.75 | 0.26, 0.18, 0.13 |
+| Accent: selection, toggles, buttons | `Theme.accent` (crema amber) | 0.62, 0.40, 0.12 | 0.76, 0.53, 0.22 |
+| Bar track | `Color.secondary.opacity(0.2)` | | |
+| Bar fill below 80% | `Theme.coffee` | 0.42, 0.27, 0.17 (espresso) | 0.80, 0.70, 0.60 (latte) |
+| Bar fill 80–99% | `Theme.warning` (orange) | 0.86, 0.40, 0.02 | 1.00, 0.58, 0.12 |
+| Bar fill 100% | `Theme.danger` (red) | 0.75, 0.10, 0.12 | 1.00, 0.30, 0.30 |
+| Roast text | `Theme.secondary`, italic, in typographic quotes. No quote icon. | | |
+| Share card background and text | `Theme.cream` and `Theme.espresso`, light only (Section 7.7) | 0.97, 0.94, 0.90 and 0.13, 0.08, 0.06 | same |
+| Menu bar item | Template image. No color. | | |
+
+Rules:
+
+1. Use `Theme.hairline` between popover sections. Do not use `Divider`.
+2. The index headline has a quiet latte surface, as a café tab.
+3. The paper fills the full popover. No window material shows at the edge.
+4. The three bar colors have an sRGB distance of 0.3 or more in each mode. A test checks the distance.
 
 Do not use a brand color for a provider. Do not use green for "good". Low usage is normal, not a success.
 
