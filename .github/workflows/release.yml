@@ -18,23 +18,26 @@ jobs:
       - run: scripts/build-app.sh "$GITHUB_REF_NAME"
       - run: |
           { echo 'SHA-256:'; echo '```'; cat SHA256SUMS; echo '```'; } > notes.md
-          gh release create "$GITHUB_REF_NAME" TokenBar.zip SHA256SUMS --title "$GITHUB_REF_NAME" --notes-file notes.md
+          # A version with a hyphen (v0.1.0-alpha.1) is a prerelease on GitHub.
+          pre=''; [[ "$GITHUB_REF_NAME" == *-* ]] && pre='--prerelease'
+          gh release create "$GITHUB_REF_NAME" TokenBar.zip SHA256SUMS --title "$GITHUB_REF_NAME" --notes-file notes.md $pre
         env:
           GH_TOKEN: ${{ github.token }}
-      # Trusted publishing needs Node 22.14.0 or later and npm 11.5.1 or later (TRD Section 13).
+      # Staged publishing needs Node 22.14.0 or later and npm 11.15.0 or later (TRD Section 13).
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm install -g 'npm@^11.5.1'
+      - run: npm install -g 'npm@^11.15.0'
       - run: |
           cp TokenBar.zip LICENSE npm/
           cd npm
           npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version
           # npm 11 stops a prerelease version (v0.1.0-alpha.1) without --tag. The alpha is the only channel, so use latest.
-          npm publish --provenance --access public --tag latest
+          # Staged publish needs no 2FA. The maintainer approves the stage on npmjs.com with 2FA (IES-218).
+          npm stage publish --provenance --access public --tag latest
         env:
           # BOOTSTRAP ONLY (IES-218). npm adds a trusted publisher only to a package that exists.
-          # The first publish uses this short-lived token. Remove this env block, the secret and the token
+          # The first stage uses this token. Remove this env block, the secret and the token
           # after the trusted publisher is set. npm tries OIDC first, then the token.
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
