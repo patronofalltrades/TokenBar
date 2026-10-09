@@ -16,6 +16,7 @@ struct PopoverView: View {
     /// Fixed time for previews and tests. Nil: the current time, updated each minute.
     var now: Date?
     @State private var listHeight: CGFloat = 0
+    @State private var copied = false
 
     var body: some View {
         TimelineView(.everyMinute) { context in
@@ -106,6 +107,9 @@ struct PopoverView: View {
                 footerButton("Settings", symbol: "gearshape", key: ",", action: actions.openSettings)
                 if snapshot.state != .noData {
                     footerButton("Refresh", symbol: "arrow.clockwise", key: "r", action: actions.refresh)
+                    // DRD 7.7. No keyboard shortcut in the DRD, so none here.
+                    Button(action: share) { Image(systemName: "square.and.arrow.up") }
+                        .buttonStyle(.borderless).help("Share").accessibilityLabel("Share")
                 }
                 Spacer()
                 if let last = snapshot.lastRefresh {
@@ -113,9 +117,23 @@ struct PopoverView: View {
                 }
                 footerButton("Quit TokenBar", symbol: "power", key: "q", action: actions.quit)
             }
-            Text("Prices verified \(snapshot.pricesVerified)").font(.caption2).foregroundStyle(.tertiary)
+            if copied {
+                Text("Copied. Paste it in your Section chat.").font(.caption2)
+            } else {
+                Text("Prices verified \(snapshot.pricesVerified)").font(.caption2).foregroundStyle(.tertiary)
+            }
         }
         .font(.caption)
+    }
+
+    /// The confirmation replaces the prices line for 3 s, so the popover height does not change.
+    private func share() {
+        guard ShareCard.copy(snapshot) else { return }
+        copied = true
+        Task {
+            try? await Task.sleep(for: .seconds(3))
+            copied = false
+        }
     }
 
     private func footerButton(_ title: String, symbol: String, key: KeyEquivalent,
@@ -336,6 +354,7 @@ enum PopoverSamples {
             state: state, barStyle: style, menuBarText: "62%", menuBarSymbol: "gauge.with.dots.needle.33percent",
             rows: rows, costTodayEUR: 6.10, costWeekEUR: 21.80,
             cafeLine: funny ? "Today = 3.4 cafés con leche" : nil, cafeSymbol: funny ? "cup.and.saucer.fill" : nil,
+            cafeEmoji: funny ? "☕" : nil,
             tuitionLine: funny ? "0.04% of your MBA tuition, in tokens" : nil,
             roast: funny ? roast : nil, lastRefresh: ago(2), pricesVerified: "2026-10-08")
     }
