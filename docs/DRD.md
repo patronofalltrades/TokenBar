@@ -103,6 +103,16 @@ The user selects one index in onboarding (Section 4.5). The user can change it i
 | Tuition Meter | `🎓 0.04%` | `🎓 0.04% of your MBA tuition, in tokens (since install)`, and a small line: `At this pace, you'll burn through it by the year 2033.` | The tuition benchmark: spend since install (Section 7.6) |
 | Water Footprint | `💧 22 L` | `💧 22 L of water today`, and a small line: `15 bottles (1.5 L) · 98 L this week` | Today's output tokens (Section 7.8) |
 
+Under the small line, the popover and the share card show the calculation of the headline (D47):
+
+| Index | Calculation line |
+|---|---|
+| Café Index | `€6.12 of tokens ÷ €1.80 per café con leche` |
+| Tuition Meter | `€45.60 of tokens since install ÷ €114,000 MBA tuition` |
+| Water Footprint | `195,556 output tokens × 0.1125 mL each (Mistral estimate)` |
+
+The calculation line is the only EUR text in the UI. The menu bar, VoiceOver and the roasts have no EUR (D42).
+
 In the Warning and Limit hit states, each index shows the limit value: `⚠ 87%` or `⌛ 1h48`.
 
 Rules:

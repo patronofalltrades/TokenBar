@@ -32,6 +32,7 @@ struct DisplaySnapshot: Equatable, Sendable {
     let indexSymbol: String?        // the index icon name for `indexLine` (`Icon`, D43)
     var indexEmoji: String? = nil   // emoji for the share card text (DRD 7.7)
     var indexDetail: String? = nil  // small second line: the unit equivalent and the week, or the burn year (DRD 3.1)
+    var indexMath: String? = nil    // the calculation of the headline. The only EUR text in the UI (D47).
     let roast: String?              // nil before the user picks an index, when roasts are off, or when none matches
     let lastRefresh: Date?
 }

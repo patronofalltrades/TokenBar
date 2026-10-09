@@ -15,13 +15,14 @@ enum ShareCard {
     /// "TokenBar · github.com/patronofalltrades/TokenBar".
     static let footer = "TokenBar · " + (Links.repository.host() ?? "") + Links.repository.path()
 
-    /// The card lines, without the footer: the selected index only (D41). No EUR (D42).
+    /// The card lines, without the footer: the selected index only (D41). EUR only in the calculation line (D47).
     /// No index yet gives no lines. The popover then has no Share button (DRD 7.7 rule 7).
     static func lines(_ s: DisplaySnapshot) -> [Line] {
         guard s.index != nil else { return [] }
         var lines: [Line] = []
         if let line = s.indexLine { lines.append(Line(text: line, symbol: s.indexSymbol, emoji: s.indexEmoji)) }
         if let detail = s.indexDetail { lines.append(Line(text: detail, symbol: "calendar")) }
+        if let math = s.indexMath { lines.append(Line(text: math, symbol: "function")) }
         if let roast = s.roast { lines.append(Line(text: "“\(roast)”", isRoast: true)) }
         return lines
     }

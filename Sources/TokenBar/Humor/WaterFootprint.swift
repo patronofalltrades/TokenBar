@@ -31,6 +31,16 @@ struct WaterData: Decodable, Sendable {
 
     func ml(outputTokens: Int) -> Double { Double(outputTokens) * mlPerOutputToken }
 
+    /// The calculation line (D47), for example "195,556 output tokens × 0.1125 mL each (Mistral estimate)".
+    func math(outputTokens: Int) -> String {
+        let f = NumberFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.numberStyle = .decimal
+        f.usesGroupingSeparator = true
+        f.groupingSize = 3
+        return "\(f.string(from: outputTokens as NSNumber) ?? "\(outputTokens)") output tokens × \(mlPerOutputToken) mL each (Mistral estimate)"
+    }
+
     /// The unit equivalent in the popover, for example "15 bottles (1.5 L)".
     /// The largest unit with a count of 1 or more, else the smallest unit.
     func equivalent(ml: Double) -> String {

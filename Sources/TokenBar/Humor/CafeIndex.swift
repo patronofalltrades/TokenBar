@@ -115,6 +115,28 @@ enum CafeIndex {
     }
 
     /// The popover line of the Tuition Meter (DRD 7.6 rule 1).
+    /// The calculation lines (D47): the only EUR text in the UI. For example "€6.12 of tokens ÷ €1.80 per café con leche".
+    static func cafeMath(costEUR: Decimal, unit: CafeUnit) -> String {
+        "\(euro(costEUR)) of tokens ÷ \(euro(unit.priceEUR)) per \(unit.singular)"
+    }
+
+    static func tuitionMath(spendEUR: Decimal, tuition: Tuition) -> String {
+        "\(euro(spendEUR)) of tokens since install ÷ \(euro(tuition.priceEUR)) \(tuition.label)"
+    }
+
+    /// "€6.12", "€45.60", "€114,000". Cents only below €1,000.
+    static func euro(_ value: Decimal) -> String {
+        let f = NumberFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.numberStyle = .decimal
+        f.usesGroupingSeparator = true
+        f.groupingSize = 3
+        let digits = value < 1000 ? 2 : 0
+        f.minimumFractionDigits = digits
+        f.maximumFractionDigits = digits
+        return "€" + (f.string(from: value as NSDecimalNumber) ?? "\(value)")
+    }
+
     static func tuitionLine(spendEUR: Decimal, tuition: Tuition) -> String {
         "\(tuitionPercent(spendEUR: spendEUR, tuition: tuition)) of your \(tuition.label), in tokens (since install)"
     }

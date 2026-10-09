@@ -98,8 +98,8 @@ private func popoverText(_ s: DisplaySnapshot) -> String {
     return ([s.indexLine, s.indexDetail, s.roast, s.menuBarText] + rows).compactMap { $0 }.joined(separator: "\n")
 }
 
-/// D42: no EUR in the popover and the share card, for each index and state. The samples and the
-/// builder with the shipped roasts cover high spend, which used to fill `{cost}`.
+/// D42, D47: no EUR in the popover and the share card, except in the calculation line, for each index and state.
+/// The samples and the builder with the shipped roasts cover high spend, which used to fill `{cost}`.
 @Test func noEuroInPopoverOrShareCard() throws {
     let suite = "NoEuro.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
@@ -129,7 +129,8 @@ private func popoverText(_ s: DisplaySnapshot) -> String {
         }
     }
     #expect(built.contains { $0.roast?.contains("API-equivalent") == false && $0.roast != nil })
-    for s in PopoverSamples.all.map(\.snapshot) + built {
+    for var s in PopoverSamples.all.map(\.snapshot) + built {
+        s.indexMath = nil  // D47: the calculation line is the only EUR text
         let text = [popoverText(s), ShareCard.text(s), MenuBarLabel.voiceOverLabel(s, now: now), s.menuBarText].joined(separator: "\n")
         for banned in ["€", "EUR", "euro", "API-equivalent", "Price unknown"] {
             #expect(!text.localizedCaseInsensitiveContains(banned), "\(banned) in: \(text)")
