@@ -207,6 +207,42 @@
       "text": "{water} today. The sustainability elective would like a word. Several, actually. All of them about you.",
       "category": "water",
       "locale": "en"
+    },
+    {
+      "id": "water-04",
+      "text": "{water} of water so your AI could write a LinkedIn post that starts with 'Humbled and honored'.",
+      "category": "water",
+      "locale": "en"
+    },
+    {
+      "id": "water-05",
+      "text": "{water} of water for a cover letter that opens with 'I have always been passionate about consulting'.",
+      "category": "water",
+      "locale": "en"
+    },
+    {
+      "id": "water-06",
+      "text": "Your AI drank {water} prepping your case interview. The interviewer will ask you to size the bottled water market.",
+      "category": "water",
+      "locale": "en"
+    },
+    {
+      "id": "water-07",
+      "text": "{water} for a 30-slide deck you will present in 4 minutes. Nobody reads the appendix. Not even the AI.",
+      "category": "water",
+      "locale": "en"
+    },
+    {
+      "id": "water-08",
+      "text": "Your AI sweated {water} today. You sweated more in your last cold call.",
+      "category": "water",
+      "locale": "en"
+    },
+    {
+      "id": "water-09",
+      "text": "{water} today. More than you drank in a week of coffee chats, and the AI got zero referrals either.",
+      "category": "water",
+      "locale": "en"
     }
   ]
 }
