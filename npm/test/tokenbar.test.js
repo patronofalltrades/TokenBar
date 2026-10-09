@@ -101,3 +101,47 @@ test('an unknown command prints usage and returns 1', () => {
   assert.strictEqual(main(['nope'], t.opts), 1);
   assert.match(t.out(), /Usage/);
 });
+
+// IES-223: uninstall undoes Claude Connect in the temporary home only.
+function claudeSettings(t, statusLine, previous) {
+  const dir = path.join(t.home, '.claude');
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, 'settings.json');
+  fs.writeFileSync(file, JSON.stringify({ model: 'opus', ...(statusLine ? { statusLine } : {}) }));
+  if (previous) {
+    const support = path.join(t.home, 'Library', 'Application Support', 'TokenBar');
+    fs.mkdirSync(support, { recursive: true });
+    fs.writeFileSync(path.join(support, 'statusline-previous.json'), JSON.stringify(previous));
+  }
+  return file;
+}
+const tokenbarLine = { type: 'command', command: "'/Users/x/Applications/TokenBar.app/Contents/MacOS/TokenBar' --statusline" };
+
+test('uninstall removes the TokenBar status line', () => {
+  const t = setup();
+  const file = claudeSettings(t, tokenbarLine);
+  assert.strictEqual(main(['uninstall'], t.opts), 0);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { model: 'opus' });
+  assert.ok(fs.existsSync(`${file}.tokenbar-uninstall-backup`));
+});
+
+test('uninstall restores the previous status line', () => {
+  const t = setup();
+  const mine = { type: 'command', command: 'my-line.sh' };
+  const file = claudeSettings(t, tokenbarLine, mine);
+  main(['uninstall'], t.opts);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(file, 'utf8')).statusLine, mine);
+  assert.ok(!fs.existsSync(path.join(t.home, 'Library', 'Application Support', 'TokenBar', 'statusline-previous.json')));
+});
+
+test('uninstall does not change another status line or a bad file', () => {
+  const t = setup();
+  const file = claudeSettings(t, { type: 'command', command: 'my-line.sh' });
+  const before = fs.readFileSync(file, 'utf8');
+  main(['uninstall'], t.opts);
+  assert.strictEqual(fs.readFileSync(file, 'utf8'), before);
+  fs.writeFileSync(file, '{ not json');
+  main(['uninstall'], t.opts);
+  assert.strictEqual(fs.readFileSync(file, 'utf8'), '{ not json');
+  assert.ok(!fs.existsSync(`${file}.tokenbar-uninstall-backup`));
+});

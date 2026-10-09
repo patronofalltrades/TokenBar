@@ -98,7 +98,7 @@ tokenbar install
 
 `tokenbar install` copies TokenBar.app to `~/Applications` and opens it. To get a new version, run `npm update -g tokenbar`, then run `tokenbar install` again.
 
-To remove TokenBar, run `tokenbar uninstall`, then run `npm uninstall -g tokenbar`.
+To remove TokenBar, run `tokenbar uninstall`, then run `npm uninstall -g tokenbar`. The uninstall also removes the TokenBar status line from Claude Code and puts back your old status line.
 
 ### Homebrew (after the alpha)
 

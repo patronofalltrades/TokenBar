@@ -60,11 +60,38 @@ function install(o) {
   o.run('/usr/bin/open', [dest]);
 }
 
+// Undo Claude Connect, as Disconnect in Settings does (IES-223). Without it, Claude Code runs a deleted app.
+// Puts back the saved status line, or removes the key. Changes nothing if the status line is not TokenBar's.
+function disconnectClaude(o) {
+  let file = path.join(o.home, '.claude', 'settings.json');
+  if (!fs.existsSync(file)) return;
+  file = fs.realpathSync(file); // keep a dotfiles link
+  let settings;
+  try { settings = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { settings = null; }
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+    o.log(`Did not change ${file}: it is not a valid JSON object.`);
+    return;
+  }
+  const command = settings.statusLine && settings.statusLine.command;
+  if (typeof command !== 'string' || !command.includes('--statusline') || !command.includes('TokenBar')) return;
+  const previousFile = path.join(o.home, 'Library', 'Application Support', 'TokenBar', 'statusline-previous.json');
+  let previous;
+  try { previous = JSON.parse(fs.readFileSync(previousFile, 'utf8')); } catch { previous = undefined; }
+  fs.copyFileSync(file, `${file}.tokenbar-uninstall-backup`);
+  if (previous === undefined) delete settings.statusLine; else settings.statusLine = previous;
+  fs.writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
+  fs.rmSync(previousFile, { force: true });
+  o.log(previous === undefined
+    ? `Removed the TokenBar status line from ${file}.`
+    : `Restored your previous Claude Code status line in ${file}.`);
+}
+
 function uninstall(o) {
   quit(o);
   const dest = path.join(o.home, 'Applications', 'TokenBar.app');
   fs.rmSync(dest, { recursive: true, force: true });
   o.log(`Removed ${dest}`);
+  disconnectClaude(o);
   o.log(`Settings stay in the UserDefaults domain ${DOMAIN}`);
   o.log(`(${path.join(o.home, 'Library', 'Preferences', DOMAIN + '.plist')}).`);
   o.log(`To remove them, run: defaults delete ${DOMAIN}`);
