@@ -1,6 +1,5 @@
 import SwiftUI
 
-@main
 struct TokenBarApp: App {
     init() {
         // A SwiftPM binary has no Info.plist, so LSUIElement has no effect.

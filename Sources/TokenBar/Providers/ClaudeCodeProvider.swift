@@ -7,6 +7,7 @@ actor ClaudeCodeProvider: UsageProvider {
 
     nonisolated let id = ProviderID.claudeCode
     private let roots: [URL]
+    private let limitsFile: URL
     private var reader = JSONLTailReader()
     /// Deduplication key → newest record and the file that holds it. Keys stay across files.
     private var records: [String: (file: String, record: UsageRecord)] = [:]
@@ -14,9 +15,10 @@ actor ClaudeCodeProvider: UsageProvider {
     private static let window: TimeInterval = 35 * 24 * 3600
     private static let marker = Data(#""type":"assistant""#.utf8)
 
-    /// Tests inject a temporary folder.
-    init(roots: [URL] = ClaudeCodeProvider.defaultRoots()) {
+    /// Tests inject temporary locations.
+    init(roots: [URL] = ClaudeCodeProvider.defaultRoots(), limitsFile: URL = ClaudeCodeLimits.defaultFile) {
         self.roots = roots
+        self.limitsFile = limitsFile
     }
 
     static func defaultRoots(environment: [String: String] = ProcessInfo.processInfo.environment) -> [URL] {
@@ -58,7 +60,8 @@ actor ClaudeCodeProvider: UsageProvider {
         return ProviderSnapshot(
             provider: id,
             records: records.values.map(\.record),
-            limits: [],
+            // Limits are optional (D-bridge opt-in). A bad limits file must not hide the token data.
+            limits: (try? ClaudeCodeLimits.read(from: limitsFile)) ?? [],
             updatedAt: now
         )
     }
