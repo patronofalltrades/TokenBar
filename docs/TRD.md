@@ -467,7 +467,7 @@ Facts for this decision (checked 2026-10-08):
 6. Check the app for `com.apple.quarantine` with `xattr -p`. If the attribute exists, show the **Open Anyway** steps. Do not remove the attribute.
 7. Open the app with `open ~/Applications/TokenBar.app`.
 
-`tokenbar uninstall` quits TokenBar and removes `~/Applications/TokenBar.app`. It does not remove settings. It shows the user where they are.
+`tokenbar uninstall` quits TokenBar and removes `~/Applications/TokenBar.app`. It undoes Claude Connect, as Disconnect in Settings does: it puts back the saved status line or removes the TokenBar status line, after a backup `settings.json.tokenbar-uninstall-backup` (IES-223). It does not change another status line or a file that is not valid JSON. It does not remove settings. It shows the user where they are.
 
 `npx tokenbar install` must also work. It uses the same steps.
 
