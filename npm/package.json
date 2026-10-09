@@ -1,0 +1,22 @@
+{
+  "name": "tokenbar",
+  "version": "0.0.0",
+  "description": "macOS menu bar app that shows LLM usage and cost. Installs TokenBar.app into ~/Applications.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/patronofalltrades/TokenBar.git"
+  },
+  "bin": {
+    "tokenbar": "bin/tokenbar.js"
+  },
+  "files": [
+    "bin/tokenbar.js",
+    "TokenBar.zip"
+  ],
+  "os": ["darwin"],
+  "cpu": ["arm64"],
+  "engines": {
+    "node": ">=18"
+  }
+}

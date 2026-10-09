@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write # npm trusted publishing (OIDC) and provenance. No npm token secret.
 
 jobs:
   release:
@@ -20,3 +21,14 @@ jobs:
           gh release create "$GITHUB_REF_NAME" TokenBar.zip SHA256SUMS --title "$GITHUB_REF_NAME" --notes-file notes.md
         env:
           GH_TOKEN: ${{ github.token }}
+      # Trusted publishing needs Node 22.14.0 or later and npm 11.5.1 or later (TRD Section 13).
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: npm install -g 'npm@^11.5.1'
+      - run: |
+          cp TokenBar.zip LICENSE npm/
+          cd npm
+          npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version
+          # npm 11 stops a prerelease version (v0.1.0-alpha.1) without --tag. The alpha is the only channel, so use latest.
+          npm publish --provenance --access public --tag latest
