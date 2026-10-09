@@ -32,8 +32,15 @@ enum CafeDataError: Error, Equatable {
 
 /// The contents of `cafe-units.json` (TRD 9).
 struct CafeData: Decodable, Sendable {
+    /// The Café Index text in onboarding step 2. It can name the school, because it is data (D25).
+    let pickerDescription: String
     let units: [CafeUnit]
     let tuition: Tuition
+
+    enum CodingKeys: String, CodingKey {
+        case units, tuition
+        case pickerDescription = "picker_description"
+    }
 
     /// Decodes and validates the file. Any error rejects the whole file.
     static func decode(_ json: Data) throws -> CafeData {
@@ -81,8 +88,9 @@ enum CafeIndex {
         return format(chosen.value, unit: chosen.unit)
     }
 
-    /// Two decimals below 0.5, one decimal below 10, none at 10 and above.
+    /// "0" at 0. Two decimals below 0.5, one decimal below 10, none at 10 and above.
     static func format(_ value: Decimal, unit: CafeUnit) -> Pick {
+        if value == 0 { return Pick(unit: unit, value: "0", name: unit.plural) }
         var places = value < 0.5 ? 2 : 1
         var shown = rounded(value, places)
         if places == 1, shown >= 10 {

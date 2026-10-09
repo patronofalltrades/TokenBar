@@ -92,6 +92,44 @@ struct OnboardingTests {
         for p in previews { #expect(MenuBarLabel.image(symbol: p.symbol, text: p.sample).size.width == MenuBarLabel.width) }
     }
 
+    /// IES-212: the descriptions. "IESE" comes from the data file only (D25).
+    @Test func choiceDescriptions() throws {
+        #expect(IndexChoice.allCases.map { Onboarding.preview($0).detail } == [
+            "How many cafés con leche at the IESE cafeteria your tokens cost today.",
+            "How much of your MBA tuition your AI has burned. Spoiler: not much. Yet.",
+            "How many liters of water your AI drank today. We used the scary estimate.",
+        ])
+        #expect(Onboarding.preview(.cafe).detail == (try CafeData.shipped()).pickerDescription)
+        #expect(IndexChoice.allCases.allSatisfy { !Onboarding.preview($0).detail.contains("Roasts") })
+    }
+
+    /// The real window shows the whole step, with the Continue button, at each step.
+    /// Set ONBOARDING_PNG_DIR to save the window of step 2 as a PNG.
+    @Test func windowFitsEachStep() throws {
+        let detection = Onboarding.Detection(claudeCode: true, codex: true)
+        let window = Onboarding.makeWindow(OnboardingView(detection: detection))
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        let host = try #require(window.contentViewController as? NSHostingController<OnboardingView>)
+        for i in Onboarding.steps(detection).indices {
+            let view = OnboardingView(detection: detection, step: i, choice: .water)
+            host.rootView = view
+            RunLoop.main.run(until: .now.addingTimeInterval(0.2))  // SwiftUI sends the new size on the next pass
+            let needed = NSHostingView(rootView: view).fittingSize.height
+            #expect(window.contentLayoutRect.height >= needed - 0.5, "step \(i + 1): \(window.contentLayoutRect.height) < \(needed)")
+            if i == 1, let dir = ProcessInfo.processInfo.environment["ONBOARDING_PNG_DIR"] {
+                let step2 = Onboarding.makeWindow(view)
+                step2.isReleasedWhenClosed = false
+                defer { step2.close() }
+                let view = try #require(step2.contentView?.superview)  // with the title bar
+                let rep = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+                view.cacheDisplay(in: view.bounds, to: rep)
+                try rep.representation(using: .png, properties: [:])?
+                    .write(to: URL(fileURLWithPath: dir).appendingPathComponent("onboarding-window-step2.png"))
+            }
+        }
+    }
+
     /// Set ONBOARDING_PNG_DIR to save each step as a PNG for a visual check.
     @Test func eachStepRenders() throws {
         let cases: [(String, Onboarding.Detection)] = [

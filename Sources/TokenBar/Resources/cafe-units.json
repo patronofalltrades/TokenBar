@@ -1,4 +1,5 @@
 {
+  "picker_description": "How many cafés con leche at the IESE cafeteria your tokens cost today.",
   "units": [
     {
       "id": "cafe_con_leche",

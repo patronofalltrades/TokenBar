@@ -14,14 +14,13 @@ Click the icon to see the full report:
 
 ```
 ┌───────────────────────────────────────────┐
+│  ☕ 3.4 cafés con leche today              │
+│  12 this week                             │
+│                                           │
 │  Claude Code      62% of 5-hour limit     │
 │                   resets in 1 h 48 min    │
 │                   as of 14:02             │
 │  Codex            18% of weekly limit     │
-│                                           │
-│  Today ≈ €6.10        Week ≈ €21.80       │
-│  ☕ Today = 3.4 cafés con leche            │
-│  🎓 0.04% of your MBA tuition, in tokens   │
 │                                           │
 │  "The protagonist has 38% of Opus left    │
 │   and a 9 AM case deadline. Discuss."     │
@@ -57,7 +56,7 @@ TokenBar cannot see usage in the ChatGPT, Claude.ai or Grok web and desktop chat
 
 Subscription usage (Claude Pro or Max, ChatGPT Plus or Pro) has no per-token bill. Thus TokenBar calculates an **API-equivalent cost**: tokens × the provider's public API price. This number tells you the value that you get from your subscription.
 
-Providers publish prices in USD. TokenBar converts them to EUR with one fixed rate from its price file. The rate is a community estimate with a date. Thus TokenBar shows costs as estimates, for example `≈ €3.40`.
+Providers publish prices in USD. TokenBar converts them to EUR with one fixed rate from its price file. The rate is a community estimate with a date. TokenBar uses the EUR cost only to calculate the index. It does not show EUR, because a subscription user does not pay API prices (D42).
 
 ### The café index
 

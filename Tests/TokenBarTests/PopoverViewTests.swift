@@ -48,11 +48,6 @@ func sampleRendersAt320Points(name: String) throws {
     #expect(PopoverFormat.time(now, locale: gb, timeZone: TimeZone(identifier: "Europe/Madrid")!) == "16:05")
 }
 
-@Test func euroFormat() {
-    #expect(PopoverFormat.euro(Decimal(string: "2.1")!, locale: gb) == "≈ €2.10")
-    #expect(PopoverFormat.euro(Decimal(string: "6.1")!, approx: false, locale: gb) == "€6.10")
-    #expect(PopoverFormat.euro(Decimal(string: "2.1")!, locale: Locale(identifier: "es_ES")) == "≈ 2,10\u{00A0}€")
-}
 
 @Test func updatedText() {
     #expect(PopoverFormat.updated(now.addingTimeInterval(-30), now: now) == "Updated just now")
@@ -77,4 +72,57 @@ func sampleRendersAt320Points(name: String) throws {
 @Test func links() {
     #expect(Links.feedback.host == "tally.so")
     #expect(Links.repository.host == "github.com")
+}
+
+/// The snapshot text that the popover shows. The other popover text is literals in the UI files.
+private func popoverText(_ s: DisplaySnapshot) -> String {
+    let rows: [String?] = s.rows.flatMap { row -> [String?] in [row.errorText] + row.limits.map(\.name) }
+    return ([s.indexLine, s.indexDetail, s.roast, s.menuBarText] + rows).compactMap { $0 }.joined(separator: "\n")
+}
+
+/// D42: no EUR in the popover and the share card, for each index and state. The samples and the
+/// builder with the shipped roasts cover high spend, which used to fill `{cost}`.
+@Test func noEuroInPopoverOrShareCard() throws {
+    let suite = "NoEuro.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let prices = try PriceTable.decode(Data(#"""
+        {"last_verified": "2026-10-08", "usd_to_eur": 1, "fx_updated": "2026-10-08", "fx_note": "n",
+         "models": [{"id": "m", "input": 1, "source": "s", "last_verified": "2026-10-08"}]}
+        """#.utf8))
+    let shipped = try Roast.shipped()
+    var built: [DisplaySnapshot] = []
+    for index in [IndexChoice?.none] + IndexChoice.allCases {
+        defaults.set(index?.rawValue, forKey: SettingsKey.index)
+        for (eur, percent) in [(0.0, 10.0), (25.0, nil), (25.0, 87.0), (300.0, 100.0)] {
+            for pick in 0..<shipped.count {
+                var roasts = RoastSelector(roasts: shipped, randomIndex: { pick % max(1, $0) }, defaults: defaults)
+                let records = [UsageRecord(provider: .claudeCode, model: "m", timestamp: now.addingTimeInterval(-60),
+                                           tokens: TokenCounts(input: Int(eur * 1_000_000), output: 10_000)),
+                               UsageRecord(provider: .codex, model: "unknown", timestamp: now.addingTimeInterval(-60),
+                                           tokens: TokenCounts(input: 1))]
+                let limits = percent.map { [LimitWindow(name: "5-hour", usedPercent: $0, resetsAt: now.addingTimeInterval(600), observedAt: now)] } ?? []
+                built.append(DisplayBuilder(prices: prices, cafe: try CafeData.shipped(), water: try WaterData.shipped(), defaults: defaults).build(
+                    snapshots: [.claudeCode: ProviderSnapshot(provider: .claudeCode, records: records.filter { $0.provider == .claudeCode },
+                                                              limits: limits, updatedAt: now),
+                                .codex: ProviderSnapshot(provider: .codex, records: records.filter { $0.provider == .codex }, limits: [], updatedAt: now)],
+                    errors: [:], lastRefresh: now, now: now, roasts: &roasts, tuition: TuitionTotal(defaults: defaults)))
+            }
+        }
+    }
+    #expect(built.contains { $0.roast?.contains("API-equivalent") == false && $0.roast != nil })
+    for s in PopoverSamples.all.map(\.snapshot) + built {
+        let text = [popoverText(s), ShareCard.text(s), MenuBarLabel.voiceOverLabel(s, now: now), s.menuBarText].joined(separator: "\n")
+        for banned in ["€", "EUR", "euro", "API-equivalent", "Price unknown"] {
+            #expect(!text.localizedCaseInsensitiveContains(banned), "\(banned) in: \(text)")
+        }
+    }
+    // The UI files have no EUR text either.
+    let ui = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../Sources/TokenBar/UI")
+    for file in try FileManager.default.contentsOfDirectory(at: ui, includingPropertiesForKeys: nil) {
+        let source = try String(contentsOf: file, encoding: .utf8)
+        for banned in ["€", ".currency(", "euros", "API-equivalent", "Price unknown"] {
+            #expect(!source.contains(banned), "\(banned) in \(file.lastPathComponent)")
+        }
+    }
 }

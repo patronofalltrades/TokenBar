@@ -15,13 +15,10 @@ enum ShareCard {
     /// "TokenBar · github.com/patronofalltrades/TokenBar".
     static let footer = "TokenBar · " + (Links.repository.host() ?? "") + Links.repository.path()
 
-    /// The card lines, without the footer: the selected index only (D41).
-    /// No index yet gives the numbers card (DRD 7.7 rule 7), the same as in `DisplayBuilder`.
-    static func lines(_ s: DisplaySnapshot, locale: Locale = .current) -> [Line] {
-        guard s.index != nil else {
-            return [Line(text: "Today \(PopoverFormat.euro(s.costTodayEUR, locale: locale))", symbol: "eurosign.circle"),
-                    Line(text: "Week \(PopoverFormat.euro(s.costWeekEUR, locale: locale)) (API-equivalent)", symbol: "calendar")]
-        }
+    /// The card lines, without the footer: the selected index only (D41). No EUR (D42).
+    /// No index yet gives no lines. The popover then has no Share button (DRD 7.7 rule 7).
+    static func lines(_ s: DisplaySnapshot) -> [Line] {
+        guard s.index != nil else { return [] }
         var lines: [Line] = []
         if let line = s.indexLine { lines.append(Line(text: line, symbol: s.indexSymbol, emoji: s.indexEmoji)) }
         if let detail = s.indexDetail { lines.append(Line(text: detail, symbol: "calendar")) }
@@ -30,8 +27,8 @@ enum ShareCard {
     }
 
     /// The clipboard text. A blank line separates the roast and the footer.
-    static func text(_ s: DisplaySnapshot, locale: Locale = .current) -> String {
-        let body = lines(s, locale: locale).map { line in
+    static func text(_ s: DisplaySnapshot) -> String {
+        let body = lines(s).map { line in
             (line.isRoast ? "\n" : "") + (line.emoji.map { $0 + " " } ?? "") + line.text
         }
         return (body + ["", footer]).joined(separator: "\n")

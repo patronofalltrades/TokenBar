@@ -116,13 +116,14 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
     let s = Fixture().build([snapshot([record(eur: 3.4)], limits: [limit(30)]), snapshot(limits: [limit(62, name: "weekly")], of: .codex)],
                             errors: [:])
     #expect(s.menuBarText == "62%" && s.menuBarSymbol == "circle.lefthalf.filled")
-    #expect(MenuBarLabel.voiceOverLabel(s, now: noon) == "TokenBar. Codex, 62 percent of weekly limit. Today, about 3.40 euros.")
+    #expect(MenuBarLabel.voiceOverLabel(s, now: noon) == "TokenBar. Codex, 62 percent of weekly limit.")
 }
 
-@Test func autoMetricIsTodaysCostWithoutLimits() {
+/// D42: no EUR in the menu bar. Without a limit and an index value, the item shows only the symbol.
+@Test func noLimitAndNoIndexValueShowsOnlyTheSymbol() {
     let s = Fixture().build([snapshot([record(eur: 3.4)])])
-    #expect(s.menuBarText == "€3.4")
-    #expect(s.costTodayEUR == Decimal(string: "3.4"))
+    #expect(s.menuBarText == "" && s.menuBarSymbol == "circle.lefthalf.filled")
+    #expect(MenuBarLabel.voiceOverLabel(s, now: noon) == "TokenBar.")
 }
 
 @Test func noIndexYetHasNoJokes() {
@@ -140,9 +141,10 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
 @Test func cafeShowsOnlyTheCafeValue() {
     let s = Fixture(index: .cafe).build([snapshot([record(eur: 6.12, output: 200_000)], limits: [limit(62)])])
     #expect(s.menuBarText == "3.4" && s.menuBarSymbol == "cup.and.saucer.fill")
-    #expect(s.indexLine == "Today = 3.4 cafés con leche" && s.indexSymbol == "cup.and.saucer.fill" && s.indexEmoji == "☕")
+    #expect(s.indexLine == "3.4 cafés con leche today" && s.indexSymbol == "cup.and.saucer.fill" && s.indexEmoji == "☕")
+    #expect(s.indexDetail == "3.4 this week")
     #expect(s.roast != nil)
-    #expect(MenuBarLabel.voiceOverLabel(s, now: noon) == "TokenBar. Claude Code, 62 percent of 5-hour limit. Today, 3.4 cafés con leche.")
+    #expect(MenuBarLabel.voiceOverLabel(s, now: noon) == "TokenBar. Claude Code, 62 percent of 5-hour limit. 3.4 cafés con leche today.")
 }
 
 /// €46.80 of €117,000 is 0.04%. On the first day, the spend since install is today's cost.
@@ -163,8 +165,8 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
     let s = f.build([snapshot([record(eur: 46.80), record(eur: 0.01, at: tomorrow.addingTimeInterval(-60))])], now: tomorrow)
     #expect(s.indexDetail == "At this pace, you'll burn through it by the year 2033.")
     #expect(ShareCard.text(s).contains("by the year 2033."))
-    // Other indexes have no second line.
-    #expect(Fixture(index: .cafe).build([snapshot([record(eur: 46.80)])]).indexDetail == nil)
+    // The café second line is the week in the same unit: €46.80 / €15 = 3.1 menús del día.
+    #expect(Fixture(index: .cafe).build([snapshot([record(eur: 46.80)])]).indexDetail == "3.1 this week")
 }
 
 /// 200k output tokens × 0.1125 mL = 22.5 L. Input tokens do not count.
@@ -173,11 +175,21 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
     let s = f.build([snapshot([record(eur: 6.12, output: 150_000), record(eur: 1, output: 50_000),
                                record(eur: 9, at: noon.addingTimeInterval(-24 * 3600), output: 900_000)], limits: [limit(62)])])
     #expect(s.menuBarText == "22 L" && s.menuBarSymbol == "drop.fill")
-    #expect(s.indexLine == "Today ≈ 22 L of water · 15 bottles (1.5 L)" && s.indexEmoji == "💧")
+    // The week has 1.1M output tokens: 123.75 L.
+    #expect(s.indexLine == "22 L of water today" && s.indexDetail == "15 bottles (1.5 L) · 124 L this week" && s.indexEmoji == "💧")
     #expect(MenuBarLabel.voiceOverLabel(s, now: noon)
-            == "TokenBar. Claude Code, 62 percent of 5-hour limit. Today, about 22 L of water · 15 bottles (1.5 L).")
-    // No output today: the primary metric, as without an index.
-    #expect(Fixture(index: .water).build([snapshot([record(eur: 6.12)], limits: [limit(62)])]).menuBarText == "62%")
+            == "TokenBar. Claude Code, 62 percent of 5-hour limit. 22 L of water today.")
+    // No output today: the menu bar shows the primary metric. The popover headline shows 0.
+    let zero = Fixture(index: .water).build([snapshot([record(eur: 6.12)], limits: [limit(62)])])
+    #expect(zero.menuBarText == "62%")
+    #expect(zero.indexLine == "0 mL of water today" && zero.indexDetail == "0 mL this week")
+}
+
+/// No cost today, but data from yesterday: the headline shows 0, and the week in the same unit.
+@Test func cafeHeadlineAtZeroToday() {
+    let s = Fixture(index: .cafe).build([snapshot([record(eur: 3.6, at: noon.addingTimeInterval(-24 * 3600))], limits: [limit(10)])])
+    #expect(s.menuBarText == "10%")
+    #expect(s.indexLine == "0 cafés con leche today" && s.indexDetail == "2.0 this week" && s.indexSymbol == "cup.and.saucer.fill")
 }
 
 /// Each index fills only its own placeholders, so a roast never shows a second index (D41).
@@ -209,10 +221,10 @@ func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
     let f = Fixture(index: .cafe)
     #expect(f.build([snapshot([record(eur: 6.12)])]).menuBarText == "3.4")  // café con leche is closest to 3
     // A fresh pick for €10.50 is pa amb tomàquet (3.0). The café con leche stays while it is in range.
-    #expect(f.build([snapshot([record(eur: 10.5)])]).indexLine == "Today = 5.8 cafés con leche")
+    #expect(f.build([snapshot([record(eur: 10.5)])]).indexLine == "5.8 cafés con leche today")
     let tomorrow = noon.addingTimeInterval(24 * 3600)
     let next = f.build([snapshot([record(eur: 10.5, at: tomorrow)])], now: tomorrow)
-    #expect(next.indexLine == "Today = 3.0 pa amb tomàquets" && next.indexSymbol == "fork.knife")
+    #expect(next.indexLine == "3.0 pa amb tomàquets today" && next.indexSymbol == "fork.knife")
 }
 
 // MARK: - Costs
@@ -220,23 +232,23 @@ func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
 @Test func costsForTodayAndWeek() {
     let records = [record(eur: 2), record(eur: 3, at: noon.addingTimeInterval(-3 * 24 * 3600)),
                    record(eur: 50, at: noon.addingTimeInterval(-8 * 24 * 3600))]
-    let s = Fixture().build([snapshot(records), snapshot([record(.codex, eur: 1)], of: .codex)], errors: [:])
-    #expect(s.costTodayEUR == 3 && s.costWeekEUR == 6)
-    #expect(s.rows.map(\.costTodayEUR) == [2, 1])
-    #expect(s.rows.allSatisfy { !$0.hasUnpricedModels })
+    let s = Fixture(index: .cafe).build([snapshot(records), snapshot([record(.codex, eur: 1)], of: .codex)], errors: [:])
+    // €3 today and €6 this week, in cafés con leche (€1.80). The EUR values stay internal (D42).
+    #expect(s.indexLine == "1.7 cafés con leche today" && s.indexDetail == "3.3 this week")
+    #expect(s.rows.allSatisfy { !$0.hasUnpricedModels } && !PopoverFormat.notCounted(s))
 }
 
 @Test func unpricedModelIsFlagged() {
-    let s = Fixture().build([snapshot([record(eur: 1, model: "unknown-model")])])
-    #expect(s.rows[0].hasUnpricedModels)
-    #expect(s.rows[0].costTodayEUR == 0)  // usage today, but no known price
-    #expect(s.rows[1].costTodayEUR == nil)
+    let s = Fixture(index: .cafe).build([snapshot([record(eur: 1, model: "unknown-model")])])
+    #expect(s.rows[0].hasUnpricedModels && !s.rows[1].hasUnpricedModels)
+    #expect(s.indexLine == "0 cafés con leche today")  // usage today, but no known price
+    #expect(PopoverFormat.notCounted(s))
+    // The Water Footprint counts tokens, not prices.
+    #expect(!PopoverFormat.notCounted(Fixture(index: .water).build([snapshot([record(eur: 1, model: "unknown-model")])])))
 }
 
 @Test func shortFormats() {
     #expect([42, 108, 599, 1439, 3 * 1440].map { DisplayBuilder.shortDuration(Double($0) * 60) } == ["42m", "1h48", "9h59", "23h", "3d"])
-    #expect(["3.4", "9.96", "12.4", "999.6", "4321"].map { DisplayBuilder.shortEUR(Decimal(string: $0)!) }
-            == ["€3.4", "€10", "€12", "€1k", "€4k"])
 }
 
 // MARK: - Width
@@ -250,7 +262,7 @@ func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
         ("", "circle.dashed"), ("", "exclamationmark.circle"),
         ("100%", "hourglass"), ("9h59", "hourglass"), ("23h", "hourglass"), ("59m", "hourglass"), ("99d", "hourglass"),
         ("99%", "exclamationmark.triangle.fill"),
-        ("79%", normal), ("€9.9", normal), ("€999", normal), ("€99k", normal),
+        ("79%", normal), ("", normal),
         ("0.5", units[0].symbol),  // only the cheapest unit goes below 0.5 (DRD 7.6 rule 5); the bar shows one decimal
         ("999", units.max { $0.priceEUR < $1.priceEUR }!.symbol),  // above the range: the most expensive unit
     ]

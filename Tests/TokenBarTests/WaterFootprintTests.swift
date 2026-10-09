@@ -23,11 +23,11 @@ private let water = try! WaterData.shipped()
     #expect(water.ml(outputTokens: 400) == 45)
     let ml = water.ml(outputTokens: 200_000)
     #expect(ml == 22_500)
-    #expect(water.line(ml: ml) == "Today ≈ 22 L of water · 15 bottles (1.5 L)")
+    #expect(water.equivalent(ml: ml) == "15 bottles (1.5 L)")
     #expect(WaterData.barValue(ml) == "22 L")
-    #expect(water.line(ml: water.ml(outputTokens: 2_000_000)) == "Today ≈ 225 L of water · 1.5 bathtubs (150 L)")
-    #expect(water.line(ml: 45) == "Today ≈ 45 mL of water · 0.2 glasses (250 mL)")
-    #expect(water.line(ml: 250) == "Today ≈ 250 mL of water · 1.0 glass (250 mL)")
+    #expect(water.equivalent(ml: water.ml(outputTokens: 2_000_000)) == "1.5 bathtubs (150 L)")
+    #expect(water.equivalent(ml: 45) == "0.2 glasses (250 mL)")
+    #expect(water.equivalent(ml: 250) == "1.0 glass (250 mL)")
 }
 
 @Test func waterFormats() {
