@@ -69,3 +69,19 @@ struct SettingsTests {
         #expect(ImageRenderer(content: AboutSettings().frame(width: 480)).nsImage != nil)
     }
 }
+
+/// IES-224: a change of the index or the roasts setting is a display change. Other settings are not.
+@Test func displaySettingsChange() throws {
+    let suite = "DisplaySettings.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let start = DisplaySettings(defaults)
+    #expect(start.index == nil && start.roasts)
+    defaults.set("other", forKey: "cafeUnit")
+    #expect(DisplaySettings(defaults) == start)
+    defaults.set(IndexChoice.water.rawValue, forKey: SettingsKey.index)
+    #expect(DisplaySettings(defaults) != start)
+    let water = DisplaySettings(defaults)
+    defaults.set(false, forKey: SettingsKey.roastsEnabled)
+    #expect(DisplaySettings(defaults) != water)
+}
