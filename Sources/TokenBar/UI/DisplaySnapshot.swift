@@ -32,6 +32,7 @@ struct DisplaySnapshot: Equatable, Sendable {
     let costWeekEUR: Decimal
     let cafeLine: String?           // nil in Serious, or when the café index is off
     let cafeSymbol: String?         // SF Symbol of the café unit in `cafeLine`
+    var cafeEmoji: String? = nil    // emoji of the same unit, for the share card text (DRD 7.6, 7.7)
     let tuitionLine: String?        // nil in Serious, or before there is data
     let roast: String?              // nil in Serious, when roasts are off, or when none matches
     let lastRefresh: Date?

@@ -217,6 +217,7 @@ TokenBar has no Stale state and no stale banner (Section 2.4, rule 3).
 |---|---|---|
 | Settings | `gearshape` | Opens the Settings window. |
 | Refresh | `arrow.clockwise` | Reads all providers now. The symbol rotates while the read runs. |
+| Share | `square.and.arrow.up` | Copies the share card (Section 7.7). Not in the No data state. |
 | Last updated | none | `Updated 2 min ago`. Relative time. |
 | Quit | `power` | Quits TokenBar. |
 
@@ -572,8 +573,9 @@ The share card lets the user post the joke in a class chat. It is the main word-
 3. Render the image with SwiftUI `ImageRenderer`. Do not add a dependency.
 4. The card contains: today's café-index value, the tuition benchmark (if available), the current roast and the text "TokenBar · github.com/patronofalltrades/TokenBar".
 5. The card does not contain the user name, file paths, project names or prompt content. It shows model names only if the roast uses `{model}`.
-6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat."
-7. In the Serious style, the card shows the numbers only.
+6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat." The confirmation replaces the "Prices verified" line for 3 seconds.
+7. In the Serious style, the card shows the numbers only: the cost today and the cost this week (API-equivalent).
+8. The image is 360 pt wide, at scale 2, with a white background and the light appearance. The clipboard text uses the unit emoji (Section 7.6).
 
 ```
 ┌──────────────────────────────┐
