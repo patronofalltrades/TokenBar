@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The `MenuBarExtra` label (DRD 2.2 and 2.4): one template symbol and one value, no color.
+/// The `MenuBarExtra` label (DRD 2.2 and 2.4): one template icon and one value, no color.
 /// The width is fixed, so a new value does not move the other menu bar items (TRD 8).
 struct MenuBarLabel: View {
     nonisolated static let width: CGFloat = 52
@@ -22,8 +22,7 @@ struct MenuBarLabel: View {
     /// `MenuBarExtra` ignores SwiftUI frames: the item width follows the text. A fixed-width template image keeps the width.
     nonisolated static func image(symbol: String, text: String, width: CGFloat = width) -> NSImage {
         let font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.menuBarFont(ofSize: 0).pointSize, weight: .regular)
-        let icon = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
-            .withSymbolConfiguration(.init(pointSize: font.pointSize, weight: .regular)) ?? NSImage()
+        let icon = Icon.image(symbol, pointSize: font.pointSize)
         let value = NSAttributedString(string: text, attributes: [.font: font])
         let height = max(icon.size.height, value.size().height)
         let image = NSImage(size: NSSize(width: width, height: height), flipped: false) { _ in

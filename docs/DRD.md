@@ -89,7 +89,7 @@ Rules:
 2. If one provider fails and others work, use the Normal state. Show the error in the popover only.
 3. Only "cannot read the source" is an error. Quiet logs are normal. If a log has no new lines, show the last value. TokenBar has no Stale state and does not dim values (decided 2026-10-08). Limit values show their age in the popover (Section 3.2).
 4. Render all symbols as template images. The menu bar item has no color. The symbol shape is the state signal.
-5. The `☕` in this document and in the README is the `cup.and.saucer.fill` symbol. Do not use a color emoji in the menu bar.
+5. The `☕`, `🎓` and `💧` in this document and in the README are the custom index icons (Section 8.3). Do not use a color emoji in the menu bar.
 
 Verify each symbol name in the SF Symbols app for macOS 14 before implementation.
 
@@ -108,7 +108,7 @@ In the Warning and Limit hit states, each index shows the limit value: `⚠ 87%`
 Rules:
 
 1. In the Warning and Limit hit states, all indexes show the limit value. The joke never hides a warning (principle 4).
-2. The `☕` is the symbol of the selected café unit. The `🎓` is `graduationcap.fill`. The `💧` is `drop.fill`. The Tuition Meter item is 68 pt wide (Section 2.2).
+2. The `☕`, `🎓` and `💧` are the custom index icons (Section 8.3, D43). All café units use the café icon. The Tuition Meter item is 68 pt wide (Section 2.2).
 3. If the index has no value (for example no cost today), the menu bar item shows the primary metric.
 4. **Roasts** is a separate toggle, on by default. An alert includes a roast only when **Roasts** is on. No separate alert roast setting exists (decided 2026-10-08).
 5. Before the user selects an index, TokenBar shows numbers only and no roast.
@@ -124,7 +124,7 @@ Rules:
 - Height: content height. Maximum 560 pt. If the content is taller, the provider list scrolls.
 - Padding: 16 pt on all sides. 12 pt between sections.
 - Order from top to bottom: header, index headline, provider rows, roast, footer (D42).
-- The index headline shows the value of the selected index in a large font (`.title2`, semibold), with the index symbol. The symbol is one value in the snapshot (`indexSymbol`), so a custom icon can replace it (IES-213).
+- The index headline shows the value of the selected index in a large font (`.title2`, semibold), with the custom index icon (Section 8.3). The snapshot keeps the icon name in `indexSymbol`.
 - Below the headline, one small line (`.callout`, secondary): the week value in the same café unit, the water unit equivalent and the week, or the Tuition Meter burn year (Section 2.5).
 - If some models have no price, a tiny footnote under the headline says "Some models not counted". The Water Footprint counts tokens, not prices, so it has no footnote.
 - The popover shows no EUR, no "API-equivalent" text and no "price unknown" line (D42). Subscription users do not pay API prices.
@@ -547,7 +547,6 @@ The `provider-01` line uses a fixed number as a joke. Do not present it as data.
 | `id` | string | Lowercase, snake case, unique. |
 | `singular` | string | Display name for a value of exactly 1. |
 | `plural` | string | Display name for all other values. |
-| `symbol` | string | SF Symbol name. Used in the menu bar and the popover. |
 | `emoji` | string | Used only in notifications and shared text. |
 | `price_eur` | number | Community estimate. |
 | `price_note` | string | Always "community estimate — verify". |
@@ -560,12 +559,12 @@ Keep Spanish and Catalan names in all locales. "Café con leche" is not translat
 
 Café units root in two things only: the MBA tuition fee (as a benchmark) and campus food and drink (decided 2026-10-08). All prices are **community estimates — verify**. They are not official prices. Contributors must update `source` and `updated` with each change.
 
-| id | singular | plural | symbol | emoji | price_eur | source |
-|---|---|---|---|---|---|---|
-| `cafe_con_leche` | café con leche | cafés con leche | `cup.and.saucer.fill` | ☕ | 1.80 | Typical Barcelona café bar. Verify. |
-| `pa_amb_tomaquet` | pa amb tomàquet | pa amb tomàquets | `fork.knife` | 🍅 | 3.50 | Typical Barcelona bar. Verify. |
-| `bravas_bar_tomas` | Bar Tomàs patatas bravas | Bar Tomàs patatas bravas | `flame.fill` | 🥔 | 6.00 | Bar Tomàs, Sarrià. Verify. |
-| `menu_del_dia` | menú del día | menús del día | `takeoutbag.and.cup.and.straw.fill` | 🍽️ | 15.00 | Typical Barcelona lunch menu. Verify. |
+| id | singular | plural | emoji | price_eur | source |
+|---|---|---|---|---|---|
+| `cafe_con_leche` | café con leche | cafés con leche | ☕ | 1.80 | Typical Barcelona café bar. Verify. |
+| `pa_amb_tomaquet` | pa amb tomàquet | pa amb tomàquets | 🍅 | 3.50 | Typical Barcelona bar. Verify. |
+| `bravas_bar_tomas` | Bar Tomàs patatas bravas | Bar Tomàs patatas bravas | 🥔 | 6.00 | Bar Tomàs, Sarrià. Verify. |
+| `menu_del_dia` | menú del día | menús del día | 🍽️ | 15.00 | Typical Barcelona lunch menu. Verify. |
 
 With these units, the range `0.5 ≤ value ≤ 20` covers a cost from €0.90 to €300. TokenBar has no other units in v1. Contributors can add a food or drink unit by pull request. The maintainer approves it.
 
@@ -707,10 +706,14 @@ Use the system font (SF Pro) only. Do not bundle a font.
 
 ### 8.3 Iconography
 
-1. Use SF Symbols only. Do not add custom icons in v1, except the app icon.
-2. Use `.hierarchical` rendering in the popover. Use template rendering in the menu bar.
-3. Use the same symbol for the same meaning everywhere. Section 2.4 and Section 3.9 list the symbols.
-4. The app icon is a separate design task. It is not in this document.
+1. Use SF Symbols for all states and buttons. The three indexes have custom icons (D43). The app icon is also custom.
+2. The custom index icons are SVG files in `Sources/TokenBar/Resources/Icons`: `cafe.svg` (Café Index), `tuition.svg` (Tuition Meter) and `water.svg` (Water Footprint). Each file is black on a 24-unit grid. `water.svg` has a narrow view box (18 × 24), so "999 L" fits in 52 pt.
+3. Load the icons with `Icon` (`UI/Icon.swift`) through `Bundle.tokenBar` (D34). `Icon` makes template images and keeps the loaded files in a cache.
+4. Show the index icon in the menu bar item, the popover headline, the onboarding step 2 previews and the share card. Warning, Limit hit, No data and Error keep their SF Symbols (Section 2.4).
+5. Size: the icon height is 15/13 of the font size. In the menu bar (13 pt text) the icon is 15 pt high, with an ink height of 13 to 14 pt. This is the ink height of `cup.and.saucer.fill` and `drop.fill` at 13 pt. The icon and the text have the same vertical center.
+6. Use `.hierarchical` rendering in the popover for SF Symbols. Use template rendering in the menu bar.
+7. Use the same icon for the same meaning everywhere. Section 2.4 and Section 3.9 list the symbols.
+8. The app icon is a separate design task. It is not in this document.
 
 ### 8.4 Motion
 

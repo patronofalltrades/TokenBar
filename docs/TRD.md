@@ -330,18 +330,18 @@ Mitigation:
 
 1. Use one display mode: Compact, max 52 pt, on all displays (DRD 2.2). TokenBar does not detect the notch. Do not use `NSScreen.auxiliaryTopLeftArea`.
 2. Fix the label width. Use `.monospacedDigit()`. Reserve space for the longest value, for example `100%`. The width must not change on each update. A width change makes macOS move other items.
-3. Use `Text` and one SF Symbol in the `MenuBarExtra` label. Do not use an `NSImage` wider than the text.
+3. Draw one template icon and the value in one fixed-width template `NSImage` (`MenuBarLabel`). The icon is an SF Symbol or a custom index icon (DRD 8.3).
 4. In first run and in Settings, tell the user: hold Command and drag the TokenBar icon to the right, next to the clock. Items near the clock are hidden last.
 
 Skipped: detection of the hidden state. `MenuBarExtra` does not expose its `NSStatusItem`. A check of the status item window frame against the notch area is possible but fragile (UNVERIFIED). Add it if alpha users report a hidden icon.
 
 ## 9. Humor data files
 
-All humor files are JSON in `Sources/TokenBar/Resources/`. SwiftPM processes them with `resources: [.process("Resources")]`. Load them with `Bundle.tokenBar` (`Core/ResourceBundle.swift`), not `Bundle.module` (D34). The DRD owns the fields and the voice. The TRD owns the file format and path.
+All humor files are JSON in `Sources/TokenBar/Resources/`. SwiftPM processes them with `resources: [.process("Resources")]`. Load them with `Bundle.tokenBar` (`Core/ResourceBundle.swift`), not `Bundle.module` (D34). The DRD owns the fields and the voice. The TRD owns the file format and path. The custom index icons are SVG files in `Resources/Icons` (DRD 8.3, D43). SwiftPM copies them to the root of the resource bundle, so load them without a subdirectory.
 
 | File | Top-level keys | Item fields |
 |---|---|---|
-| `cafe-units.json` | `units`, `tuition` | Units, DRD 7.6: `id`, `singular`, `plural`, `symbol`, `emoji`, `price_eur`, `price_note`, `source`, `updated`. `tuition` is one object, not a unit: `id` (`iese_mba_tuition`), `label`, `price_eur`, `source`, `updated`. The UI shows `label`. Code has no hardcoded school name. |
+| `cafe-units.json` | `units`, `tuition` | Units, DRD 7.6: `id`, `singular`, `plural`, `emoji`, `price_eur`, `price_note`, `source`, `updated`. `tuition` is one object, not a unit: `id` (`iese_mba_tuition`), `label`, `price_eur`, `source`, `updated`. The UI shows `label`. Code has no hardcoded school name. |
 | `roasts.json` | `roasts` | DRD 7.2: `id`, `text`, `category`, `min_percent`, `max_percent`, `hours`, `weekdays`, `provider`, `locale` |
 | `water.json` | `ml_per_output_token`, `basis`, `source`, `source_note`, `last_verified`, `units` | DRD 7.8. Units: `id`, `singular`, `plural`, `ml`. A test fails if the factor or a unit size is ≤ 0. |
 

@@ -82,18 +82,18 @@ struct DisplayBuilder {
         case .cafe:
             let day = pick ?? CafeIndex.format(0, unit: cafe.units[0])
             let week = CafeIndex.format(costWeek / day.unit.priceEUR, unit: day.unit)
-            line = ("\(day.text) today", "\(week.value) this week", day.unit.symbol, day.unit.emoji)
+            line = ("\(day.text) today", "\(week.value) this week", IndexChoice.cafe.rawValue, day.unit.emoji)
         case .tuition:
             let first = tuition.defaults.object(forKey: TuitionTotal.firstLaunchKey) as? Date
             line = (CafeIndex.tuitionLine(spendEUR: spend ?? 0, tuition: cafe.tuition),
                     first.flatMap { CafeIndex.burnLine(spendEUR: spend ?? 0, days: now.timeIntervalSince($0) / 86_400,
                                                        tuition: cafe.tuition, year: calendar.component(.year, from: now)) },
-                    Self.tuitionSymbol, "🎓")
+                    IndexChoice.tuition.rawValue, "🎓")
         case .water:
             let ml = water.ml(outputTokens: outputToday)
             let week = "\(WaterData.amount(water.ml(outputTokens: outputWeek))) this week"
             line = ("\(WaterData.amount(ml)) of water today", ml > 0 ? "\(water.equivalent(ml: ml)) · \(week)" : week,
-                    Self.waterSymbol, "💧")
+                    IndexChoice.water.rawValue, "💧")
         case nil: line = nil
         }
 
@@ -105,9 +105,9 @@ struct DisplayBuilder {
         case .limitHit: (reset ?? "100%", "hourglass")
         case .warning: ("\(Int(percent))%", "exclamationmark.triangle.fill")
         case .normal:
-            if let pick { (Self.barValue(pick.value), pick.unit.symbol) }
-            else if let tuitionSpend { (CafeIndex.tuitionBarValue(spendEUR: tuitionSpend, tuition: cafe.tuition), Self.tuitionSymbol) }
-            else if let waterML { (WaterData.barValue(waterML), Self.waterSymbol) }
+            if let pick { (Self.barValue(pick.value), IndexChoice.cafe.rawValue) }
+            else if let tuitionSpend { (CafeIndex.tuitionBarValue(spendEUR: tuitionSpend, tuition: cafe.tuition), IndexChoice.tuition.rawValue) }
+            else if let waterML { (WaterData.barValue(waterML), IndexChoice.water.rawValue) }
             else if let top { ("\(Int(top.limit.usedPercent))%", "circle.lefthalf.filled") }
             else { ("", "circle.lefthalf.filled") }  // no EUR in the menu bar (D42)
         }
@@ -133,9 +133,6 @@ struct DisplayBuilder {
             indexLine: line?.text, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
             roast: roast, lastRefresh: lastRefresh, pricesVerified: prices.lastVerified)
     }
-
-    static let tuitionSymbol = "graduationcap.fill"
-    static let waterSymbol = "drop.fill"
 
     static func isNotInstalled(_ error: any Error) -> Bool {
         if case ClaudeCodeProvider.Failure.notFound = error { return true }

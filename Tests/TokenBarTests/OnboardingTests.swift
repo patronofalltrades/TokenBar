@@ -88,8 +88,9 @@ struct OnboardingTests {
         let previews = IndexChoice.allCases.map(Onboarding.preview)
         #expect(IndexChoice.allCases.map(MenuBarLabel.width) == [52, 68, 52])
         #expect(previews.map(\.sample) == ["3.4", "0.04%", "22 L"])
-        #expect(previews.map(\.symbol) == ["cup.and.saucer.fill", "graduationcap.fill", "drop.fill"])
-        for p in previews { #expect(MenuBarLabel.image(symbol: p.symbol, text: p.sample).size.width == MenuBarLabel.width) }
+        for (choice, p) in zip(IndexChoice.allCases, previews) {
+            #expect(MenuBarLabel.image(symbol: choice.rawValue, text: p.sample, width: MenuBarLabel.width(choice)).size.width == MenuBarLabel.width(choice))
+        }
     }
 
     /// IES-212: the descriptions. "IESE" comes from the data file only (D25).

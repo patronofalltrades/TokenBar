@@ -2,12 +2,12 @@ import Foundation
 
 /// One café-index unit (DRD 7.6).
 struct CafeUnit: Decodable, Sendable {
-    let id, singular, plural, symbol, emoji: String
+    let id, singular, plural, emoji: String
     let priceEUR: Decimal
     let priceNote, source, updated: String
 
     enum CodingKeys: String, CodingKey {
-        case id, singular, plural, symbol, emoji, source, updated
+        case id, singular, plural, emoji, source, updated
         case priceEUR = "price_eur", priceNote = "price_note"
     }
 }

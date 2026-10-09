@@ -85,7 +85,7 @@ struct PopoverView: View {
     @ViewBuilder private var headline: some View {
         if let line = snapshot.indexLine {
             VStack(alignment: .leading, spacing: 4) {
-                Label(line, systemImage: snapshot.indexSymbol ?? "cup.and.saucer.fill")
+                Icon.label(line, icon: snapshot.indexSymbol ?? IndexChoice.cafe.rawValue, style: .title2)
                     .font(.title2.weight(.semibold)).monospacedDigit()
                     .fixedSize(horizontal: false, vertical: true)
                 if let detail = snapshot.indexDetail {
@@ -343,10 +343,10 @@ enum PopoverSamples {
 
     /// The headline, the second line and the menu bar value of each choice, for the samples.
     private static let lines: [IndexChoice: (line: String, detail: String, symbol: String, emoji: String, bar: String)] = [
-        .cafe: ("3.4 cafés con leche today", "12 this week", "cup.and.saucer.fill", "☕", "3.4"),
+        .cafe: ("3.4 cafés con leche today", "12 this week", "cafe", "☕", "3.4"),
         .tuition: ("0.04% of your MBA tuition, in tokens (since install)", "At this pace, you'll burn through it by the year 4210.",
-                   DisplayBuilder.tuitionSymbol, "🎓", "0.04%"),
-        .water: ("22 L of water today", "15 bottles (1.5 L) · 98 L this week", DisplayBuilder.waterSymbol, "💧", "22 L"),
+                   "tuition", "🎓", "0.04%"),
+        .water: ("22 L of water today", "15 bottles (1.5 L) · 98 L this week", "water", "💧", "22 L"),
     ]
 
     private static func snapshot(_ state: DisplaySnapshot.State, rows: [DisplaySnapshot.ProviderRow],

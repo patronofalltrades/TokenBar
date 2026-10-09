@@ -7,7 +7,7 @@ import SwiftUI
 enum ShareCard {
     struct Line: Equatable {
         var text: String
-        var symbol: String? = nil   // SF Symbol for the image
+        var symbol: String? = nil   // icon name for the image (`Icon`)
         var emoji: String? = nil    // prefix for the clipboard text
         var isRoast = false
     }
@@ -63,7 +63,7 @@ struct ShareCardView: View {
                 if line.isRoast {
                     Text(line.text).font(.callout).italic().foregroundStyle(.secondary).padding(.top, 6)
                 } else {
-                    Label(line.text, systemImage: line.symbol ?? "cup.and.saucer.fill")
+                    Icon.label(line.text, icon: line.symbol ?? IndexChoice.cafe.rawValue, style: index == 0 ? .title3 : .callout)
                         .font(index == 0 ? .title3.weight(.semibold) : .callout)
                         .monospacedDigit()
                 }

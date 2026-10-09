@@ -140,8 +140,8 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
 
 @Test func cafeShowsOnlyTheCafeValue() {
     let s = Fixture(index: .cafe).build([snapshot([record(eur: 6.12, output: 200_000)], limits: [limit(62)])])
-    #expect(s.menuBarText == "3.4" && s.menuBarSymbol == "cup.and.saucer.fill")
-    #expect(s.indexLine == "3.4 cafés con leche today" && s.indexSymbol == "cup.and.saucer.fill" && s.indexEmoji == "☕")
+    #expect(s.menuBarText == "3.4" && s.menuBarSymbol == "cafe")
+    #expect(s.indexLine == "3.4 cafés con leche today" && s.indexSymbol == "cafe" && s.indexEmoji == "☕")
     #expect(s.indexDetail == "3.4 this week")
     #expect(s.roast != nil)
     #expect(MenuBarLabel.voiceOverLabel(s, now: noon) == "TokenBar. Claude Code, 62 percent of 5-hour limit. 3.4 cafés con leche today.")
@@ -150,7 +150,7 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
 /// €46.80 of €117,000 is 0.04%. On the first day, the spend since install is today's cost.
 @Test func tuitionShowsTheShareOfTuition() {
     let s = Fixture(index: .tuition).build([snapshot([record(eur: 46.80, output: 200_000)], limits: [limit(62)])])
-    #expect(s.menuBarText == "0.04%" && s.menuBarSymbol == "graduationcap.fill")
+    #expect(s.menuBarText == "0.04%" && s.menuBarSymbol == "tuition")
     #expect(s.indexLine == "0.04% of your MBA tuition, in tokens (since install)" && s.indexEmoji == "🎓")
     #expect(MenuBarLabel.voiceOverLabel(s, now: noon)
             == "TokenBar. Claude Code, 62 percent of 5-hour limit. 0.04% of your MBA tuition, in tokens (since install).")
@@ -174,7 +174,7 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
     let f = Fixture(index: .water)
     let s = f.build([snapshot([record(eur: 6.12, output: 150_000), record(eur: 1, output: 50_000),
                                record(eur: 9, at: noon.addingTimeInterval(-24 * 3600), output: 900_000)], limits: [limit(62)])])
-    #expect(s.menuBarText == "22 L" && s.menuBarSymbol == "drop.fill")
+    #expect(s.menuBarText == "22 L" && s.menuBarSymbol == "water")
     // The week has 1.1M output tokens: 123.75 L.
     #expect(s.indexLine == "22 L of water today" && s.indexDetail == "15 bottles (1.5 L) · 124 L this week" && s.indexEmoji == "💧")
     #expect(MenuBarLabel.voiceOverLabel(s, now: noon)
@@ -189,7 +189,7 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
 @Test func cafeHeadlineAtZeroToday() {
     let s = Fixture(index: .cafe).build([snapshot([record(eur: 3.6, at: noon.addingTimeInterval(-24 * 3600))], limits: [limit(10)])])
     #expect(s.menuBarText == "10%")
-    #expect(s.indexLine == "0 cafés con leche today" && s.indexDetail == "2.0 this week" && s.indexSymbol == "cup.and.saucer.fill")
+    #expect(s.indexLine == "0 cafés con leche today" && s.indexDetail == "2.0 this week" && s.indexSymbol == "cafe")
 }
 
 /// Each index fills only its own placeholders, so a roast never shows a second index (D41).
@@ -224,7 +224,7 @@ func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
     #expect(f.build([snapshot([record(eur: 10.5)])]).indexLine == "5.8 cafés con leche today")
     let tomorrow = noon.addingTimeInterval(24 * 3600)
     let next = f.build([snapshot([record(eur: 10.5, at: tomorrow)])], now: tomorrow)
-    #expect(next.indexLine == "3.0 pa amb tomàquets today" && next.indexSymbol == "fork.knife")
+    #expect(next.indexLine == "3.0 pa amb tomàquets today" && next.indexSymbol == "cafe")
 }
 
 // MARK: - Costs
@@ -254,24 +254,21 @@ func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
 // MARK: - Width
 
 /// The longest text that each state can show, with its symbol (DRD 2.2: max 52 pt).
-@Test func longestLabelsFit() throws {
+@Test func longestLabelsFit() {
     let font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.menuBarFont(ofSize: 0).pointSize, weight: .regular)
-    let units = try CafeData.shipped().units
     let normal = "circle.lefthalf.filled"
     var labels: [(String, String)] = [
         ("", "circle.dashed"), ("", "exclamationmark.circle"),
         ("100%", "hourglass"), ("9h59", "hourglass"), ("23h", "hourglass"), ("59m", "hourglass"), ("99d", "hourglass"),
         ("99%", "exclamationmark.triangle.fill"),
         ("79%", normal), ("", normal),
-        ("0.5", units[0].symbol),  // only the cheapest unit goes below 0.5 (DRD 7.6 rule 5); the bar shows one decimal
-        ("999", units.max { $0.priceEUR < $1.priceEUR }!.symbol),  // above the range: the most expensive unit
+        ("0.5", "cafe"), ("9.9", "cafe"), ("20", "cafe"), ("999", "cafe"),  // all café units use the café icon (D43)
     ]
-    labels += units.flatMap { [("9.9", $0.symbol), ("20", $0.symbol)] }
     // The longest Water Footprint values (D41).
-    labels += ["0.1 L", "9.9 L", "999 L", "9.9kL", "99kL"].map { ($0, DisplayBuilder.waterSymbol) }
+    labels += ["0.1 L", "9.9 L", "999 L", "9.9kL", "99kL"].map { ($0, "water") }
     for (text, symbol) in labels {
-        let image = try #require(NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
-            .withSymbolConfiguration(.init(pointSize: font.pointSize, weight: .regular)))
+        let image = Icon.image(symbol, pointSize: font.pointSize)
+        #expect(image.size.width > 0, "\(symbol) is missing")
         let textWidth = text.isEmpty ? 0 : NSAttributedString(string: text, attributes: [.font: font]).size().width + MenuBarLabel.spacing
         #expect(image.size.width + textWidth <= MenuBarLabel.width, "\(symbol) \(text): \(image.size.width + textWidth) pt")
         #expect(MenuBarLabel.image(symbol: symbol, text: text).size.width == MenuBarLabel.width)
@@ -283,7 +280,7 @@ func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
 @Test func tuitionLabelsFit68Points() throws {
     let tuition = MenuBarLabel.width(.tuition)
     #expect(tuition == 68)
-    let labels: [(String, String)] = ["<.01%", "0.04%", "12.3%", "99.9%", "123%"].map { ($0, DisplayBuilder.tuitionSymbol) }
+    let labels: [(String, String)] = ["<.01%", "0.04%", "12.3%", "99.9%", "123%"].map { ($0, "tuition") }
         + [("99%", "exclamationmark.triangle.fill"), ("100%", "hourglass"), ("9h59", "hourglass")]
     for (text, symbol) in labels {
         let image = MenuBarLabel.image(symbol: symbol, text: text, width: tuition)
