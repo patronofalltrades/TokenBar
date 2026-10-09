@@ -119,3 +119,30 @@ private func record(_ provider: ProviderID, _ model: String, at date: Date, inpu
     #expect(week[.claudeCode]?["opus"] == TokenCounts(input: 3, output: 2))
     #expect(week[.codex]?["gpt"] == TokenCounts(input: 7, output: 1))
 }
+
+/// IES-225: a write in a watched folder calls back, without polling.
+@MainActor @Test func fileWatcherSeesAWrite() async throws {
+    let dir = FileManager.default.temporaryDirectory.appending(path: "Watch-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    #expect(FileWatcher(paths: [dir.appending(path: "missing")]) { _ in } == nil)
+    var calls = 0
+    var changed: [String] = []
+    let watcher = try #require(FileWatcher(paths: [dir], latency: 0.1) { calls += 1; changed += $0 })
+    try Data("x".utf8).write(to: dir.appending(path: "log.jsonl"))
+    for _ in 0..<50 where calls == 0 { try await Task.sleep(for: .milliseconds(100)) }
+    #expect(calls > 0)
+    #expect(changed.contains { $0.hasPrefix(dir.resolvingSymlinksInPath().path) || $0.contains(dir.lastPathComponent) })
+    _ = watcher
+}
+
+/// IES-225: a file change reads only its provider. The other snapshot stays.
+@MainActor @Test func refreshOnlyReadsTheGivenProviders() async {
+    let claude = StubProvider(.claudeCode), codex = StubProvider(.codex)
+    let store = makeStore([claude, codex])
+    await store.refresh()
+    await store.refresh(only: [.codex])
+    #expect(await claude.calls == 1)
+    #expect(await codex.calls == 2)
+    #expect(store.snapshots.count == 2)
+}

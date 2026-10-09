@@ -123,3 +123,18 @@ func unknownModelHasNoCost(model: String) {
     #expect(haiku.usd(TokenCounts(input: 1, output: 1_000_000, cacheWrite1h: 100_000)) == d("0.0000005") + d("2.5") + d("0.1"))
     #expect(haiku.usd(TokenCounts(input: 1, output: 1_000_000)) == d("0.0000001") + d("0.5"))
 }
+
+/// IES-225: the cache gives the same cost and prices each record one time.
+@Test func costCacheMatchesAndPrunes() throws {
+    let table = try PriceTable.shipped()
+    let model = try #require(table.models.first).id
+    let day = Date(timeIntervalSince1970: 1_791_000_000)
+    let old = UsageRecord(provider: .claudeCode, model: model, timestamp: day.addingTimeInterval(-50 * 86_400), tokens: TokenCounts(input: 1000))
+    let new = UsageRecord(provider: .claudeCode, model: model, timestamp: day, tokens: TokenCounts(output: 500))
+    let unknown = UsageRecord(provider: .codex, model: "no-such-model", timestamp: day, tokens: TokenCounts(input: 1))
+    let cache = CostCache()
+    for r in [old, new, unknown, new] { #expect(cache.costEUR(r, prices: table) == table.costEUR(r)) }
+    #expect(cache.count == 3)
+    cache.prune(before: day.addingTimeInterval(-40 * 86_400), day: day)
+    #expect(cache.count == 2)
+}
