@@ -279,7 +279,7 @@ v1 has no API keys and no API key screen (PRD 7.4). Keep these rules for the Lat
 
 ### 4.5 Bar style choice
 
-After detection, the welcome popover asks the user to select a bar style (Section 2.5). Show the two options with a live preview of the menu bar item.
+After detection, the onboarding window asks the user to select a bar style (Section 2.5). Show the two options with a live preview of the menu bar item. The user cannot continue without a selection.
 
 ```
 ┌──────────────────────────────────────────┐
@@ -295,7 +295,25 @@ After detection, the welcome popover asks the user to select a bar style (Sectio
 └──────────────────────────────────────────┘
 ```
 
-### 4.6 Onboarding tone
+### 4.6 Onboarding window
+
+TokenBar has no Dock icon and no main window. Thus onboarding is a window, not the popover (TRD-T28).
+
+1. The window opens in front of other apps at launch when no bar style is saved.
+2. The window opens again at each launch until the user selects a bar style and clicks **Done**. No menu item opens it again. Settings has all the same choices.
+3. TokenBar checks only that the log folders exist. It does not read a log in onboarding.
+
+| Step | Content | Condition |
+|---|---|---|
+| 1. Welcome | Welcome line (Section 4.7). Claude Code and Codex: found or not found. TokenBar cannot see web chat, such as claude.ai or ChatGPT. Your data stays on this Mac. | Always |
+| 2. Bar style | Section 4.5. | Always |
+| 3. Claude limits | Optional **Connect** (Section 5, D39). The current status line keeps working. Errors show below the button. The user can skip. | Only if TokenBar found Claude Code |
+| 4. Keep TokenBar visible | macOS hides the icons near the notch first, without a warning. An open app with many menus pushes icons out. "Hold ⌘ and drag TokenBar to the right, toward the clock." | Always. No Skip button (D40). |
+| 5. Done | "Open TokenBar at login" toggle, on by default (Section 4.4). **Done** saves the bar style and turns on launch at login. A login item failure is quiet. Settings shows the real state. | Always |
+
+Target: the user completes all steps in less than two minutes (PRD-US-18).
+
+### 4.7 Onboarding tone
 
 Use the voice of Section 7.1, but keep instructions literal. Humor is allowed in the welcome line only.
 
