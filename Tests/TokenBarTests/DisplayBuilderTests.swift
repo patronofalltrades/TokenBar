@@ -304,3 +304,22 @@ func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
     #expect(DisplayBuilder.barValue("3.4") == "3.4")
     #expect(DisplayBuilder.barValue("12") == "12")
 }
+
+/// The content is centered, so the open item highlight has the same margin on each side.
+@Test func labelContentIsCentered() throws {
+    for (symbol, text, width) in [("cafe", "2.4", MenuBarLabel.width), ("water", "12 L", MenuBarLabel.width),
+                                  ("tuition", "0.04%", MenuBarLabel.tuitionWidth)] {
+        let image = MenuBarLabel.image(symbol: symbol, text: text, width: width)
+        let rep = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(width) * 2, pixelsHigh: Int(image.size.height) * 2,
+                                                bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                                colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        rep.size = image.size
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        image.draw(in: NSRect(origin: .zero, size: image.size))
+        NSGraphicsContext.restoreGraphicsState()
+        let inked = (0..<rep.pixelsWide).filter { x in (0..<rep.pixelsHigh).contains { (rep.colorAt(x: x, y: $0)?.alphaComponent ?? 0) > 0.05 } }
+        let left = try #require(inked.first), right = rep.pixelsWide - 1 - (try #require(inked.last))
+        #expect(abs(left - right) <= 4, "\(symbol) \(text): left \(left) px, right \(right) px")
+    }
+}

@@ -25,9 +25,11 @@ struct MenuBarLabel: View {
         let icon = Icon.image(symbol, pointSize: font.pointSize)
         let value = NSAttributedString(string: text, attributes: [.font: font])
         let height = max(icon.size.height, value.size().height)
+        // Center the content, so the highlight of the open item has the same margin on each side.
+        let x = max(0, (width - icon.size.width - spacing - value.size().width) / 2)
         let image = NSImage(size: NSSize(width: width, height: height), flipped: false) { _ in
-            icon.draw(in: NSRect(origin: NSPoint(x: 0, y: (height - icon.size.height) / 2), size: icon.size))
-            value.draw(at: NSPoint(x: icon.size.width + spacing, y: (height - value.size().height) / 2))
+            icon.draw(in: NSRect(origin: NSPoint(x: x, y: (height - icon.size.height) / 2), size: icon.size))
+            value.draw(at: NSPoint(x: x + icon.size.width + spacing, y: (height - value.size().height) / 2))
             return true
         }
         image.isTemplate = true
