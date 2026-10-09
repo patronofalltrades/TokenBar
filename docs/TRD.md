@@ -208,7 +208,7 @@ Rejected alternative: `GET https://api.anthropic.com/api/oauth/usage` with the O
 | same | `payload.rate_limits.primary` and `.secondary` → `used_percent`, `window_minutes`, `resets_at` (epoch s) | Limit windows. |
 | same | `payload.rate_limits.plan_type`, `.limit_id` | Display only. |
 
-Mapping: `input = input_tokens − cached_input_tokens`. `cacheRead = cached_input_tokens`. `cacheWrite5m = cache_write_input_tokens`. `output = output_tokens`. `cached_input_tokens` is part of `input_tokens` (CodexBar guards `cached <= input`; UNVERIFIED in OpenAI docs). `reasoning_output_tokens` is part of `output_tokens` (UNVERIFIED). Never decode `response_item` lines, `payload.base_instructions` or `payload.collaboration_mode.settings.developer_instructions`. They hold content.
+Mapping: `input = input_tokens − cached_input_tokens`. `cacheRead = cached_input_tokens`. `cacheWrite5m = 0`: `cache_write_input_tokens` is 0 on every real line (verified 2026-10-08, 47,313 lines). `output = output_tokens`. `cached_input_tokens` is part of `input_tokens` and `reasoning_output_tokens` is part of `output_tokens` (verified on 47,313 real lines, 2026-10-08). Never decode `response_item` lines, `payload.base_instructions` or `payload.collaboration_mode.settings.developer_instructions`. They hold content.
 
 Double count rule: if a file has any `token_usage_record` line, use only those lines for tokens. Else use `token_count` lines. Do not use `total_token_usage`. It is cumulative.
 
@@ -440,7 +440,7 @@ Facts for this decision (checked 2026-10-08):
 2. `scripts/build-app.sh` makes `TokenBar.app/Contents/{MacOS,Resources,Info.plist}`. The `Info.plist` sets `LSUIElement` to true. It copies the SwiftPM resource bundle into `Contents/Resources`. The generated `Bundle.module` does not look in `Contents/Resources`: it checks the `.app` root and the build folder only (verified 2026-10-08, Swift 6.3.3). App code must load resources with `Bundle.tokenBar` (`Core/ResourceBundle.swift`), which checks `Contents/Resources` first. Do not call `Bundle.module` directly.
 3. Ad-hoc sign the bundle with `codesign --force --sign - TokenBar.app`. This signature seals `Info.plist` and the resources (fact 4). Do not use `--deep`, because the bundle has one executable.
 4. Verify the signature with `codesign --verify --strict --verbose=2 TokenBar.app`.
-5. Make the npm app archive with `ditto -c -k --keepParent TokenBar.app npm/TokenBar.zip`.
+5. `scripts/build-app.sh` makes `TokenBar.zip` in the repository root. The publish step copies it to `npm/TokenBar.zip`.
 6. Write `SHA256SUMS` with `shasum -a 256` for `TokenBar.zip`.
 7. Upload `TokenBar.zip` and `SHA256SUMS` to a GitHub Release with `gh release create`. Put the SHA-256 values in the release notes.
 8. Publish the npm package (see "npm publish" below).

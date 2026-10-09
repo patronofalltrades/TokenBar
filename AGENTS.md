@@ -92,7 +92,7 @@ More than one agent works on this repository at the same time. Agents can come f
 2. Before you start, set the issue to **In Progress**. Add a comment with your agent name and model.
 3. If the issue is already **In Progress** for a different agent, do not start. Tell the maintainer.
 4. When you open the pull request, link it to the issue.
-5. Do not merge your own pull request. The maintainer merges after a Claude pre-review and a green CI run ([docs/WORKFLOW.md](docs/WORKFLOW.md)).
+5. Do not merge your own pull request. The Claude coordinator merges after its pre-review, a green CI run and a wave integration check (D36, [docs/WORKFLOW.md](docs/WORKFLOW.md)).
 
 ### 6.2 Branches and worktrees
 
