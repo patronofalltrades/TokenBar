@@ -662,17 +662,20 @@ Rules:
 
 ### 8.1 Color
 
-Use semantic system colors only. They adapt to light mode, dark mode and Increase Contrast.
+Use the café palette (`Theme`). Each color adapts to light mode and dark mode. The palette keeps high contrast in both modes.
 
 | Use | Color |
 |---|---|
-| Primary text | `Color.primary` |
+| Popover and onboarding background | `Theme.paper` (light cream, dark espresso) |
+| Primary text | `Theme.ink` |
 | Secondary text, reset times | `Color.secondary` |
+| Hairlines, quiet surfaces | `Theme.latte` |
 | Bar track | `Color.secondary.opacity(0.2)` |
-| Bar fill below 80% | `Color.accentColor` |
-| Bar fill 80–99% | `Color.orange` |
-| Bar fill 100% | `Color.red` |
-| Roast text | `Color.secondary` |
+| Bar fill below 80% | `Theme.accent` (crema amber) |
+| Bar fill 80–99% | `Theme.warning` (warm orange) |
+| Bar fill 100% | `Theme.danger` (deep red) |
+| Roast text | `Theme.ink.opacity(0.7)`, italic, in typographic quotes |
+| Share card background | `Theme.cream`, light only (DRD 7.7) |
 | Menu bar item | Template image. No color. |
 
 Do not use a brand color for a provider. Do not use green for "good". Low usage is normal, not a success.

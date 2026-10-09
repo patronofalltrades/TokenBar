@@ -29,30 +29,33 @@ struct PopoverView: View {
             if snapshot.state == .noData {
                 NoDataView(check: actions.refresh)
             } else {
-                Text("TokenBar").font(.headline)
-                Divider()
+                Text("TokenBar").font(.headline).foregroundStyle(Theme.ink)
+                Theme.hairline
                 // DRD 3.1: the list scrolls only when it is taller than its share of the 560 pt.
                 if listHeight > 320 {
                     ScrollView { providerListView(now: now) }.frame(height: 320)
                 } else {
                     providerListView(now: now)
                 }
-                Divider()
+                Theme.hairline
                 totals
                 if let roast = snapshot.roast {
-                    Divider()
-                    Text("“\(roast)”")
-                        .font(.callout).italic().foregroundStyle(.secondary)
+                    Theme.hairline
+                    Label("“\(roast)”", systemImage: "quote.opening")
+                        .font(.callout).italic()
+                        .foregroundStyle(Theme.ink.opacity(0.7))
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityLabel("Roast: \(roast)")
                 }
             }
-            Divider()
+            Theme.hairline
             footer(now: now)
         }
         .padding(16)
         .frame(width: 320, alignment: .leading)
         .frame(maxHeight: 560)
+        .background(Theme.paper)
+        .tint(Theme.accent)
         .symbolRenderingMode(.hierarchical)
     }
 
@@ -101,6 +104,9 @@ struct PopoverView: View {
                 Text(detail).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.latte.opacity(0.45), in: RoundedRectangle(cornerRadius: 8))
     }
 
     private func footer(now: Date) -> some View {
@@ -273,7 +279,7 @@ private extension DisplaySnapshot.ProviderRow {
 enum PopoverFormat {
     /// DRD 8.1.
     static func barColor(_ percent: Double) -> Color {
-        percent >= 100 ? .red : percent >= 80 ? .orange : .accentColor
+        percent >= 100 ? Theme.danger : percent >= 80 ? Theme.warning : Theme.accent
     }
 
     /// "≈ €2.10".

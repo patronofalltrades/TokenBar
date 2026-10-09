@@ -61,10 +61,10 @@ func sampleRendersAt320Points(name: String) throws {
 }
 
 @Test func barColorThresholds() {
-    #expect(PopoverFormat.barColor(79.9) == .accentColor)
-    #expect(PopoverFormat.barColor(80) == .orange)
-    #expect(PopoverFormat.barColor(99) == .orange)
-    #expect(PopoverFormat.barColor(100) == .red)
+    #expect(PopoverFormat.barColor(79.9) == Theme.accent)
+    #expect(PopoverFormat.barColor(80) == Theme.warning)
+    #expect(PopoverFormat.barColor(99) == Theme.warning)
+    #expect(PopoverFormat.barColor(100) == Theme.danger)
 }
 
 @Test func stillAvailableShowsWhatIsLeft() {

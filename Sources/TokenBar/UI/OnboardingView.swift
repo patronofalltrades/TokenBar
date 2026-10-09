@@ -120,6 +120,8 @@ struct OnboardingView: View {
         .padding(24)
         .frame(width: 440, alignment: .topLeading)
         .frame(minHeight: 340, alignment: .top)
+        .background(Theme.paper)
+        .tint(Theme.accent)
         .symbolRenderingMode(.hierarchical)
     }
 

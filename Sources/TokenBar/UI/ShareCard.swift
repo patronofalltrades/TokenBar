@@ -64,20 +64,23 @@ struct ShareCardView: View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
                 if line.isRoast {
-                    Text(line.text).font(.callout).italic().foregroundStyle(.secondary).padding(.top, 6)
+                    Text(line.text).font(.callout).italic().foregroundStyle(Theme.ink.opacity(0.7)).padding(.top, 6)
                 } else {
                     Label(line.text, systemImage: line.symbol ?? "cup.and.saucer.fill")
                         .font(index == 0 ? .title3.weight(.semibold) : .callout)
                         .monospacedDigit()
+                        .foregroundStyle(Theme.ink)
                 }
+                if index < lines.count - 1 { Theme.dashed.padding(.vertical, 4) }
             }
-            Text(ShareCard.footer).font(.caption).foregroundStyle(.tertiary).padding(.top, 10)
+            Theme.dashed.padding(.vertical, 4)
+            Text(ShareCard.footer).font(.caption).monospaced().foregroundStyle(Theme.ink.opacity(0.5))
         }
         .fixedSize(horizontal: false, vertical: true)
         .symbolRenderingMode(.hierarchical)
         .padding(24)
         .frame(width: 360, alignment: .leading)
-        .background(Color.white)
+        .background(Theme.cream)
         .environment(\.colorScheme, .light)
     }
 }

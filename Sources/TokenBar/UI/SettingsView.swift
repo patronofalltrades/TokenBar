@@ -15,6 +15,7 @@ struct SettingsView: View {
             AboutSettings().tabItem { Label("About", systemImage: "info.circle") }
         }
         .frame(width: 480)
+        .tint(Theme.accent)
     }
 }
 
