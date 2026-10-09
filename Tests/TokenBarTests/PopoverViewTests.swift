@@ -56,7 +56,7 @@ func sampleRendersAt320Points(name: String) throws {
 }
 
 @Test func barColorThresholds() {
-    #expect(PopoverFormat.barColor(79.9) == Theme.coffee)
+    #expect(PopoverFormat.barColor(79.9) == Theme.bar)
     #expect(PopoverFormat.barColor(80) == Theme.warning)
     #expect(PopoverFormat.barColor(99) == Theme.warning)
     #expect(PopoverFormat.barColor(100) == Theme.danger)
@@ -76,10 +76,10 @@ func barColorsDiffer(appearance: NSAppearance.Name) throws {
     func distance(_ a: Color, _ b: Color) throws -> CGFloat {
         sqrt(zip(try rgb(a), try rgb(b)).map { ($0 - $1) * ($0 - $1) }.reduce(0, +))
     }
-    #expect(try rgb(Theme.coffee) != rgb(Theme.paper))  // the color is dynamic, not a fallback
-    #expect(try distance(Theme.coffee, Theme.warning) >= 0.3)
+    #expect(try rgb(Theme.bar) != rgb(Theme.paper))  // the color is dynamic, not a fallback
+    #expect(try distance(Theme.bar, Theme.warning) >= 0.3)
     #expect(try distance(Theme.warning, Theme.danger) >= 0.3)
-    #expect(try distance(Theme.coffee, Theme.danger) >= 0.3)
+    #expect(try distance(Theme.bar, Theme.danger) >= 0.3)
 }
 
 @Test func stillAvailableShowsWhatIsLeft() {
