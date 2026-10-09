@@ -124,7 +124,7 @@ func formatsValue(value: String, expected: String) {
     #expect(line("117000", days: 30) == "Tuition fully burned. The tokens graduated before you did.")
 }
 
-/// A tiny value shows "<.01%" (D41: "<0.01%" does not fit 64 pt).
+/// A tiny value shows "<.01%" (D41: "<0.01%" does not fit 68 pt).
 @Test func tuitionBarValueHasFiveCharactersMaximum() {
     let values = ["0", "0.000049", "0.00005", "0.0004", "0.09994", "0.1234", "0.99949", "1.234"].map {
         CafeIndex.tuitionBarValue(spendEUR: tuition.priceEUR * Decimal(string: $0)!, tuition: tuition)

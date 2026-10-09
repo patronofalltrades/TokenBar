@@ -54,11 +54,11 @@ TokenBar has one display mode: Compact, on all displays (decided 2026-10-08). No
 | Content | Maximum width |
 |---|---|
 | Symbol and one value. The index choice (Section 2.5) selects the value. | 52 pt |
-| The same, with the Tuition Meter selected (D41). All states use this width. | 64 pt |
+| The same, with the Tuition Meter selected (D41). All states use this width. | 68 pt |
 
 The symbol changes with the state (Section 2.4).
 
-The Tuition Meter is the only exception to 52 pt. `🎓 0.04%` needs about 64 pt. The maintainer chose the clear `%` over the cap (D41).
+The Tuition Meter is the only exception to 52 pt. `🎓 0.04%` needs about 68 pt. The maintainer chose the clear `%` over the cap (D41).
 
 Use monospaced digits. The width must not change when the number changes from `9%` to `10%`. Reserve the width for the longest value.
 
@@ -108,7 +108,7 @@ In the Warning and Limit hit states, each index shows the limit value: `⚠ 87%`
 Rules:
 
 1. In the Warning and Limit hit states, all indexes show the limit value. The joke never hides a warning (principle 4).
-2. The `☕` is the symbol of the selected café unit. The `🎓` is `graduationcap.fill`. The `💧` is `drop.fill`. The Tuition Meter item is 64 pt wide (Section 2.2).
+2. The `☕` is the symbol of the selected café unit. The `🎓` is `graduationcap.fill`. The `💧` is `drop.fill`. The Tuition Meter item is 68 pt wide (Section 2.2).
 3. If the index has no value (for example no cost today), the menu bar item shows the primary metric.
 4. **Roasts** is a separate toggle, on by default. An alert includes a roast only when **Roasts** is on. No separate alert roast setting exists (decided 2026-10-08).
 5. Before the user selects an index, TokenBar shows numbers only and no roast.
@@ -575,7 +575,7 @@ TokenBar calculates two values from it:
 Rules:
 
 1. Show the tuition benchmark as the popover line of the Tuition Meter only (D41). Format: `🎓 {tuition_percent} of your {label}, in tokens (since install)`. Example: `🎓 0.04% of your MBA tuition, in tokens (since install)`. Code takes the label from the data file. Code has no hardcoded "IESE" string.
-5. Tuition Meter menu bar value, in 64 pt: `0.04%` and `9.99%` below 10, `12.3%` below 100, else `123%`. Below 0.005%, show `<.01%`. `<0.01%` does not fit 64 pt.
+5. Tuition Meter menu bar value, in 68 pt: `0.04%` and `9.99%` below 10, `12.3%` below 100, else `123%`. Below 0.005%, show `<.01%`. `<0.01%` does not fit 68 pt.
 6. Tuition Meter burn line, under the tuition line in the popover and on the share card. Year = current year + (tuition − spend since install) ÷ (spend since install ÷ days since install) ÷ 365.25, rounded to a whole year. Text: `At this pace, you'll burn through it by the year 2033.`
    - Less than 1 day since install, or zero spend: no line.
    - Year above 99,999: `At this pace, you'll burn through it by the year 99,999+. Bring snacks.`

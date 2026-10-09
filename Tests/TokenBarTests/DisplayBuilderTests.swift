@@ -266,11 +266,11 @@ func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
     }
 }
 
-/// D41: the Tuition Meter has 64 pt for "0.04%", in each state. The advance width of "0.04%" is 64.07 pt,
+/// D41: the Tuition Meter has 68 pt for "0.04%", in each state. The advance width of "0.04%" is 64.07 pt,
 /// so the test checks the drawn pixels: the last column of the image must be empty.
-@Test func tuitionLabelsFit64Points() throws {
+@Test func tuitionLabelsFit68Points() throws {
     let tuition = MenuBarLabel.width(.tuition)
-    #expect(tuition == 64)
+    #expect(tuition == 68)
     let labels: [(String, String)] = ["<.01%", "0.04%", "12.3%", "99.9%", "123%"].map { ($0, DisplayBuilder.tuitionSymbol) }
         + [("99%", "exclamationmark.triangle.fill"), ("100%", "hourglass"), ("9h59", "hourglass")]
     for (text, symbol) in labels {

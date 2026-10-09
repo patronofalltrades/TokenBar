@@ -6,7 +6,7 @@ import SwiftUI
 struct MenuBarLabel: View {
     nonisolated static let width: CGFloat = 52
     /// D41: the maintainer chose a clear "0.04%" over the 52 pt cap for the Tuition Meter only.
-    nonisolated static let tuitionWidth: CGFloat = 64
+    nonisolated static let tuitionWidth: CGFloat = 68
 
     /// Each state uses the same width for one index, so a warning does not move the other menu bar items.
     nonisolated static func width(_ index: IndexChoice?) -> CGFloat { index == .tuition ? tuitionWidth : width }

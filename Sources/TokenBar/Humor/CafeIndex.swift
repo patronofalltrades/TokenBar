@@ -97,7 +97,7 @@ enum CafeIndex {
         fixed(rounded(spendEUR / tuition.priceEUR * 100, 2), 2) + "%"
     }
 
-    /// The menu bar value of the Tuition Meter. Fits 64 pt (D41): "0.04%", "12.3%", "123%".
+    /// The menu bar value of the Tuition Meter. Fits 68 pt (D41): "0.04%", "12.3%", "123%".
     /// Below 0.005% it shows "<.01%". "<0.01%" does not fit.
     static func tuitionBarValue(spendEUR: Decimal, tuition: Tuition) -> String {
         let percent = spendEUR / tuition.priceEUR * 100
