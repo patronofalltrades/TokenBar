@@ -34,5 +34,4 @@ struct DisplaySnapshot: Equatable, Sendable {
     var indexDetail: String? = nil  // small second line: the unit equivalent and the week, or the burn year (DRD 3.1)
     let roast: String?              // nil before the user picks an index, when roasts are off, or when none matches
     let lastRefresh: Date?
-    let pricesVerified: String      // the `last_verified` date of prices.json
 }

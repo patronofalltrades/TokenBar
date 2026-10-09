@@ -130,7 +130,7 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
     let s = Fixture().build([snapshot([record(eur: 6.12)], limits: [limit(62)])])
     #expect(s.index == nil)
     #expect(s.indexLine == nil && s.indexSymbol == nil && s.roast == nil)
-    #expect(s.pricesVerified == "2026-10-08" && s.lastRefresh == noon)
+    #expect(s.lastRefresh == noon)
 }
 
 @Test func noIndexYetShowsThePrimaryMetric() {
@@ -165,8 +165,8 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
     let s = f.build([snapshot([record(eur: 46.80), record(eur: 0.01, at: tomorrow.addingTimeInterval(-60))])], now: tomorrow)
     #expect(s.indexDetail == "At this pace, you'll burn through it by the year 2033.")
     #expect(ShareCard.text(s).contains("by the year 2033."))
-    // The café second line is the week in the same unit: €46.80 / €15 = 3.1 menús del día.
-    #expect(Fixture(index: .cafe).build([snapshot([record(eur: 46.80)])]).indexDetail == "3.1 this week")
+    // The café second line is the week in the same unit: €46.80 / €10 = 4.7 menús del día.
+    #expect(Fixture(index: .cafe).build([snapshot([record(eur: 46.80)])]).indexDetail == "4.7 this week")
 }
 
 /// 200k output tokens × 0.1125 mL = 22.5 L. Input tokens do not count.
