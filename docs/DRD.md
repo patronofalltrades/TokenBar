@@ -43,7 +43,7 @@ This document specifies the user interface, the humor system and the café index
 The primary metric is always Auto (decided 2026-10-08). No "Menu bar shows" setting exists.
 
 1. Auto shows the highest limit percentage of all providers. This is the limit that is closest to a reset problem. Example: `62%`.
-2. If no provider has a limit, Auto shows today's cost for all providers. Example: `≈ €3.40`. TRD-T08 checks that this value fits in 52 pt.
+2. If no provider has a limit, Auto shows today's cost for all providers. Example: `€3.4`. The menu bar has no `≈` sign. The popover keeps `≈ €` (D38). TRD-T08 checks that this value fits in 52 pt.
 
 The bar style (Section 2.5) selects if the menu bar item shows the primary metric or the café-index value.
 
@@ -321,8 +321,9 @@ Settings has 3 tabs: General, Alerts and About (decided 2026-10-08). No Provider
 │ Launch at login     [✓]                                 │
 │                                                         │
 │ Claude limits (optional)                                │
-│ Add this line to Claude Code settings: [Copy]           │
-│ ⚠ This replaces your current Claude Code status line.   │
+│ Not connected                               [Connect]   │
+│ Your current Claude Code status line keeps working.     │
+│ ▸ Show manual setup                                     │
 │                                                         │
 │ Tip: Hold ⌘ and drag TokenBar to the right.             │
 └─────────────────────────────────────────────────────────┘
@@ -334,7 +335,7 @@ Settings has 3 tabs: General, Alerts and About (decided 2026-10-08). No Provider
 | General | Roasts | Toggle | On (Funny), off (Serious) |
 | General | Café index | Toggle | On (Funny), off (Serious) |
 | General | Launch at login | Toggle | On after onboarding (decided 2026-10-08) |
-| General | Claude limits | Status line snippet, **Copy** button, warning text, status ("Connected as of 14:02", "Not set up") | Not set up |
+| General | Claude limits | Status ("Not connected", "Connected. Waiting for the next Claude Code reply.", "Connected · updated 3 min ago"), **Connect** or **Disconnect** button, caption text, "Show manual setup" with the snippet and a **Copy** button (D39) | Not connected |
 | General | Command-drag tip | Text (Section 2.3) | — |
 | Alerts | 95% alert | Toggle | On |
 | Alerts | Limit hit alert | Toggle | On |
@@ -342,8 +343,8 @@ Settings has 3 tabs: General, Alerts and About (decided 2026-10-08). No Provider
 
 Rules:
 
-1. The Claude limits setup is opt-in. TokenBar never edits the Claude Code settings file. The TRD specifies the snippet (TRD 5.1).
-2. Show the warning text before the **Copy** button: the snippet replaces an existing custom Claude Code status line.
+1. The Claude limits setup is opt-in. TokenBar edits the Claude Code settings file only when the user clicks **Connect** or **Disconnect** (D39, TRD 5.1).
+2. Show the caption below the button: the current status line keeps working, open sessions must restart, and Claude Code runs the status line only in trusted folders.
 3. Without the setup, the Claude Code row shows tokens and cost only (Section 3.2).
 4. TokenBar refreshes every 60 seconds. No refresh setting exists. The popover **Refresh** button reads at once.
 5. No currency setting exists. All costs are in EUR (Section 7.6).

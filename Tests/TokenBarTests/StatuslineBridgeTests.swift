@@ -53,6 +53,39 @@ import Testing
         #expect(!FileManager.default.fileExists(atPath: file.path))
     }
 
+    private func chain(_ command: String?) throws -> String? {
+        let previous = file.deletingLastPathComponent().appending(path: "statusline-previous.json")
+        if let command {
+            try FileManager.default.createDirectory(at: previous.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try JSONSerialization.data(withJSONObject: ["type": "command", "command": command]).write(to: previous)
+        }
+        return StatuslineBridge.chain(input: input(rateLimits: both), previousFile: previous)
+    }
+
+    @Test func chainPrintsPreviousOutput() throws {
+        defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+        #expect(try chain("echo hi") == "hi")
+        #expect(try chain("printf 'a\\nb\\n\\n'") == "a\nb")
+    }
+
+    @Test func chainPassesStdin() throws {
+        defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+        #expect(try chain(#"grep -o '"session_id":"abc"'"#) == #""session_id":"abc""#)
+    }
+
+    @Test(arguments: [nil, "exit 1", "echo hi; exit 1", "true", "/no/such/command"])
+    func chainFallsBack(command: String?) throws {
+        defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+        #expect(try chain(command) == nil)
+    }
+
+    @Test func chainTimesOut() throws {
+        defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+        let start = Date()
+        #expect(try chain("sleep 5; echo late") == nil)
+        #expect(Date().timeIntervalSince(start) < 3)
+    }
+
     /// Claude Code drops a window after its reset time. The bridge keeps the old window, so the app can show it as reset.
     @Test func keepsDroppedWindow() throws {
         defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
