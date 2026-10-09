@@ -54,6 +54,8 @@ struct GeneralSettings: View {
 
             Section("Claude limits (optional)") {
                 Text("Add this line to your Claude Code settings file (~/.claude/settings.json). TokenBar then shows your 5-hour and weekly Claude limits.")
+                Text("Claude Code runs the status line only after you trust the workspace, and not when disableAllHooks is true.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Label("This replaces your current Claude Code status line.", systemImage: "exclamationmark.triangle")
                 HStack(alignment: .top) {
                     Text(SettingsView.statusLineSnippet)

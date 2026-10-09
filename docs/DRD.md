@@ -179,7 +179,7 @@ Add the `exclamationmark.triangle.fill` symbol next to the provider name. The ro
 │ Claude Code                  ⌛ Limit hit │
 │ ████████████████████████  100% of 5-hour │  ← bar in red
 │ resets in 1 h 48 min  (at 14:30)         │
-│ Codex still available: 18% of weekly     │
+│ Codex still available: 82% left this week│
 ```
 
 Show the absolute reset time next to the relative time. If a different provider has capacity, show one line that names it.

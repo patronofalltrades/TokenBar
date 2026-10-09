@@ -104,7 +104,7 @@ struct DisplayBuilder {
         return DisplaySnapshot(
             state: state, barStyle: style, menuBarText: text, menuBarSymbol: symbol, rows: rows,
             costTodayEUR: costToday, costWeekEUR: costWeek,
-            cafeLine: pick.map { "Today = \($0.text)" },
+            cafeLine: pick.map { "Today = \($0.text)" }, cafeSymbol: pick?.unit.symbol,
             tuitionLine: cafeOn ? spend.map { CafeIndex.tuitionLine(spendEUR: $0, tuition: cafe.tuition) } : nil,
             roast: roast, lastRefresh: lastRefresh, pricesVerified: prices.lastVerified)
     }

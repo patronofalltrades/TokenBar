@@ -78,7 +78,7 @@ struct PopoverView: View {
               let other = visibleRows.first(where: { !$0.isLimitHit && $0.errorText == nil && !$0.limits.isEmpty }),
               let top = other.limits.max(by: { $0.usedPercent < $1.usedPercent })
         else { return nil }
-        return "\(other.provider.displayName) still available: \(Int(top.usedPercent))% of \(top.name)"
+        return PopoverFormat.stillAvailable(other.provider, top)
     }
 
     private var totals: some View {
@@ -90,7 +90,7 @@ struct PopoverView: View {
             }
             .font(.title3).monospacedDigit()
             if let cafe = snapshot.cafeLine {
-                Label(cafe, systemImage: "cup.and.saucer")
+                Label(cafe, systemImage: snapshot.cafeSymbol ?? "cup.and.saucer.fill")
                     .font(.callout)
                     .accessibilityLabel("Today's cost, \(PopoverFormat.euro(snapshot.costTodayEUR)), equals \(cafe)")
             }
@@ -138,7 +138,7 @@ private struct ProviderRowView: View {
         VStack(alignment: .leading, spacing: 6) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(row.provider.displayName).font(.headline)
+                    Text(DisplayBuilder.name(row.provider)).font(.headline)
                     Spacer()
                     badge
                 }
@@ -206,7 +206,7 @@ private struct ProviderRowView: View {
 
     /// DRD 9.1: one element per row.
     private var accessibilityText: String {
-        let name = row.provider.displayName
+        let name = DisplayBuilder.name(row.provider)
         guard row.installed else { return "\(name), not installed." }
         if let error = row.errorText { return "\(name), error. \(error)" }
         var parts = row.limits.map { limit in
@@ -249,15 +249,6 @@ private extension DisplaySnapshot.ProviderRow {
     var isLimitHit: Bool { (topPercent ?? 0) >= 100 }
 }
 
-private extension ProviderID {
-    var displayName: String {
-        switch self {
-        case .claudeCode: "Claude Code"
-        case .codex: "Codex"
-        }
-    }
-}
-
 /// Small text helpers. Tests pass a fixed locale and time zone.
 enum PopoverFormat {
     /// DRD 8.1.
@@ -296,6 +287,12 @@ enum PopoverFormat {
         }
         let (h, m) = (minutes / 60, minutes % 60)
         return h == 0 ? "resets in \(m) min" : "resets in \(h) h \(m) min"
+    }
+
+    /// DRD 3.5: "Codex still available: 82% left this week".
+    static func stillAvailable(_ provider: ProviderID, _ limit: DisplaySnapshot.Limit) -> String {
+        let window = limit.name == "weekly" ? "this week" : "in this \(limit.name) window"
+        return "\(DisplayBuilder.name(provider)) still available: \(100 - Int(limit.usedPercent))% left \(window)"
     }
 
     /// "Updated 2 min ago".
@@ -338,7 +335,7 @@ enum PopoverSamples {
         return DisplaySnapshot(
             state: state, barStyle: style, menuBarText: "62%", menuBarSymbol: "gauge.with.dots.needle.33percent",
             rows: rows, costTodayEUR: 6.10, costWeekEUR: 21.80,
-            cafeLine: funny ? "Today = 3.4 cafés con leche" : nil,
+            cafeLine: funny ? "Today = 3.4 cafés con leche" : nil, cafeSymbol: funny ? "cup.and.saucer.fill" : nil,
             tuitionLine: funny ? "0.04% of your MBA tuition, in tokens" : nil,
             roast: funny ? roast : nil, lastRefresh: ago(2), pricesVerified: "2026-10-08")
     }
@@ -358,7 +355,7 @@ enum PopoverSamples {
         rows: ProviderID.allCases.map {
             .init(provider: $0, installed: false, errorText: nil, limits: [], costTodayEUR: nil, hasUnpricedModels: false)
         },
-        costTodayEUR: 0, costWeekEUR: 0, cafeLine: nil, tuitionLine: nil, roast: nil,
+        costTodayEUR: 0, costWeekEUR: 0, cafeLine: nil, cafeSymbol: nil, tuitionLine: nil, roast: nil,
         lastRefresh: nil, pricesVerified: "2026-10-08")
 
     static let all: [(name: String, snapshot: DisplaySnapshot)] = [

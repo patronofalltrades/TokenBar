@@ -75,7 +75,7 @@ struct LimitAlerts {
                       !sent.contains(where: { now.timeIntervalSince($0.sentAt) < 5 * 60 && $0.event.rawValue >= event.rawValue })
                 else { return nil }
 
-                let name = row.provider == .claudeCode ? "Claude Code" : "Codex"
+                let name = DisplayBuilder.name(row.provider)
                 let title: String, number: String
                 switch event {
                 case .warning95:

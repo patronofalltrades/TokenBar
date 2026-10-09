@@ -99,7 +99,7 @@ enum CafeIndex {
 
     /// The popover line, Funny style only (DRD 7.6 rule 1).
     static func tuitionLine(spendEUR: Decimal, tuition: Tuition) -> String {
-        "🎓 \(tuitionPercent(spendEUR: spendEUR, tuition: tuition)) of your \(tuition.label), in tokens"
+        "\(tuitionPercent(spendEUR: spendEUR, tuition: tuition)) of your \(tuition.label), in tokens"
     }
 
     /// Formats a rounded value with a fixed number of decimals and a "." separator.
