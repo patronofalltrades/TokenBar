@@ -10,6 +10,17 @@ enum SettingsKey {
     static let alertLimitEnabled = "alertLimitEnabled"  // default true
 }
 
+/// The settings that change the display. A change rebuilds the snapshot at once, without a log read (IES-224).
+struct DisplaySettings: Equatable {
+    let index: String?
+    let roasts: Bool
+
+    init(_ defaults: UserDefaults = .standard) {
+        index = defaults.string(forKey: SettingsKey.index)
+        roasts = defaults.object(forKey: SettingsKey.roastsEnabled) as? Bool ?? true
+    }
+}
+
 /// DRD 2.5, D41. TokenBar shows one index only.
 enum IndexChoice: String, CaseIterable, Sendable {
     case cafe, tuition, water

@@ -12,8 +12,10 @@ final class AppModel {
     private let builder = DisplayBuilder(prices: try! .shipped(), cafe: try! .shipped(), water: try! .shipped())
     private var roasts = RoastSelector(roasts: try! Roast.shipped())
     private let tuition = TuitionTotal(defaults: .standard)
+    private var shown = DisplaySettings()
 
     /// Refreshes every 60 s (TRD 7) and builds the snapshot one time after each refresh.
+    /// A change of the index or the roasts setting builds it again at once, from the last data (IES-224).
     init() {
         Task {
             while !Task.isCancelled {
@@ -21,14 +23,25 @@ final class AppModel {
                 try? await Task.sleep(for: .seconds(60), tolerance: .seconds(10))
             }
         }
+        Task { [weak self] in
+            for await _ in NotificationCenter.default.notifications(named: UserDefaults.didChangeNotification) {
+                guard let self else { return }
+                // The builder also writes settings. Those writes do not change `DisplaySettings`, so no loop.
+                if DisplaySettings() != shown, store.lastRefresh != nil { build() }
+            }
+        }
     }
 
     func refresh() async {
         await store.refresh()
-        let snapshot = builder.build(snapshots: store.snapshots, errors: store.errors, lastRefresh: store.lastRefresh,
-                                     now: Date(), roasts: &roasts, tuition: tuition)
-        self.snapshot = snapshot
-        LimitAlerts().refreshed(snapshot)
+        build()
+        if let snapshot { LimitAlerts().refreshed(snapshot) }
+    }
+
+    private func build() {
+        shown = DisplaySettings()
+        snapshot = builder.build(snapshots: store.snapshots, errors: store.errors, lastRefresh: store.lastRefresh,
+                                 now: Date(), roasts: &roasts, tuition: tuition)
     }
 }
 

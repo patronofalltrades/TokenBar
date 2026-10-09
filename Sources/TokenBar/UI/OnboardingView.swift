@@ -76,9 +76,18 @@ import SwiftUI
         window.isReleasedWhenClosed = false
         window.center()
         Self.window = window
-        // An accessory app is not active, so the window opens behind other windows without this.
+        // macOS 14 does not let an accessory app take the front (IES-224). A regular app with a Dock icon can.
+        // `orderFrontRegardless` shows the window above other apps also when the activation fails.
+        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { _ in
+            MainActor.assumeIsolated {
+                NSApplication.shared.setActivationPolicy(.accessory)
+                Self.window = nil
+            }
+        }
+        NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.activate()
         window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
     }
 }
 
