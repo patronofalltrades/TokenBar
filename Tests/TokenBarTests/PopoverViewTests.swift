@@ -56,10 +56,28 @@ func sampleRendersAt320Points(name: String) throws {
 }
 
 @Test func barColorThresholds() {
-    #expect(PopoverFormat.barColor(79.9) == .accentColor)
-    #expect(PopoverFormat.barColor(80) == .orange)
-    #expect(PopoverFormat.barColor(99) == .orange)
-    #expect(PopoverFormat.barColor(100) == .red)
+    #expect(PopoverFormat.barColor(79.9) == Theme.bar)
+    #expect(PopoverFormat.barColor(80) == Theme.high)
+    #expect(PopoverFormat.barColor(100) == Theme.high)
+}
+
+/// DRD 8.1 rule 4: the three bar colors are far apart in light and dark mode. PR #28 had 0.16 between normal and warning.
+@Test(arguments: [NSAppearance.Name.aqua, .darkAqua])
+func barColorsDiffer(appearance: NSAppearance.Name) throws {
+    func rgb(_ color: Color) throws -> [CGFloat] {
+        var resolved: NSColor?
+        NSAppearance(named: appearance)!.performAsCurrentDrawingAppearance {
+            resolved = NSColor(color).usingColorSpace(.sRGB)
+        }
+        let c = try #require(resolved)
+        return [c.redComponent, c.greenComponent, c.blueComponent]
+    }
+    func distance(_ a: Color, _ b: Color) throws -> CGFloat {
+        sqrt(zip(try rgb(a), try rgb(b)).map { ($0 - $1) * ($0 - $1) }.reduce(0, +))
+    }
+    #expect(try rgb(Theme.bar) != rgb(Theme.paper))  // the color is dynamic, not a fallback
+    #expect(try distance(Theme.bar, Theme.high) >= 0.3)
+    #expect(try distance(Theme.bar, Theme.track) >= 0.3)
 }
 
 @Test func stillAvailableShowsWhatIsLeft() {

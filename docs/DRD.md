@@ -632,7 +632,7 @@ The share card lets the user post the joke in a class chat. It is the main word-
 5. The card does not contain the user name, file paths, project names or prompt content. It shows model names only if the roast uses `{model}`.
 6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat." The confirmation replaces the "Prices verified" line for 3 seconds.
 7. Before the user selects an index, there is no card. The popover has no **Share** button (D42).
-8. The image is 360 pt wide, at scale 2, with a white background and the light appearance. The clipboard text uses the emoji of the index: the café unit emoji (Section 7.6), `🎓` or `💧`.
+8. The image is 360 pt wide, at scale 2, with the light appearance. It looks like a receipt: red text on white paper, a dashed rule after each line and a monospaced footer (D45). The clipboard text uses the emoji of the index: the café unit emoji (Section 7.6), `🎓` or `💧`.
 
 ```
 ┌──────────────────────────────┐
@@ -674,18 +674,31 @@ Rules:
 
 ### 8.1 Color
 
-Use semantic system colors only. They adapt to light mode, dark mode and Increase Contrast.
+Use the IESE palette (`UI/Theme.swift`, D45). Each mode has two colors and their tints. Light mode is IESE red on white. Dark mode is white on IESE near-black (#1E1E1E). Do not mix red and black. The values come from the iese.edu style sheet.
 
-| Use | Color |
-|---|---|
-| Primary text | `Color.primary` |
-| Secondary text, reset times | `Color.secondary` |
-| Bar track | `Color.secondary.opacity(0.2)` |
-| Bar fill below 80% | `Color.accentColor` |
-| Bar fill 80–99% | `Color.orange` |
-| Bar fill 100% | `Color.red` |
-| Roast text | `Color.secondary` |
-| Menu bar item | Template image. No color. |
+| Use | Color | Light (sRGB) | Dark (sRGB) |
+|---|---|---|---|
+| Window background | `Theme.paper` | 1, 1, 1 (white) | 0.118, 0.118, 0.118 (#1E1E1E) |
+| All text, selection outline | `Theme.ink` | 0.878, 0, 0 (IESE red, 5:1) | 0.96, 0.96, 0.96 |
+| Secondary and tertiary text | `Theme.secondary`, `Theme.tertiary` | red, solid | 0.78 and 0.70 gray |
+| Index headline surface and main button, with `paper` text | `Theme.accent` | red | white |
+| Toggles and pickers | `Theme.control` | red | 0.55 gray |
+| Hairlines, quiet outlines | `Theme.rule` | 0.97, 0.78, 0.78 | 0.30 gray |
+| Bar track, chips | `Theme.track` | 0.99, 0.91, 0.91 | 0.24 gray |
+| Bar fill below 80% | `Theme.bar` | 0.94, 0.55, 0.55 | 0.58 gray |
+| Bar fill from 80% | `Theme.high` (= ink) | red | 0.96 gray |
+| Share card | `Theme.cardPaper` and `Theme.cardInk`, light only (Section 7.7) | white and red | same |
+| Menu bar item | Template image. No color. | | |
+
+The red is #E00000, not #FF0000. Red on white and white on red are then 5:1 (WCAG AA). Pure red gives 4:1. Red with opacity is below 4.5:1 on white, so secondary text in light mode is solid red. The text and the icon tell 80% from 100% (DRD 9.3). Orange is not used.
+
+Rules:
+
+1. Use `Theme.hairline` between popover sections. Do not use `Divider`.
+2. The index headline is a solid `accent` surface with `paper` text: white on red, or near-black on white.
+3. The paper fills the full popover. No window material shows at the edge.
+4. The bar fill below 80%, the bar fill from 80% and the track have an sRGB distance of 0.3 or more in each mode. A test checks the distance.
+5. Use `ThemeButtonStyle` for the main onboarding buttons. A white system tint hides the button text.
 
 Do not use a brand color for a provider. Do not use green for "good". Low usage is normal, not a success.
 

@@ -31,7 +31,7 @@ struct PopoverView: View {
             } else {
                 Text("TokenBar").font(.headline)
                 headline
-                Divider()
+                Theme.hairline
                 // DRD 3.1: the list scrolls only when it is taller than its share of the 560 pt.
                 if listHeight > 320 {
                     ScrollView { providerListView(now: now) }.frame(height: 320)
@@ -39,19 +39,20 @@ struct PopoverView: View {
                     providerListView(now: now)
                 }
                 if let roast = snapshot.roast {
-                    Divider()
+                    Theme.hairline
                     Text("“\(roast)”")
-                        .font(.callout).italic().foregroundStyle(.secondary)
+                        .font(.callout).italic().foregroundStyle(Theme.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityLabel("Roast: \(roast)")
                 }
             }
-            Divider()
+            Theme.hairline
             footer(now: now)
         }
         .padding(16)
         .frame(width: 320, alignment: .leading)
         .frame(maxHeight: 560)
+        .onPaper()
         .symbolRenderingMode(.hierarchical)
     }
 
@@ -89,14 +90,17 @@ struct PopoverView: View {
                     .font(.title2.weight(.semibold)).monospacedDigit()
                     .fixedSize(horizontal: false, vertical: true)
                 if let detail = snapshot.indexDetail {
-                    Text(detail).font(.callout).foregroundStyle(.secondary)
+                    Text(detail).font(.callout)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if PopoverFormat.notCounted(snapshot) {
-                    Text("Some models not counted").font(.caption2).foregroundStyle(.tertiary)
+                    Text("Some models not counted").font(.caption2)
                 }
             }
+            .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundStyle(Theme.paper)  // white on red, or near-black on white
+            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 8))
         }
     }
 
@@ -114,14 +118,14 @@ struct PopoverView: View {
                 }
                 Spacer()
                 if let last = snapshot.lastRefresh {
-                    Text(PopoverFormat.updated(last, now: now)).foregroundStyle(.secondary)
+                    Text(PopoverFormat.updated(last, now: now)).foregroundStyle(Theme.secondary)
                 }
                 footerButton("Quit TokenBar", symbol: "power", key: "q", action: actions.quit)
             }
             if copied {
                 Text("Copied. Paste it in your Section chat.").font(.caption2)
             } else {
-                Text("Prices verified \(snapshot.pricesVerified)").font(.caption2).foregroundStyle(.tertiary)
+                Text("Prices verified \(snapshot.pricesVerified)").font(.caption2).foregroundStyle(Theme.tertiary)
             }
         }
         .font(.caption)
@@ -162,12 +166,12 @@ private struct ProviderRowView: View {
                     badge
                 }
                 if !row.installed {
-                    Text("Not installed").font(.caption).foregroundStyle(.secondary)
+                    Text("Not installed").font(.caption).foregroundStyle(Theme.secondary)
                 } else if let error = row.errorText {
                     Text(error).fixedSize(horizontal: false, vertical: true)
                 } else {
                     ForEach(row.limits, id: \.name) { limit in limitView(limit) }
-                    if row.limits.isEmpty { Text("No limit data").font(.caption).foregroundStyle(.secondary) }
+                    if row.limits.isEmpty { Text("No limit data").font(.caption).foregroundStyle(Theme.secondary) }
                 }
             }
             .accessibilityElement(children: .ignore)
@@ -195,7 +199,7 @@ private struct ProviderRowView: View {
     private func limitView(_ limit: DisplaySnapshot.Limit) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Capsule()
-                .fill(Color.secondary.opacity(0.2))
+                .fill(Theme.track)
                 .overlay(alignment: .leading) {
                     Capsule()
                         .fill(PopoverFormat.barColor(limit.usedPercent))
@@ -204,7 +208,7 @@ private struct ProviderRowView: View {
                 .frame(height: 6)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: limit.usedPercent)
             Text("\(Int(limit.usedPercent))% of \(limit.name) limit").monospacedDigit()
-            Text(detail(limit)).font(.caption).foregroundStyle(.secondary)
+            Text(detail(limit)).font(.caption).foregroundStyle(Theme.secondary)
         }
     }
 
@@ -244,14 +248,14 @@ private struct NoDataView: View {
             Text("TokenBar found no Claude Code or Codex logs on this Mac.")
             VStack(alignment: .leading, spacing: 4) {
                 Text("I use Claude Code or Codex").font(.body.weight(.medium))
-                Text("Run it one time, then click Check again.").foregroundStyle(.secondary)
+                Text("Run it one time, then click Check again.").foregroundStyle(Theme.secondary)
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text("I use only ChatGPT or Claude.ai").font(.body.weight(.medium))
-                Text("TokenBar cannot read web chat usage in v1.").foregroundStyle(.secondary)
+                Text("TokenBar cannot read web chat usage in v1.").foregroundStyle(Theme.secondary)
             }
             Button("Check again", action: check)
-            Text("Your data stays on this Mac.").font(.caption).foregroundStyle(.secondary)
+            Text("Your data stays on this Mac.").font(.caption).foregroundStyle(Theme.secondary)
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -266,7 +270,7 @@ private extension DisplaySnapshot.ProviderRow {
 enum PopoverFormat {
     /// DRD 8.1.
     static func barColor(_ percent: Double) -> Color {
-        percent >= 100 ? .red : percent >= 80 ? .orange : .accentColor
+        percent >= 80 ? Theme.high : Theme.bar
     }
 
     /// The footnote under the headline. The Water Footprint counts tokens, not prices, so it has none.

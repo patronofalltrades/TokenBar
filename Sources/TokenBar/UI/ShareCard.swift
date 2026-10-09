@@ -53,7 +53,8 @@ enum ShareCard {
     }
 }
 
-/// 360 pt wide. Light appearance and an opaque background, so the card looks the same in every chat app.
+/// A receipt, 360 pt wide: IESE red on white paper, with dashed rules (D45). Light appearance and an opaque background,
+/// so the card looks the same in every chat app.
 struct ShareCardView: View {
     let lines: [ShareCard.Line]
 
@@ -61,20 +62,22 @@ struct ShareCardView: View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
                 if line.isRoast {
-                    Text(line.text).font(.callout).italic().foregroundStyle(.secondary).padding(.top, 6)
+                    Text(line.text).font(.callout).italic().foregroundStyle(Theme.cardInk.opacity(0.75)).padding(.vertical, 4)
                 } else {
                     Icon.label(line.text, icon: line.symbol ?? IndexChoice.cafe.rawValue, style: index == 0 ? .title3 : .callout)
                         .font(index == 0 ? .title3.weight(.semibold) : .callout)
                         .monospacedDigit()
                 }
+                Theme.dashed
             }
-            Text(ShareCard.footer).font(.caption).foregroundStyle(.tertiary).padding(.top, 10)
+            Text(ShareCard.footer).font(.caption.monospaced()).foregroundStyle(Theme.cardInk.opacity(0.65))
         }
         .fixedSize(horizontal: false, vertical: true)
         .symbolRenderingMode(.hierarchical)
+        .foregroundStyle(Theme.cardInk)
         .padding(24)
         .frame(width: 360, alignment: .leading)
-        .background(Color.white)
+        .background(Theme.cardPaper)
         .environment(\.colorScheme, .light)
     }
 }
