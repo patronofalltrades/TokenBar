@@ -19,7 +19,7 @@ This document specifies the user interface, the humor system and the café index
 | Provider | One usage source. In v1: Claude Code or Codex. OpenAI API and Anthropic API are Later (PRD 7.4). |
 | Limit | A usage cap with a reset time, for example the Claude 5-hour limit. |
 | Primary metric | The single number in the menu bar item. |
-| Cost | API-equivalent cost in EUR, shown as an estimate: `≈ €3.40`. Real API cost comes with API keys (Later). |
+| Cost | API-equivalent cost in EUR. TokenBar uses it only to calculate the indexes. The UI does not show EUR (D42). |
 | Unit | One café-index item, for example café con leche. |
 | Roast | One short humor line in the style of an IESE case. |
 
@@ -30,7 +30,7 @@ This document specifies the user interface, the humor system and the café index
 1. **Glanceable.** The user must understand the menu bar item in less than one second. Show one number.
 2. **Quiet by default.** Do not animate the menu bar item. Send few notifications. Show a roast only in the popover.
 3. **Funny about AI usage only.** Make jokes about tokens, limits, deadlines and MBA life. Do not make jokes about the body, gender, origin, religion, money problems or a real person.
-4. **Honest numbers.** The joke never hides the real number. Show the real percentage or cost next to each café-index value. Label API-equivalent cost as an estimate.
+4. **Honest numbers.** The joke never hides the real number. Warnings always show the real limit percentage. The UI shows no EUR, because subscription users do not pay API prices (D42).
 5. **Native.** Use system fonts, semantic colors and SF Symbols. TokenBar must look like a part of macOS.
 6. **Compact.** The space next to the camera notch is small. TokenBar must not push other items out of the menu bar.
 
@@ -43,7 +43,7 @@ This document specifies the user interface, the humor system and the café index
 The primary metric is always Auto (decided 2026-10-08). No "Menu bar shows" setting exists.
 
 1. Auto shows the highest limit percentage of all providers. This is the limit that is closest to a reset problem. Example: `62%`.
-2. If no provider has a limit, Auto shows today's cost for all providers. Example: `€3.4`. The menu bar has no `≈` sign. The popover keeps `≈ €` (D38). TRD-T08 checks that this value fits in 52 pt.
+2. If no provider has a limit, Auto shows the symbol only. It does not show EUR (D42).
 
 The index choice (Section 2.5) selects the value of the menu bar item. Before the user picks an index, it shows the primary metric.
 
@@ -99,9 +99,9 @@ The user selects one index in onboarding (Section 4.5). The user can change it i
 
 | Index | Normal state | Popover line | Data |
 |---|---|---|---|
-| Café Index | `☕ 3.4` | `Today = 3.4 cafés con leche` | Today's cost (Section 7.6) |
+| Café Index | `☕ 3.4` | `☕ 3.4 cafés con leche today`, and a small line: `12 this week` | Today's cost (Section 7.6) |
 | Tuition Meter | `🎓 0.04%` | `🎓 0.04% of your MBA tuition, in tokens (since install)`, and a small line: `At this pace, you'll burn through it by the year 2033.` | The tuition benchmark: spend since install (Section 7.6) |
-| Water Footprint | `💧 22 L` | `Today ≈ 22 L of water · 15 bottles (1.5 L)` | Today's output tokens (Section 7.8) |
+| Water Footprint | `💧 22 L` | `💧 22 L of water today`, and a small line: `15 bottles (1.5 L) · 98 L this week` | Today's output tokens (Section 7.8) |
 
 In the Warning and Limit hit states, each index shows the limit value: `⚠ 87%` or `⌛ 1h48`.
 
@@ -123,7 +123,11 @@ Rules:
 - Width: 320 pt. Fixed.
 - Height: content height. Maximum 560 pt. If the content is taller, the provider list scrolls.
 - Padding: 16 pt on all sides. 12 pt between sections.
-- Order from top to bottom: header, provider rows, totals, café-index line, roast, footer.
+- Order from top to bottom: header, index headline, provider rows, roast, footer (D42).
+- The index headline shows the value of the selected index in a large font (`.title2`, semibold), with the index symbol. The symbol is one value in the snapshot (`indexSymbol`), so a custom icon can replace it (IES-213).
+- Below the headline, one small line (`.callout`, secondary): the week value in the same café unit, the water unit equivalent and the week, or the Tuition Meter burn year (Section 2.5).
+- If some models have no price, a tiny footnote under the headline says "Some models not counted". The Water Footprint counts tokens, not prices, so it has no footnote.
+- The popover shows no EUR, no "API-equivalent" text and no "price unknown" line (D42). Subscription users do not pay API prices.
 
 ### 3.2 Provider row
 
@@ -136,30 +140,27 @@ Each enabled provider has one row.
 | Limit label | `62% of 5-hour limit`. Always show the number as text. |
 | Reset | `resets in 1 h 48 min`. Use relative time below 24 hours. Use weekday and time above 24 hours: `resets Mon 09:00`. |
 | Age | `as of 14:02`. The time when the limit source last reported the value. Show it under each limit. |
-| Cost | `≈ €2.10 today`. Add `(API-equivalent)` for subscription providers. |
 
-A provider without a limit source shows tokens and cost only. It has no bar. Example: Claude Code without the status line setup (Section 5).
+A provider row has no cost (D42). A provider without a limit source shows "No limit data". It has no bar. Example: Claude Code without the status line setup (Section 5).
 
 ### 3.3 Normal state
 
 ```
 ┌──────────────────────────────────────────┐
 │ TokenBar                                 │
+│ ☕ 3.4 cafés con leche today              │  ← large
+│ 12 this week                             │
+│ Some models not counted                  │  ← tiny, only if needed
 ├──────────────────────────────────────────┤
 │ Claude Code                              │
 │ ███████████████░░░░░░░░░  62% of 5-hour  │
 │ resets in 1 h 48 min · as of 14:02       │
 │ ██████░░░░░░░░░░░░░░░░░░  24% of weekly  │
 │ resets Mon 09:00 · as of 14:02           │
-│ ≈ €3.90 today (API-equivalent)           │
 │                                          │
 │ Codex                                    │
 │ ████░░░░░░░░░░░░░░░░░░░░  18% of weekly  │
 │ resets Thu 14:00 · as of 13:55           │
-│ ≈ €2.20 today (API-equivalent)           │
-├──────────────────────────────────────────┤
-│ Today ≈ €6.10          Week ≈ €21.80     │
-│ ☕ Today = 3.4 cafés con leche            │
 ├──────────────────────────────────────────┤
 │ "The protagonist has 38% of Opus left    │
 │  and a 9 AM deadline. Discuss."          │
@@ -168,7 +169,7 @@ A provider without a limit source shows tokens and cost only. It has no bar. Exa
 └──────────────────────────────────────────┘
 ```
 
-The popover shows the Today and Week totals side by side (decided 2026-10-08). It has no Today/Week control. Today starts at local midnight. Week is the rolling last 7 days. The index line shows the selected index only (Section 2.5). The example shows the Café Index.
+The headline shows the selected index only (Section 2.5). The example shows the Café Index. The popover has no EUR totals (D42). Today starts at local midnight. Week is the rolling last 7 days.
 
 ### 3.4 Warning state
 
@@ -224,7 +225,7 @@ TokenBar has no Stale state and no stale banner (Section 2.4, rule 3).
 |---|---|---|
 | Settings | `gearshape` | Opens the Settings window. |
 | Refresh | `arrow.clockwise` | Reads all providers now. The symbol rotates while the read runs. |
-| Share | `square.and.arrow.up` | Copies the share card (Section 7.7). Not in the No data state. |
+| Share | `square.and.arrow.up` | Copies the share card (Section 7.7). Not in the No data state and not before the user selects an index. |
 | Last updated | none | `Updated 2 min ago`. Relative time. |
 | Quit | `power` | Quits TokenBar. |
 
@@ -294,18 +295,28 @@ After detection, the onboarding window asks the user to select one index (Sectio
 │ Pick your index                          │
 │                                          │
 │  [ ☕ 3.4 ]  Café Index                   │
-│  Today's spend in cafés con leche.       │
+│  How many cafés con leche at the IESE    │
+│  cafeteria your tokens cost today.       │
 │                                          │
 │  [ 🎓 0.04% ]  Tuition Meter              │
-│  Your AI spend as a % of MBA tuition.    │
+│  How much of your MBA tuition your AI    │
+│  has burned. Spoiler: not much. Yet.     │
 │                                          │
 │  [ 💧 22 L ]  Water Footprint             │
-│  The water your AI drank today.          │
+│  How many liters of water your AI drank  │
+│  today. We used the scary estimate.      │
 │                                          │
 │  Warnings always show the real number.   │
 │  You can turn off roasts in Settings.    │
+│                       [Back] [Continue]  │
 └──────────────────────────────────────────┘
 ```
+
+Rules:
+
+1. The Café Index text comes from `picker_description` in `cafe-units.json`. It names the school, so it stays in the data file (D25).
+2. The descriptions show no EUR (D42).
+3. The window has the height of the tallest step at the current text size. The Continue button always shows.
 
 ### 4.6 Onboarding window
 
@@ -377,7 +388,7 @@ Rules:
 2. Show the caption below the button: the current status line keeps working, open sessions must restart, and Claude Code runs the status line only in trusted folders.
 3. Without the setup, the Claude Code row shows tokens and cost only (Section 3.2).
 4. TokenBar refreshes every 60 seconds. No refresh setting exists. The popover **Refresh** button reads at once.
-5. No currency setting exists. All costs are in EUR (Section 7.6).
+5. No currency setting exists. All costs are in EUR internally (Section 7.6). The UI shows no EUR (D42).
 6. No Café index toggle exists (D41). The index choice replaces it.
 
 When Roasts is off, TokenBar shows the index and the numbers only. It must work fully.
@@ -447,7 +458,7 @@ Roasts are data, not code. Store roasts in a data file next to the café-index u
 | `provider` | string, optional | `codex` |
 | `locale` | string | `en` |
 
-Placeholders: `{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{time}`, `{cost}`, `{unit_value}`, `{unit_plural}`, `{tuition_percent}`, `{tuition_years}`, `{water}`. If a placeholder has no value, do not select the roast. Only the selected index fills its placeholders (Section 2.5, rule 6).
+Placeholders: `{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{time}`, `{cost}`, `{unit_value}`, `{unit_plural}`, `{tuition_percent}`, `{tuition_years}`, `{water}`. If a placeholder has no value, do not select the roast. `{cost}` never has a value, because the UI shows no EUR (D42). A roast with `{cost}` does not show. Only the selected index fills its placeholders (Section 2.5, rule 6).
 
 ### 7.3 Categories and triggers
 
@@ -504,7 +515,7 @@ Selection order:
 | weekday-01 | weekday | `Monday, 8 AM. You are opening the case for the first time. The model already read it twice.` |
 | weekday-02 | weekday | `Saturday in Barcelona. Your Claude usage is up. Your beach usage is down. Discuss the trade-off.` |
 | weekday-03 | weekday | `Friday evening, tokens still flowing. Either a deadline, or you are the group member who "will just finish the deck".` |
-| spend-01 | spend | `Today's API-equivalent cost is {cost}. That is lunch for two at the campus menú del día. The model did not share.` |
+| spend-01 | spend | `Today's API-equivalent cost is {cost}. That is lunch for two at the campus menú del día. The model did not share.` Does not show: `{cost}` has no value (D42). |
 | spend-02 | spend | `Your tokens cost more today than your coffee habit this week. Only one of them helps you stay awake in class.` |
 | career-01 | career | `The protagonist asked the model to "make it more MECE". The model agreed. Nobody knows what changed.` |
 | career-02 | career | `{percent}% utilization. Banking recruiters call this "a great culture fit".` |
@@ -604,9 +615,10 @@ The popover shows one café-index line with one unit (decided 2026-10-08). No se
 4. Select the in-range unit with `value` closest to 3. Keep this unit for the full day, to prevent flicker.
 5. If no unit is in range and cost is below the range, use the unit with the lowest price. Show two decimal places, for example `0.12 cafés con leche`.
 6. If no unit is in range and cost is above the range, use the unit with the highest price.
-7. If cost is 0, show no café-index line. Show the `zero` roast.
+7. If cost is 0, the menu bar shows the primary metric. The popover headline shows `0` of the first unit, for example `0 cafés con leche today`. Show the `zero` roast.
+8. The second popover line shows the cost of the week in the same unit: `12 this week`.
 
-Format: one decimal place below 10, no decimal places at 10 and above. Use `singular` only when the displayed value is exactly `1`. Always show the real cost on the same row in the popover.
+Format: one decimal place below 10, no decimal places at 10 and above. Use `singular` only when the displayed value is exactly `1`. The popover does not show the cost in EUR (D42).
 
 ---
 
@@ -617,15 +629,16 @@ The share card lets the user post the joke in a class chat. It is the main word-
 1. The popover footer has a **Share** button (`square.and.arrow.up`).
 2. **Share** copies an image and a text to the clipboard. The user pastes them into WhatsApp or LinkedIn.
 3. Render the image with SwiftUI `ImageRenderer`. Do not add a dependency.
-4. The card contains: the line of the selected index only (Section 2.5), the Tuition Meter burn line (Section 7.6, if available), the current roast and the text "TokenBar · github.com/patronofalltrades/TokenBar".
+4. The card contains: the headline of the selected index only (Section 2.5), its second line (Section 3.1, if available), the current roast and the text "TokenBar · github.com/patronofalltrades/TokenBar". The card shows no EUR (D42).
 5. The card does not contain the user name, file paths, project names or prompt content. It shows model names only if the roast uses `{model}`.
 6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat." The confirmation replaces the "Prices verified" line for 3 seconds.
-7. Before the user selects an index, the card shows the numbers only: the cost today and the cost this week (API-equivalent).
+7. Before the user selects an index, there is no card. The popover has no **Share** button (D42).
 8. The image is 360 pt wide, at scale 2, with a white background and the light appearance. The clipboard text uses the emoji of the index: the café unit emoji (Section 7.6), `🎓` or `💧`.
 
 ```
 ┌──────────────────────────────┐
 │  ☕ 3.4 cafés con leche today │
+│  📅 12 this week              │
 │                              │
 │  "The cold call is coming.   │
 │   The tokens are not."       │
@@ -636,7 +649,7 @@ The share card lets the user post the joke in a class chat. It is the main word-
 
 ### 7.8 Water Footprint
 
-The Water Footprint converts today's output tokens into water (D41). The tone is dramatic. The value is an estimate, so the popover shows `≈`.
+The Water Footprint converts today's output tokens into water (D41). The tone is dramatic. The value is an estimate. Onboarding says so ("We used the scary estimate"), and `water.json` gives the source.
 
 Data file: `water.json`.
 
@@ -654,9 +667,9 @@ Rules:
 1. Count output tokens only, for all providers, since local midnight. Codex output includes reasoning tokens.
 2. Do not count input or cache tokens. Coding agents read large caches again and again. With input tokens, the value is meaningless.
 3. The source is a high published estimate. A second source, Li et al. 2023 ("Making AI Less Thirsty", arXiv:2304.03271), gives 500 mL for 10 to 50 GPT-3 responses, so 10 to 50 mL for each response. The Mistral value is at the top of that range.
-4. Popover: `Today ≈ {amount} of water · {count} {unit}`. Use the largest unit with a count of 1 or more, else the glass. Amount: `45 mL`, `2.3 L`, `22 L`.
+4. Popover headline: `{amount} of water today`. Second line: `{count} {unit} · {week amount} this week`. Use the largest unit with a count of 1 or more, else the glass. Amount: `45 mL`, `2.3 L`, `22 L`. With no output today, the headline is `0 mL of water today` and the second line shows the week only.
 5. Menu bar: `0.1 L` to `9.9 L`, `22 L` to `999 L`, then `1.1kL` and `99kL`. These values fit 52 pt.
-6. Example: 200,000 output tokens = 22.5 L = 15 bottles. The popover shows `Today ≈ 22 L of water · 15 bottles (1.5 L)`.
+6. Example: 200,000 output tokens = 22.5 L = 15 bottles. The popover shows `22 L of water today` and `15 bottles (1.5 L) · 98 L this week`.
 
 ## 8. Visual style
 
@@ -715,11 +728,11 @@ Use the system font (SF Pro) only. Do not bundle a font.
 
 | Element | Label example |
 |---|---|
-| Menu bar item, Normal | "TokenBar. Claude Code, 62 percent of 5-hour limit. Today, 3.4 cafés con leche." |
+| Menu bar item, Normal | "TokenBar. Claude Code, 62 percent of 5-hour limit. 3.4 cafés con leche today." |
 | Menu bar item, Limit hit | "TokenBar. Claude Code limit reached. Resets in 1 hour 48 minutes." |
 | Menu bar item, No data | "TokenBar. No usage data. Click to set up." |
 | Limit bar | "Claude Code 5-hour limit, 62 percent used, resets in 1 hour 48 minutes." Use `.accessibilityValue`. |
-| Café-index line | "Today's cost, about 6 euros 10, equals 3.4 cafés con leche." |
+| Index headline | "3.4 cafés con leche today." No EUR (D42). |
 | Limit age | "As of 14:02." Add it after the limit bar label. |
 | Roast | "Roast:" then the text. |
 | Footer buttons | "Settings", "Refresh", "Quit TokenBar". |
@@ -749,7 +762,7 @@ The user can reach all controls in the popover and in Settings with the keyboard
 1. v1 is English only (decided 2026-10-08). Spanish comes after the launch.
 2. Put all UI strings in a String Catalog. Do not concatenate strings in code.
 3. Use `{placeholders}` in roasts and alerts, not string order.
-4. Format numbers, currency, dates and times with the user's locale. The currency is always EUR. Spanish uses a comma for decimals.
+4. Format numbers, dates and times with the user's locale. The UI shows no currency (D42). Spanish uses a comma for decimals.
 5. Write roasts in each language. Do not machine-translate roasts. A joke must work in the target language.
 6. When Spanish comes, allow 30% more text width. Test the popover with long strings.
 
@@ -762,7 +775,7 @@ The user can reach all controls in the popover and in Settings with the keyboard
 | 1 | Resolved 2026-10-08: no automatic notch or hidden-item detection. Compact is the only mode (Section 2.3). | — |
 | 2 | Does `MenuBarExtra` support the fixed label width? Or does TokenBar need `NSStatusItem`? | TRD |
 | 3 | Resolved 2026-10-08: one fixed USD to EUR rate in `prices.json`, with a date and the note "community estimate". No network source (PRD Q3). | — |
-| 4 | Resolved 2026-10-08: EUR everywhere. No currency setting (PRD Q3). | — |
+| 4 | Resolved 2026-10-08: EUR everywhere. No currency setting (PRD Q3). Changed 2026-10-09: EUR stays internal, the UI shows no EUR (D42). | — |
 | 5 | Resolved 2026-10-08: "Today" starts at local midnight. "Week" is the rolling last 7 days (PRD Section 1). | — |
 | 6 | Does each limit have its own 95% and limit-hit alerts, or do alerts use only the highest limit? | PRD |
 | 7 | Resolved 2026-10-08: the maintainer alone approves each roast. One safe set only (Section 7.1, PRD Q7). A review checklist in CONTRIBUTING is still useful. | — |

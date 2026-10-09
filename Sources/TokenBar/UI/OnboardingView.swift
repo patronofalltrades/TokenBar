@@ -41,28 +41,38 @@ import SwiftUI
     }
 
     /// The menu bar preview of each index choice in step 2 (DRD 4.5).
+    /// The café text comes from `cafe-units.json`, because it names the school (D25).
     static func preview(_ choice: IndexChoice) -> (symbol: String, sample: String, detail: String) {
         switch choice {
-        case .cafe: ("cup.and.saucer.fill", "3.4", "Today's spend in cafés con leche. Roasts.")
-        case .tuition: (DisplayBuilder.tuitionSymbol, "0.04%", "Your AI spend since install, as a % of MBA tuition. Roasts.")
-        case .water: (DisplayBuilder.waterSymbol, "22 L", "The water your AI drank today. High estimate. Roasts.")
+        case .cafe: ("cup.and.saucer.fill", "3.4", (try? CafeData.shipped().pickerDescription) ?? "")
+        case .tuition: (DisplayBuilder.tuitionSymbol, "0.04%", "How much of your MBA tuition your AI has burned. Spoiler: not much. Yet.")
+        case .water: (DisplayBuilder.waterSymbol, "22 L", "How many liters of water your AI drank today. We used the scary estimate.")
         }
     }
 
     private static var window: NSWindow?
 
+    /// The window has the height of the tallest step at the current text size, so the Continue button always shows.
+    static func makeWindow(_ view: OnboardingView) -> NSWindow {
+        let height = steps(view.detection).indices.map {
+            NSHostingView(rootView: OnboardingView(detection: view.detection, step: $0, choice: .cafe)).fittingSize.height
+        }.max() ?? 0
+        let window = NSWindow(contentViewController: NSHostingController(rootView: view))
+        window.title = "Welcome to TokenBar"
+        window.styleMask = [.titled, .closable]
+        window.setContentSize(NSSize(width: 440, height: height))
+        return window
+    }
+
     /// Opens the window in front of other apps. `onFinish` runs after Done.
     static func showIfNeeded(onFinish: @escaping @MainActor () -> Void) {
         guard isNeeded(), Self.window == nil else { return }
-        let view = OnboardingView(detection: .scan()) { index, launchAtLogin in
+        let window = makeWindow(OnboardingView(detection: .scan()) { index, launchAtLogin in
             finish(index: index, launchAtLogin: launchAtLogin)
             Self.window?.close()
             Self.window = nil
             onFinish()
-        }
-        let window = NSWindow(contentViewController: NSHostingController(rootView: view))
-        window.title = "Welcome to TokenBar"
-        window.styleMask = [.titled, .closable]
+        })
         window.isReleasedWhenClosed = false
         window.center()
         Self.window = window

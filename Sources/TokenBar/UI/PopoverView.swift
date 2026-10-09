@@ -30,6 +30,7 @@ struct PopoverView: View {
                 NoDataView(check: actions.refresh)
             } else {
                 Text("TokenBar").font(.headline)
+                headline
                 Divider()
                 // DRD 3.1: the list scrolls only when it is taller than its share of the 560 pt.
                 if listHeight > 320 {
@@ -37,8 +38,6 @@ struct PopoverView: View {
                 } else {
                     providerListView(now: now)
                 }
-                Divider()
-                totals
                 if let roast = snapshot.roast {
                     Divider()
                     Text("“\(roast)”")
@@ -82,24 +81,22 @@ struct PopoverView: View {
         return PopoverFormat.stillAvailable(other.provider, top)
     }
 
-    private var totals: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("Today \(PopoverFormat.euro(snapshot.costTodayEUR))")
-                Spacer()
-                Text("Week \(PopoverFormat.euro(snapshot.costWeekEUR))")
-            }
-            .font(.title3).monospacedDigit()
-            if let line = snapshot.indexLine {
+    /// DRD 3.1: the selected index, large, with one small second line. No EUR (D42).
+    @ViewBuilder private var headline: some View {
+        if let line = snapshot.indexLine {
+            VStack(alignment: .leading, spacing: 4) {
                 Label(line, systemImage: snapshot.indexSymbol ?? "cup.and.saucer.fill")
-                    .font(.callout)
+                    .font(.title2.weight(.semibold)).monospacedDigit()
                     .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityLabel(snapshot.index == .cafe
-                        ? "Today's cost, \(PopoverFormat.euro(snapshot.costTodayEUR)), equals \(line)" : line)
+                if let detail = snapshot.indexDetail {
+                    Text(detail).font(.callout).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if PopoverFormat.notCounted(snapshot) {
+                    Text("Some models not counted").font(.caption2).foregroundStyle(.tertiary)
+                }
             }
-            if let detail = snapshot.indexDetail {
-                Text(detail).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -109,7 +106,9 @@ struct PopoverView: View {
                 footerButton("Settings", symbol: "gearshape", key: ",", action: actions.openSettings)
                 if snapshot.state != .noData {
                     footerButton("Refresh", symbol: "arrow.clockwise", key: "r", action: actions.refresh)
-                    // DRD 7.7. No keyboard shortcut in the DRD, so none here.
+                }
+                // DRD 7.7. No keyboard shortcut in the DRD, so none here. No card before the index choice.
+                if snapshot.state != .noData && snapshot.index != nil {
                     Button(action: share) { Image(systemName: "square.and.arrow.up") }
                         .buttonStyle(.borderless).help("Share").accessibilityLabel("Share")
                 }
@@ -168,11 +167,7 @@ private struct ProviderRowView: View {
                     Text(error).fixedSize(horizontal: false, vertical: true)
                 } else {
                     ForEach(row.limits, id: \.name) { limit in limitView(limit) }
-                    Text(row.costTodayEUR.map { "\(PopoverFormat.euro($0)) today (API-equivalent)" } ?? "No usage today")
-                        .monospacedDigit()
-                    if row.hasUnpricedModels {
-                        Text("Price unknown for some models").font(.caption).foregroundStyle(.secondary)
-                    }
+                    if row.limits.isEmpty { Text("No limit data").font(.caption).foregroundStyle(.secondary) }
                 }
             }
             .accessibilityElement(children: .ignore)
@@ -234,9 +229,7 @@ private struct ProviderRowView: View {
             if let reset = limit.resetsAt { text += ", \(PopoverFormat.reset(reset, now: now, spoken: true))" }
             return text + ". As of \(PopoverFormat.time(limit.observedAt))."
         }
-        if parts.isEmpty { parts.append(name + ".") }
-        if let cost = row.costTodayEUR { parts.append("About \(PopoverFormat.euro(cost, approx: false)) today, API-equivalent.") }
-        if row.hasUnpricedModels { parts.append("Price unknown for some models.") }
+        if parts.isEmpty { parts.append("\(name), no limit data.") }
         return parts.joined(separator: " ")
     }
 }
@@ -276,10 +269,9 @@ enum PopoverFormat {
         percent >= 100 ? .red : percent >= 80 ? .orange : .accentColor
     }
 
-    /// "≈ €2.10".
-    static func euro(_ value: Decimal, approx: Bool = true, locale: Locale = .current) -> String {
-        let text = value.formatted(.currency(code: "EUR").locale(locale))
-        return approx ? "≈ \(text)" : text
+    /// The footnote under the headline. The Water Footprint counts tokens, not prices, so it has none.
+    static func notCounted(_ s: DisplaySnapshot) -> Bool {
+        s.index != .water && s.rows.contains(where: \.hasUnpricedModels)
     }
 
     /// "14:02" in the user's locale.
@@ -341,19 +333,20 @@ enum PopoverSamples {
                   .init(name: "5-hour", usedPercent: fiveHour, resetsAt: later(108), observedAt: ago(3)),
                   .init(name: "weekly", usedPercent: weekly, resetsAt: later(60 * 67), observedAt: ago(3)),
               ] : [],
-              costTodayEUR: error == nil ? 3.90 : nil, hasUnpricedModels: false)
+              hasUnpricedModels: false)
     }
 
     private static let codex = DisplaySnapshot.ProviderRow(
         provider: .codex, installed: true, errorText: nil,
         limits: [.init(name: "weekly", usedPercent: 18, resetsAt: later(60 * 96), observedAt: ago(10))],
-        costTodayEUR: 2.20, hasUnpricedModels: true)
+        hasUnpricedModels: true)
 
-    /// The index line and the menu bar value of each choice, for the samples.
-    private static let lines: [IndexChoice: (line: String, symbol: String, emoji: String, bar: String)] = [
-        .cafe: ("Today = 3.4 cafés con leche", "cup.and.saucer.fill", "☕", "3.4"),
-        .tuition: ("0.04% of your MBA tuition, in tokens (since install)", DisplayBuilder.tuitionSymbol, "🎓", "0.04%"),
-        .water: ("Today ≈ 22 L of water · 15 bottles (1.5 L)", DisplayBuilder.waterSymbol, "💧", "22 L"),
+    /// The headline, the second line and the menu bar value of each choice, for the samples.
+    private static let lines: [IndexChoice: (line: String, detail: String, symbol: String, emoji: String, bar: String)] = [
+        .cafe: ("3.4 cafés con leche today", "12 this week", "cup.and.saucer.fill", "☕", "3.4"),
+        .tuition: ("0.04% of your MBA tuition, in tokens (since install)", "At this pace, you'll burn through it by the year 4210.",
+                   DisplayBuilder.tuitionSymbol, "🎓", "0.04%"),
+        .water: ("22 L of water today", "15 bottles (1.5 L) · 98 L this week", DisplayBuilder.waterSymbol, "💧", "22 L"),
     ]
 
     private static func snapshot(_ state: DisplaySnapshot.State, rows: [DisplaySnapshot.ProviderRow],
@@ -361,9 +354,7 @@ enum PopoverSamples {
         let line = lines[index]
         return DisplaySnapshot(
             state: state, index: index, menuBarText: line?.bar ?? "62%", menuBarSymbol: line?.symbol ?? "circle.lefthalf.filled",
-            rows: rows, costTodayEUR: 6.10, costWeekEUR: 21.80,
-            indexLine: line?.line, indexSymbol: line?.symbol, indexEmoji: line?.emoji,
-            indexDetail: index == .tuition ? "At this pace, you'll burn through it by the year 4210." : nil,
+            rows: rows, indexLine: line?.line, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
             roast: roast, lastRefresh: ago(2), pricesVerified: "2026-10-08")
     }
 
@@ -375,6 +366,10 @@ enum PopoverSamples {
                                 roast: "Your prompts drank 22 L of water today. Somewhere a cooling tower is writing its own case study.")
     static let warning = snapshot(.warning, rows: [claude(87), codex],
                                   roast: "87% used before lunch. The case writes itself.")
+    static let tuitionWarning = snapshot(.warning, rows: [claude(87), codex], index: .tuition,
+                                         roast: "87% used before lunch. The case writes itself.")
+    static let waterWarning = snapshot(.warning, rows: [claude(87), codex], index: .water,
+                                       roast: "87% used before lunch. The case writes itself.")
     static let limitHit = snapshot(.limitHit, rows: [claude(100, weekly: 64), codex],
                                    roast: "Limit reached. Time to read the case yourself.")
     static let error = snapshot(.error, rows: [
@@ -383,14 +378,14 @@ enum PopoverSamples {
     static let noData = DisplaySnapshot(
         state: .noData, index: nil, menuBarText: "", menuBarSymbol: "cup.and.saucer",
         rows: ProviderID.allCases.map {
-            .init(provider: $0, installed: false, errorText: nil, limits: [], costTodayEUR: nil, hasUnpricedModels: false)
+            .init(provider: $0, installed: false, errorText: nil, limits: [], hasUnpricedModels: false)
         },
-        costTodayEUR: 0, costWeekEUR: 0, indexLine: nil, indexSymbol: nil, roast: nil,
+        indexLine: nil, indexSymbol: nil, roast: nil,
         lastRefresh: nil, pricesVerified: "2026-10-08")
 
     static let all: [(name: String, snapshot: DisplaySnapshot)] = [
         ("cafe", normal), ("tuition", tuition), ("water", water),
-        ("warning", warning), ("limitHit", limitHit), ("noData", noData), ("error", error),
+        ("warning", warning), ("tuitionWarning", tuitionWarning), ("waterWarning", waterWarning), ("limitHit", limitHit), ("noData", noData), ("error", error),
     ]
 }
 

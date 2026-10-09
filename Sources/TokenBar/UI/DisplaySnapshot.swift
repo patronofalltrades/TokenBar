@@ -19,8 +19,7 @@ struct DisplaySnapshot: Equatable, Sendable {
         let installed: Bool         // false: the source folder does not exist. Not an error.
         let errorText: String?      // set only when TokenBar cannot read an existing source
         let limits: [Limit]
-        let costTodayEUR: Decimal?  // nil: no usage today
-        let hasUnpricedModels: Bool // true: show "price unknown" for part of the usage
+        let hasUnpricedModels: Bool // true: the cost of part of the usage is not counted
     }
 
     let state: State
@@ -28,12 +27,11 @@ struct DisplaySnapshot: Equatable, Sendable {
     let menuBarText: String         // for example "3.4", "62%", "87%", "1h48"
     let menuBarSymbol: String       // SF Symbol name (DRD 2.4)
     let rows: [ProviderRow]
-    let costTodayEUR: Decimal
-    let costWeekEUR: Decimal
-    let indexLine: String?          // the one line of the selected index. Nil for Numbers only or without data.
-    let indexSymbol: String?        // SF Symbol for `indexLine`
+    // No EUR value in the snapshot (D42). The costs stay in `DisplayBuilder`. The indexes come from them.
+    let indexLine: String?          // the headline of the selected index (DRD 3.1). Nil before the index choice or without data.
+    let indexSymbol: String?        // SF Symbol for `indexLine`. IES-213 replaces it with a custom icon.
     var indexEmoji: String? = nil   // emoji for the share card text (DRD 7.7)
-    var indexDetail: String? = nil  // small second line. Tuition Meter only: the burn year (DRD 7.6).
+    var indexDetail: String? = nil  // small second line: the unit equivalent and the week, or the burn year (DRD 3.1)
     let roast: String?              // nil before the user picks an index, when roasts are off, or when none matches
     let lastRefresh: Date?
     let pricesVerified: String      // the `last_verified` date of prices.json

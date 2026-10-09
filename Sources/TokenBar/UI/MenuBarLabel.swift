@@ -35,14 +35,11 @@ struct MenuBarLabel: View {
         return image
     }
 
-    /// DRD 9.1, for example "TokenBar. Claude Code, 62 percent of 5-hour limit. Today, 3.4 cafés con leche."
+    /// DRD 9.1, for example "TokenBar. Claude Code, 62 percent of 5-hour limit. 3.4 cafés con leche today."
     nonisolated static func voiceOverLabel(_ s: DisplaySnapshot, now: Date) -> String {
         let top = DisplayBuilder.topLimit(in: s.rows)
         let name = top.map { DisplayBuilder.name($0.provider) } ?? ""
-        let today = s.indexLine.map {
-            $0.replacingOccurrences(of: " =", with: ",").replacingOccurrences(of: " ≈", with: ", about") + "."
-        }
-            ?? "Today, about \(s.costTodayEUR.formatted(.number.precision(.fractionLength(2)).locale(Locale(identifier: "en_US_POSIX")))) euros."
+        let today = s.indexLine.map { $0 + "." } ?? ""  // no EUR (D42)
         let limit = top.map { "\(name), \(Int($0.limit.usedPercent)) percent of \($0.limit.name) limit." } ?? ""
         let parts: [String] = switch s.state {
         case .noData: ["No usage data. Click to set up."]

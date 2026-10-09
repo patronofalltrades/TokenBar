@@ -11,9 +11,9 @@ private func limit(_ percent: Double, name: String = "5-hour", resetsAt: Date? =
 
 private func snapshot(_ limits: [DisplaySnapshot.Limit], index: IndexChoice? = .cafe, roast: String? = "Discuss.") -> DisplaySnapshot {
     let row = DisplaySnapshot.ProviderRow(provider: .claudeCode, installed: true, errorText: nil, limits: limits,
-                                          costTodayEUR: nil, hasUnpricedModels: false)
+                                          hasUnpricedModels: false)
     return DisplaySnapshot(state: .warning, index: index, menuBarText: "", menuBarSymbol: "", rows: [row],
-                           costTodayEUR: 0, costWeekEUR: 0, indexLine: nil, indexSymbol: nil, roast: roast,
+                           indexLine: nil, indexSymbol: nil, roast: roast,
                            lastRefresh: t0, pricesVerified: "")
 }
 

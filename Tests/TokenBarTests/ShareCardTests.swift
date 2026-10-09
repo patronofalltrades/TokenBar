@@ -3,12 +3,12 @@ import Foundation
 import Testing
 @testable import TokenBar
 
-private let gb = Locale(identifier: "en_GB")
 private let secret = "SECRET-MARKER"
 
 @Test func cafeCardText() {
-    #expect(ShareCard.text(PopoverSamples.normal, locale: gb) == """
-        ☕ Today = 3.4 cafés con leche
+    #expect(ShareCard.text(PopoverSamples.normal) == """
+        ☕ 3.4 cafés con leche today
+        12 this week
 
         “The protagonist has 38% of Opus left and a 9 AM deadline. Discuss.”
 
@@ -17,7 +17,7 @@ private let secret = "SECRET-MARKER"
 }
 
 @Test func tuitionCardText() {
-    #expect(ShareCard.text(PopoverSamples.tuition, locale: gb) == """
+    #expect(ShareCard.text(PopoverSamples.tuition) == """
         🎓 0.04% of your MBA tuition, in tokens (since install)
         At this pace, you'll burn through it by the year 4210.
 
@@ -28,8 +28,9 @@ private let secret = "SECRET-MARKER"
 }
 
 @Test func waterCardText() {
-    #expect(ShareCard.text(PopoverSamples.water, locale: gb) == """
-        💧 Today ≈ 22 L of water · 15 bottles (1.5 L)
+    #expect(ShareCard.text(PopoverSamples.water) == """
+        💧 22 L of water today
+        15 bottles (1.5 L) · 98 L this week
 
         “Your prompts drank 22 L of water today. Somewhere a cooling tower is writing its own case study.”
 
@@ -38,29 +39,24 @@ private let secret = "SECRET-MARKER"
 }
 
 private let noIndex = DisplaySnapshot(
-    state: .normal, index: nil, menuBarText: "", menuBarSymbol: "", rows: [], costTodayEUR: 6.10, costWeekEUR: 21.80,
+    state: .normal, index: nil, menuBarText: "", menuBarSymbol: "", rows: [],
     indexLine: "café", indexSymbol: nil, roast: "roast", lastRefresh: nil, pricesVerified: "")
 
-/// No index yet: numbers only, also when a snapshot has index lines.
-@Test func noIndexCardShowsNumbersOnly() {
-    #expect(ShareCard.text(noIndex, locale: gb) == """
-        Today ≈ €6.10
-        Week ≈ €21.80 (API-equivalent)
-
-        TokenBar · github.com/patronofalltrades/TokenBar
-        """)
+/// No index yet: no card lines, also when a snapshot has index lines. The popover has no Share button (D42).
+@Test func noIndexCardHasNoLines() {
+    #expect(ShareCard.lines(noIndex).isEmpty)
 }
 
-/// DRD 7.7 rule 5: only the index line, the roast and the costs go onto the card.
+/// DRD 7.7 rule 5: only the index lines and the roast go onto the card.
 @Test func cardLeaksNoOtherSnapshotText() {
     let row = DisplaySnapshot.ProviderRow(
         provider: .claudeCode, installed: true, errorText: "/Users/\(secret)/project \(secret)",
         limits: [.init(name: secret, usedPercent: 50, resetsAt: nil, observedAt: .now)],
-        costTodayEUR: 1, hasUnpricedModels: false)
+        hasUnpricedModels: false)
     for index in IndexChoice.allCases + [nil] {
         let s = DisplaySnapshot(
             state: .normal, index: index, menuBarText: secret, menuBarSymbol: secret, rows: [row],
-            costTodayEUR: 1, costWeekEUR: 2, indexLine: nil, indexSymbol: secret, roast: nil,
+            indexLine: nil, indexSymbol: secret, roast: nil,
             lastRefresh: .now, pricesVerified: secret)
         #expect(!ShareCard.text(s).contains(secret))
         #expect(!ShareCard.lines(s).contains { $0.text.contains(secret) })
@@ -86,12 +82,12 @@ func modelOnlyThroughRoast(text: String, shows: Bool) throws {
         snapshots: [.claudeCode: ProviderSnapshot(provider: .claudeCode, records: [record], limits: [], updatedAt: now)],
         errors: [:], lastRefresh: now, now: now, roasts: &roasts, tuition: TuitionTotal(defaults: defaults))
     let card = ShareCard.text(s)
-    #expect(card.contains("☕ Today = ") || card.contains("🍅 Today = ") || card.contains("🥔 Today = "))
+    #expect(card.hasPrefix("☕ 2.8 cafés con leche today\n"))  // €5 / €1.80
     #expect(card.contains(secret) == shows)
 }
 
 @MainActor @Test func imageIs360PointsWideAtScale2() throws {
-    for sample in [PopoverSamples.normal, PopoverSamples.tuition, PopoverSamples.water, noIndex] {
+    for sample in [PopoverSamples.normal, PopoverSamples.tuition, PopoverSamples.water] {
         let image = try #require(ShareCard.image(sample))
         #expect(image.width == 720)
         #expect(image.height > 100 && image.height < 720)

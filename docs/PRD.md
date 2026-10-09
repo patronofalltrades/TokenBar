@@ -153,10 +153,10 @@ As P2, I want TokenBar to read my local Claude Code logs, so that I see my usage
 As P2, I want a cost in EUR for my subscription usage, so that I know its value.
 - AC1: TokenBar calculates API-equivalent cost as tokens × price from the price table.
 - AC2: Each price table entry has a model name, a price, a source URL and a "last checked" date.
-- AC3: The popover labels the number "API-equivalent", not "spent".
+- AC3: The popover labels the number "API-equivalent", not "spent". (Changed by D42: the UI shows no EUR. The cost goes only into the index.)
 - AC4: If a model has no price, TokenBar shows the tokens and the text "price unknown". It does not guess.
 - AC5: TokenBar converts USD prices to EUR with one fixed rate from the price table. The rate has a date and the note "community estimate".
-- AC6: TokenBar shows each cost with an approximate sign, for example `≈ €3.40`. No currency setting exists.
+- AC6: TokenBar shows each cost with an approximate sign, for example `≈ €3.40`. No currency setting exists. (Changed by D42: the UI shows no EUR.)
 
 **PRD-US-04 See one number in the menu bar** (Must)
 As any user, I want one short value next to the notch, so that I see my usage with no click.
@@ -305,7 +305,7 @@ Create one Linear issue for each story. Use the story ID in the issue title. US-
 | NFR-03 | v1 has no API keys. When API keys come back (Later), TokenBar keeps them only in the Keychain (AGENTS.md 5.6). |
 | NFR-04 | TokenBar uses less than 1% average CPU when idle (target, to verify in TRD). |
 | NFR-05 | TokenBar works offline. In v1, only the opt-in update check needs the network. |
-| NFR-06 | All user-facing numbers show their unit and their type: API cost or API-equivalent cost. Costs are in EUR with the `≈` sign. |
+| NFR-06 | All user-facing numbers show their unit. The UI shows no EUR cost (D42). |
 | NFR-08 | The README and all user-facing UI text outside the data files do not use the name "IESE". Section 13 has the rule. |
 | NFR-07 | The README credits CodexBar as prior art. TokenBar copies no CodexBar code. |
 

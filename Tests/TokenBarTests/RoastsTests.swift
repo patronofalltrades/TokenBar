@@ -180,14 +180,18 @@ private func withSelector(_ roasts: [Roast], seed: UInt64 = 1, _ body: (inout Ro
 }
 
 @Test func rendersPlaceholders() {
-    let text = "{percent}% used, {remaining}% left of {model} at {time}. Cost {cost}, {unit_value} {unit_plural}."
+    let text = "{percent}% used, {remaining}% left of {model} at {time}. {unit_value} {unit_plural}."
     var s = state(date(23, 5), percent: 87.9)
     s.model = "Opus"
     s.costEUR = 3.4
     s.unitValue = "1.9"
     s.unitPlural = "cafés con leche"
     withSelector([roast("career-1", text)]) { selector in
-        #expect(selector.roast(for: s) == "87% used, 13% left of Opus at 23:05. Cost ≈ €3.40, 1.9 cafés con leche.")
+        #expect(selector.roast(for: s) == "87% used, 13% left of Opus at 23:05. 1.9 cafés con leche.")
+    }
+    // D42: no EUR in the UI, so a `{cost}` roast never shows.
+    withSelector([roast("career-1", "Cost {cost}.")]) { selector in
+        #expect(selector.roast(for: s) == nil)
     }
     s.model = nil
     withSelector([roast("career-1", text)]) { selector in

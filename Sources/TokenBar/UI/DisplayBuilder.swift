@@ -23,19 +23,21 @@ struct DisplayBuilder {
         var rows: [DisplaySnapshot.ProviderRow] = []
         var records: [UsageRecord] = []
         var dailyCosts: [Date: Decimal] = [:]
-        var costToday: Decimal = 0, costWeek: Decimal = 0, outputToday = 0
+        var costToday: Decimal = 0, costWeek: Decimal = 0, outputToday = 0, outputWeek = 0
         for id in ProviderID.allCases {
             let error = errors[id]
             let installed = error.map { !Self.isNotInstalled($0) } ?? (snapshots[id] != nil)
             let snapshot = installed ? snapshots[id] : nil
-            var rowCost: Decimal?, unpriced = false
+            var unpriced = false
             for record in snapshot?.records ?? [] where record.timestamp <= now {
                 records.append(record)
                 let cost = prices.costEUR(record)
-                if record.timestamp >= weekStart, cost == nil { unpriced = true }
+                if record.timestamp >= weekStart {
+                    outputWeek += record.tokens.output
+                    if cost == nil { unpriced = true }
+                }
                 if record.timestamp >= today {
                     outputToday += record.tokens.output
-                    rowCost = (rowCost ?? 0) + (cost ?? 0)
                     costToday += cost ?? 0
                 }
                 guard let cost else { continue }
@@ -48,7 +50,7 @@ struct DisplayBuilder {
             }
             rows.append(.init(provider: id, installed: installed,
                               errorText: installed && error != nil ? "TokenBar cannot read the \(Self.name(id)) logs. The log format possibly changed." : nil,
-                              limits: limits, costTodayEUR: rowCost, hasUnpricedModels: unpriced))
+                              limits: limits, hasUnpricedModels: unpriced))
         }
 
         let installedRows = rows.filter(\.installed)
@@ -74,11 +76,26 @@ struct DisplayBuilder {
         let spend = hasData ? tuition.update(now: now, dailyCostsEUR: dailyCosts, todayEUR: costToday) : nil
         let waterML = index == .water && outputToday > 0 ? water.ml(outputTokens: outputToday) : nil
         let tuitionSpend = index == .tuition ? spend : nil
-        let line: (text: String, symbol: String, emoji: String)? =
-            if let pick { ("Today = \(pick.text)", pick.unit.symbol, pick.unit.emoji) }
-            else if let tuitionSpend { (CafeIndex.tuitionLine(spendEUR: tuitionSpend, tuition: cafe.tuition), Self.tuitionSymbol, "🎓") }
-            else if let waterML { (water.line(ml: waterML), Self.waterSymbol, "💧") }
-            else { nil }
+        // The popover headline and its second line (DRD 3.1). They show also at zero, unlike the menu bar value.
+        let line: (text: String, detail: String?, symbol: String, emoji: String)?
+        switch hasData ? index : nil {
+        case .cafe:
+            let day = pick ?? CafeIndex.format(0, unit: cafe.units[0])
+            let week = CafeIndex.format(costWeek / day.unit.priceEUR, unit: day.unit)
+            line = ("\(day.text) today", "\(week.value) this week", day.unit.symbol, day.unit.emoji)
+        case .tuition:
+            let first = tuition.defaults.object(forKey: TuitionTotal.firstLaunchKey) as? Date
+            line = (CafeIndex.tuitionLine(spendEUR: spend ?? 0, tuition: cafe.tuition),
+                    first.flatMap { CafeIndex.burnLine(spendEUR: spend ?? 0, days: now.timeIntervalSince($0) / 86_400,
+                                                       tuition: cafe.tuition, year: calendar.component(.year, from: now)) },
+                    Self.tuitionSymbol, "🎓")
+        case .water:
+            let ml = water.ml(outputTokens: outputToday)
+            let week = "\(WaterData.amount(water.ml(outputTokens: outputWeek))) this week"
+            line = ("\(WaterData.amount(ml)) of water today", ml > 0 ? "\(water.equivalent(ml: ml)) · \(week)" : week,
+                    Self.waterSymbol, "💧")
+        case nil: line = nil
+        }
 
         // Menu bar (DRD 2.4 and 2.5). Each choice shows the limit value in Warning and Limit hit.
         let reset = top?.limit.resetsAt.map { Self.shortDuration($0.timeIntervalSince(now)) }
@@ -92,7 +109,7 @@ struct DisplayBuilder {
             else if let tuitionSpend { (CafeIndex.tuitionBarValue(spendEUR: tuitionSpend, tuition: cafe.tuition), Self.tuitionSymbol) }
             else if let waterML { (WaterData.barValue(waterML), Self.waterSymbol) }
             else if let top { ("\(Int(top.limit.usedPercent))%", "circle.lefthalf.filled") }
-            else { (Self.shortEUR(costToday), "circle.lefthalf.filled") }
+            else { ("", "circle.lefthalf.filled") }  // no EUR in the menu bar (D42)
         }
 
         var roast: String?
@@ -113,14 +130,7 @@ struct DisplayBuilder {
 
         return DisplaySnapshot(
             state: state, index: index, menuBarText: text, menuBarSymbol: symbol, rows: rows,
-            costTodayEUR: costToday, costWeekEUR: costWeek,
-            indexLine: line?.text, indexSymbol: line?.symbol, indexEmoji: line?.emoji,
-            indexDetail: tuitionSpend.flatMap { spend in
-                (tuition.defaults.object(forKey: TuitionTotal.firstLaunchKey) as? Date).flatMap {
-                    CafeIndex.burnLine(spendEUR: spend, days: now.timeIntervalSince($0) / 86_400, tuition: cafe.tuition,
-                                       year: calendar.component(.year, from: now))
-                }
-            },
+            indexLine: line?.text, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
             roast: roast, lastRefresh: lastRefresh, pricesVerified: prices.lastVerified)
     }
 
@@ -157,7 +167,6 @@ struct DisplayBuilder {
         }
     }
 
-    /// Fits 52 pt, so it has no "≈": "€3.4", "€12", "€123", "€4k". The limits keep "€10.0" and "€1000" out.
     /// The menu bar has no room for two decimals (52 pt). Below 1, show one decimal, minimum "0.1".
     /// The popover keeps the full value.
     static func barValue(_ value: String) -> String {
@@ -165,10 +174,4 @@ struct DisplayBuilder {
         return String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), max(0.1, (number * 10).rounded() / 10))
     }
 
-    static func shortEUR(_ cost: Decimal) -> String {
-        if cost >= Decimal(string: "999.5")! { return "€\(NSDecimalNumber(decimal: CafeIndex.rounded(cost / 1000, 0)).intValue)k" }
-        let places = cost > 0 && cost < Decimal(string: "9.95")! ? 1 : 0
-        return "€" + cost.formatted(.number.precision(.fractionLength(places)).grouping(.never)
-            .locale(Locale(identifier: "en_US_POSIX")))
-    }
 }

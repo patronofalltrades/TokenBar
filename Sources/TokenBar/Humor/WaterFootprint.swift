@@ -31,14 +31,14 @@ struct WaterData: Decodable, Sendable {
 
     func ml(outputTokens: Int) -> Double { Double(outputTokens) * mlPerOutputToken }
 
-    /// The popover line, for example "Today ≈ 22.5 L of water · 15 bottles (1.5 L)".
+    /// The unit equivalent in the popover, for example "15 bottles (1.5 L)".
     /// The largest unit with a count of 1 or more, else the smallest unit.
-    func line(ml: Double) -> String {
+    func equivalent(ml: Double) -> String {
         let sorted = units.sorted { $0.ml < $1.ml }
         let unit = sorted.last { ml / $0.ml >= 1 } ?? sorted[0]
         let count = ml / unit.ml
         let shown = String(format: count < 10 ? "%.1f" : "%.0f", count)
-        return "Today ≈ \(Self.amount(ml)) of water · \(shown) \(shown == "1.0" ? unit.singular : unit.plural)"
+        return "\(shown) \(shown == "1.0" ? unit.singular : unit.plural)"
     }
 
     /// "450 mL", "2.3 L", "22 L". Fills `{water}`.

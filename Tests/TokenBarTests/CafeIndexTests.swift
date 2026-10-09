@@ -22,6 +22,8 @@ private func pick(_ cost: String, kept: String? = nil) -> String? {
     #expect(data.tuition.priceEUR > 0)
     let shown = data.units.flatMap { [$0.singular, $0.plural] } + [data.tuition.label]
     #expect(shown.allSatisfy { !$0.contains("IESE") })
+    // D25: the school name is in the data file, not in the Swift code.
+    #expect(data.pickerDescription == "How many cafés con leche at the IESE cafeteria your tokens cost today.")
 }
 
 private func json(unitPrice: String = "1.8", tuitionPrice: String = "1000", ids: [String] = ["a"],
@@ -33,7 +35,7 @@ private func json(unitPrice: String = "1.8", tuitionPrice: String = "1000", ids:
         return "{" + fields.filter { $0.key != field }.map { "\"\($0.key)\": \($0.value)" }.joined(separator: ",") + "}"
     }
     let tuitionJSON = #"{"id": "t", "label": "MBA tuition", "price_eur": \#(tuitionPrice), "source": "s", "updated": "d"}"#
-    return Data(#"{"units": [\#(unitsJSON.joined(separator: ","))], "tuition": \#(tuitionJSON)}"#.utf8)
+    return Data(#"{"picker_description": "p", "units": [\#(unitsJSON.joined(separator: ","))], "tuition": \#(tuitionJSON)}"#.utf8)
 }
 
 @Test func validFileDecodes() throws {
@@ -84,6 +86,7 @@ func missingFieldRejectsFile(field: String) {
 // MARK: - Formatting
 
 @Test(arguments: [
+    ("0", "0 cafés con leche"),
     ("0.12", "0.12 cafés con leche"),
     ("0.5", "0.5 cafés con leche"),
     ("1", "1.0 café con leche"),

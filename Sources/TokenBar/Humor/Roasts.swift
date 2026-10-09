@@ -138,7 +138,7 @@ struct RoastState {
             "provider": provider,
             "reset": reset,
             "time": String(format: "%02d:%02d", minuteOfDay / 60, minuteOfDay % 60),
-            "cost": costEUR.map { String(format: "≈ €%.2f", $0) },
+            // "cost" has no value: no EUR in the UI (D42). A roast with `{cost}` does not show.
             "unit_value": unitValue,
             "unit_plural": unitPlural,
             "tuition_percent": tuitionPercent,
