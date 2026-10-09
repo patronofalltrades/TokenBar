@@ -475,12 +475,13 @@ Facts for this decision (checked 2026-10-08):
 
 1. Turn on two-factor authentication for the npm account.
 2. Publish only from `release.yml` on a GitHub-hosted runner. Never publish from a laptop.
-3. Use npm trusted publishing (OIDC). It needs npm CLI 11.5.1 or later, Node 22.14.0 or later, `permissions: id-token: write` and a GitHub-hosted runner. Source: [npm trusted publishers](https://docs.npmjs.com/trusted-publishers).
-4. Run `npm publish --provenance --access public`. Trusted publishing makes provenance by default, but keep the flag as an explicit check. Source: [npm provenance](https://docs.npmjs.com/generating-provenance-statements).
-5. After the first trusted publish, set the package to "Require two-factor authentication and disallow tokens".
-6. Do not store an npm token in GitHub secrets.
+3. Use npm trusted publishing (OIDC). It needs `permissions: id-token: write` and a GitHub-hosted runner. Source: [npm trusted publishers](https://docs.npmjs.com/trusted-publishers).
+4. Run `npm stage publish --provenance --access public`. Staged publishing needs npm CLI 11.15.0 or later and Node 22.14.0 or later. The stage does not need 2FA. Source: [npm staged publishing](https://docs.npmjs.com/staged-publishing).
+5. The maintainer approves each stage on npmjs.com (Staged Packages tab) with 2FA. The version is not live before this approval.
+6. After the first approved publish, add the trusted publisher. Then set the package to "Require two-factor authentication and disallow tokens".
+7. Do not keep an npm token in GitHub secrets after step 6.
 
-UNVERIFIED: npm can need an existing package before you add a trusted publisher. If so, ask the maintainer. Do not publish from a laptop to make the package.
+npm adds a trusted publisher only to a package that exists (verified 2026-10-10). The first stage uses a short-lived token in the `NPM_TOKEN` secret. npm plans to stop direct publish with 2FA-bypass tokens in January 2027, so do not use a direct publish (decided 2026-10-10, D49). Do not publish from a laptop.
 
 **Homebrew formula (TRD-T11, decide after the alpha).** Build this only if the maintainer approves it after the alpha. Formula `Formula/tokenbar.rb` in `patronofalltrades/homebrew-tap`:
 
