@@ -11,7 +11,7 @@ This file tells how work moves from a Linear issue to a merged pull request. [AG
 5. **Pull request.** The agent opens a pull request with tests. The pull request links the issue and meets the definition of done (AGENTS.md 7).
 6. **Pre-review.** Claude reviews the pull request: a code review and a `ponytail-review`. The author fixes the findings.
 7. **CI.** CI must be green: `swift build` and `swift test` (TRD 13).
-8. **Merge.** The maintainer merges. An agent never merges its own pull request.
+8. **Merge.** The Claude coordinator merges when three checks pass: its pre-review, green CI, and a wave integration check (all open branches of the wave merged together, then `swift build` and `swift test`). An agent never merges its own pull request. The maintainer can revert any merge (decided 2026-10-09, D36).
 9. **Done.** The maintainer sets the Linear issue to **Done**.
 
 When an agent stops work, it writes a handoff comment in Linear. Use the format in AGENTS.md 6.4.
@@ -81,4 +81,4 @@ The probe showed that OpenCode checks each part of a compound command. `git stat
 
 ## 5. Time budget
 
-The maintainer has 3 to 5 hours a week (PRD R11). Reviews and merges use most of this time. Plan about 2 waves a week. If a wave is late, cut Should stories first (PRD R11).
+The maintainer has 3 to 5 hours a week (PRD R11). Manual testing, alpha users and posts use most of this time. Plan about 2 waves a week. If a wave is late, cut Should stories first (PRD R11).
