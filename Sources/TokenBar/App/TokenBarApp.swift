@@ -9,7 +9,7 @@ final class AppModel {
 
     private let store = UsageStore(providers: [ClaudeCodeProvider(), CodexProvider()])
     // The JSON files ship in the app bundle, and tests decode them. A failure is a packaging error.
-    private let builder = DisplayBuilder(prices: try! .shipped(), cafe: try! .shipped())
+    private let builder = DisplayBuilder(prices: try! .shipped(), cafe: try! .shipped(), water: try! .shipped())
     private var roasts = RoastSelector(roasts: try! Roast.shipped())
     private let tuition = TuitionTotal(defaults: .standard)
 
@@ -38,7 +38,7 @@ struct TokenBarApp: App {
     init() {
         // `swift run` has no Info.plist, so LSUIElement has no effect there. The accessory policy hides the Dock icon.
         NSApplication.shared.setActivationPolicy(.accessory)
-        // The task runs after launch, so the window can come to the front. Refresh shows the new bar style at once.
+        // The task runs after launch, so the window can come to the front. Refresh shows the new index at once.
         let model = model
         Task { Onboarding.showIfNeeded { Task { await model.refresh() } } }
     }

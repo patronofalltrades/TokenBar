@@ -3,9 +3,9 @@ import ServiceManagement
 import SwiftUI
 
 /// First-run onboarding (PRD-US-18, DRD 4). A window, because the app has no Dock icon and no main window.
-/// The window shows at each launch until the user selects a bar style and clicks Done.
+/// The window shows at each launch until the user selects an index and clicks Done.
 @MainActor enum Onboarding {
-    enum Step: Equatable { case welcome, barStyle, claudeLimits, menuBar, finish }
+    enum Step: Equatable { case welcome, index, claudeLimits, menuBar, finish }
 
     /// DRD 4.1. Checks only that the log folders exist. It never reads a log.
     struct Detection: Equatable {
@@ -24,20 +24,29 @@ import SwiftUI
     /// The Claude limits step shows only when Claude Code is on this Mac.
     /// The menu bar step is always in the list (D40). It has no Skip button.
     static func steps(_ found: Detection) -> [Step] {
-        [.welcome, .barStyle] + (found.claudeCode ? [.claudeLimits] : []) + [.menuBar, .finish]
+        [.welcome, .index] + (found.claudeCode ? [.claudeLimits] : []) + [.menuBar, .finish]
     }
 
-    /// DRD 2.5: no default style. Onboarding is necessary until the user selects one.
+    /// DRD 2.5: no default index. Onboarding is necessary until the user selects one.
     static func isNeeded(defaults: UserDefaults = .standard) -> Bool {
-        defaults.string(forKey: SettingsKey.barStyle).flatMap(BarStyle.init) == nil
+        IndexChoice.saved(in: defaults) == nil
     }
 
-    /// Writes the style. Turns on launch at login if the toggle is on (PRD-US-19).
+    /// Writes the index. Turns on launch at login if the toggle is on (PRD-US-19).
     /// A login item failure is quiet, as in Settings. Settings shows the real state.
-    static func finish(style: BarStyle, launchAtLogin: Bool, defaults: UserDefaults = .standard,
+    static func finish(index: IndexChoice, launchAtLogin: Bool, defaults: UserDefaults = .standard,
                        register: () throws -> Void = { try SMAppService.mainApp.register() }) {
-        SettingsView.select(style, in: defaults)
+        defaults.set(index.rawValue, forKey: SettingsKey.index)
         if launchAtLogin { try? register() }
+    }
+
+    /// The menu bar preview of each index choice in step 2 (DRD 4.5).
+    static func preview(_ choice: IndexChoice) -> (symbol: String, sample: String, detail: String) {
+        switch choice {
+        case .cafe: ("cup.and.saucer.fill", "3.4", "Today's spend in cafés con leche. Roasts.")
+        case .tuition: (DisplayBuilder.tuitionSymbol, "0.04%", "Your AI spend since install, as a % of MBA tuition. Roasts.")
+        case .water: (DisplayBuilder.waterSymbol, "22 L", "The water your AI drank today. High estimate. Roasts.")
+        }
     }
 
     private static var window: NSWindow?
@@ -45,8 +54,8 @@ import SwiftUI
     /// Opens the window in front of other apps. `onFinish` runs after Done.
     static func showIfNeeded(onFinish: @escaping @MainActor () -> Void) {
         guard isNeeded(), Self.window == nil else { return }
-        let view = OnboardingView(detection: .scan()) { style, launchAtLogin in
-            finish(style: style, launchAtLogin: launchAtLogin)
+        let view = OnboardingView(detection: .scan()) { index, launchAtLogin in
+            finish(index: index, launchAtLogin: launchAtLogin)
             Self.window?.close()
             Self.window = nil
             onFinish()
@@ -65,20 +74,20 @@ import SwiftUI
 
 struct OnboardingView: View {
     let detection: Onboarding.Detection
-    let done: @MainActor (BarStyle, Bool) -> Void
+    let done: @MainActor (IndexChoice, Bool) -> Void
     @State private var index: Int
-    @State private var style: BarStyle?
+    @State private var choice: IndexChoice?
     @State private var launchAtLogin = true
     @State private var connected = false
     @State private var connectError: String?
 
-    /// `step` and `style` are for previews and tests.
-    init(detection: Onboarding.Detection, step: Int = 0, style: BarStyle? = nil,
-         done: @escaping @MainActor (BarStyle, Bool) -> Void = { _, _ in }) {
+    /// `step` and `choice` are for previews and tests.
+    init(detection: Onboarding.Detection, step: Int = 0, choice: IndexChoice? = nil,
+         done: @escaping @MainActor (IndexChoice, Bool) -> Void = { _, _ in }) {
         self.detection = detection
         self.done = done
         _index = State(initialValue: step)
-        _style = State(initialValue: style)
+        _choice = State(initialValue: choice)
     }
 
     private var steps: [Onboarding.Step] { Onboarding.steps(detection) }
@@ -88,7 +97,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 14) {
             switch step {
             case .welcome: welcome
-            case .barStyle: barStyle
+            case .index: indexChoice
             case .claudeLimits: claudeLimits
             case .menuBar: menuBar
             case .finish: finish
@@ -99,12 +108,12 @@ struct OnboardingView: View {
                 Spacer()
                 if index > 0 { Button("Back") { index -= 1 } }
                 if step == .finish {
-                    Button("Done") { if let style { done(style, launchAtLogin) } }
+                    Button("Done") { if let choice { done(choice, launchAtLogin) } }
                         .keyboardShortcut(.defaultAction)
                 } else {
                     Button(step == .claudeLimits && !connected ? "Skip" : "Continue") { index += 1 }
                         .keyboardShortcut(.defaultAction)
-                        .disabled(step == .barStyle && style == nil)
+                        .disabled(step == .index && choice == nil)
                 }
             }
         }
@@ -140,33 +149,36 @@ struct OnboardingView: View {
             .foregroundStyle(isFound ? .primary : .secondary)
     }
 
-    // DRD 4.5.
-    private var barStyle: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("How do you want the bar?").font(.title2.bold())
-            option(.funny, symbol: "cup.and.saucer.fill", sample: "3.4", detail: "Your spend in cafés con leche. Roasts.")
-            option(.serious, symbol: "circle.lefthalf.filled", sample: "62%", detail: "Numbers only. No jokes.")
-            Text("Warnings always show the real number. You can change this later in Settings.")
-                .font(.caption).foregroundStyle(.secondary)
+    // DRD 4.5. Each option shows the real menu bar image.
+    private var indexChoice: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Pick your index").font(.title2.bold())
+            ForEach(IndexChoice.allCases, id: \.self) { value in
+                let preview = Onboarding.preview(value)
+                option(value, symbol: preview.symbol, sample: preview.sample, detail: preview.detail)
+            }
+            Text("TokenBar shows one index. Warnings always show the real number. You can change the index or turn off roasts later in Settings.")
+                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    private func option(_ value: BarStyle, symbol: String, sample: String, detail: String) -> some View {
-        let selected = style == value
-        return Button { style = value } label: {
+    private func option(_ value: IndexChoice, symbol: String, sample: String, detail: String) -> some View {
+        let selected = choice == value
+        return Button { choice = value } label: {
             HStack(spacing: 12) {
                 // The same image as the real menu bar item.
-                Image(nsImage: MenuBarLabel.image(symbol: symbol, text: sample))
+                Image(nsImage: MenuBarLabel.image(symbol: symbol, text: sample, width: MenuBarLabel.width(value)))
+                    .frame(width: MenuBarLabel.tuitionWidth, alignment: .leading)  // aligns the three titles
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 5))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(value == .funny ? "Funny" : "Serious").font(.headline)
-                    Text(detail).foregroundStyle(.secondary)
+                    Text(value.title).font(.headline)
+                    Text(detail).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
                 Image(systemName: selected ? "largecircle.fill.circle" : "circle")
             }
-            .padding(10)
+            .padding(8)
             .contentShape(Rectangle())
             .overlay(RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(selected ? Color.accentColor : Color.secondary.opacity(0.3), lineWidth: selected ? 2 : 1))
@@ -228,4 +240,4 @@ struct OnboardingView: View {
 }
 
 #Preview("Welcome") { OnboardingView(detection: .init(claudeCode: true, codex: false)) }
-#Preview("Bar style") { OnboardingView(detection: .init(claudeCode: true, codex: true), step: 1, style: .funny) }
+#Preview("Index") { OnboardingView(detection: .init(claudeCode: true, codex: true), step: 1, choice: .water) }

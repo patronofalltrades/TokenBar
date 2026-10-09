@@ -45,7 +45,7 @@ The primary metric is always Auto (decided 2026-10-08). No "Menu bar shows" sett
 1. Auto shows the highest limit percentage of all providers. This is the limit that is closest to a reset problem. Example: `62%`.
 2. If no provider has a limit, Auto shows today's cost for all providers. Example: `€3.4`. The menu bar has no `≈` sign. The popover keeps `≈ €` (D38). TRD-T08 checks that this value fits in 52 pt.
 
-The bar style (Section 2.5) selects if the menu bar item shows the primary metric or the café-index value.
+The index choice (Section 2.5) selects the value of the menu bar item. Before the user picks an index, it shows the primary metric.
 
 ### 2.2 Display mode and width
 
@@ -53,9 +53,12 @@ TokenBar has one display mode: Compact, on all displays (decided 2026-10-08). No
 
 | Content | Maximum width |
 |---|---|
-| Symbol and one value. The bar style (Section 2.5) selects the value. | 52 pt |
+| Symbol and one value. The index choice (Section 2.5) selects the value. | 52 pt |
+| The same, with the Tuition Meter selected (D41). All states use this width. | 68 pt |
 
 The symbol changes with the state (Section 2.4).
+
+The Tuition Meter is the only exception to 52 pt. `🎓 0.04%` needs about 68 pt. The maintainer chose the clear `%` over the cap (D41).
 
 Use monospaced digits. The width must not change when the number changes from `9%` to `10%`. Reserve the width for the longest value.
 
@@ -72,7 +75,7 @@ Requirements:
 
 ### 2.4 States
 
-| State | Condition | Menu bar item (Serious style) | Symbol candidate |
+| State | Condition | Menu bar item (no index yet) | Symbol candidate |
 |---|---|---|---|
 | Normal | Primary metric < 80%. | `◐ 62%` | `gauge.with.dots.needle.33percent` or `circle.lefthalf.filled` |
 | Warning | Primary metric ≥ 80% and < 100%. | `⚠ 87%` | `exclamationmark.triangle.fill` |
@@ -90,21 +93,26 @@ Rules:
 
 Verify each symbol name in the SF Symbols app for macOS 14 before implementation.
 
-### 2.5 Bar style: Funny or Serious
+### 2.5 Index choice: Café Index, Tuition Meter or Water Footprint
 
-The user selects the bar style in onboarding (Section 4.5). The user can change it in **Settings > General > Bar style**. There is no default. The user must select one.
+The user selects one index in onboarding (Section 4.5). The user can change it in **Settings > General > Index**. There is no default. The user must select one. TokenBar shows only the selected index, never two at the same time (D41).
 
-| Bar style | Normal state | Warning or Limit hit state | Roasts |
+| Index | Normal state | Popover line | Data |
 |---|---|---|---|
-| Funny | Café-index value: `☕ 3.4` | Limit value: `⚠ 87%` or `⌛ 1h48` | On, in the popover and in alerts |
-| Serious | Primary metric: `◐ 62%` | Limit value: `⚠ 87%` or `⌛ 1h48` | Off. Alerts have no roast. |
+| Café Index | `☕ 3.4` | `Today = 3.4 cafés con leche` | Today's cost (Section 7.6) |
+| Tuition Meter | `🎓 0.04%` | `🎓 0.04% of your MBA tuition, in tokens (since install)`, and a small line: `At this pace, you'll burn through it by the year 2033.` | The tuition benchmark: spend since install (Section 7.6) |
+| Water Footprint | `💧 22 L` | `Today ≈ 22 L of water · 15 bottles (1.5 L)` | Today's output tokens (Section 7.8) |
+
+In the Warning and Limit hit states, each index shows the limit value: `⚠ 87%` or `⌛ 1h48`.
 
 Rules:
 
-1. In the Warning and Limit hit states, both styles show the limit value. The joke never hides a warning (principle 4).
-2. The Funny style uses the unit of Section 7.6. The `☕` is the symbol of the selected unit.
-3. The Serious style sets **Roasts** and **Café index** to off. The user can turn them on again in Settings.
-4. An alert includes a roast only when the bar style is Funny and **Roasts** is on. No separate alert roast setting exists (decided 2026-10-08).
+1. In the Warning and Limit hit states, all indexes show the limit value. The joke never hides a warning (principle 4).
+2. The `☕` is the symbol of the selected café unit. The `🎓` is `graduationcap.fill`. The `💧` is `drop.fill`. The Tuition Meter item is 68 pt wide (Section 2.2).
+3. If the index has no value (for example no cost today), the menu bar item shows the primary metric.
+4. **Roasts** is a separate toggle, on by default. An alert includes a roast only when **Roasts** is on. No separate alert roast setting exists (decided 2026-10-08).
+5. Before the user selects an index, TokenBar shows numbers only and no roast.
+6. A roast uses only the placeholders of the selected index, so a roast never shows a second index.
 
 ---
 
@@ -152,7 +160,6 @@ A provider without a limit source shows tokens and cost only. It has no bar. Exa
 ├──────────────────────────────────────────┤
 │ Today ≈ €6.10          Week ≈ €21.80     │
 │ ☕ Today = 3.4 cafés con leche            │
-│ 🎓 0.04% of your MBA tuition, in tokens   │
 ├──────────────────────────────────────────┤
 │ "The protagonist has 38% of Opus left    │
 │  and a 9 AM deadline. Discuss."          │
@@ -161,7 +168,7 @@ A provider without a limit source shows tokens and cost only. It has no bar. Exa
 └──────────────────────────────────────────┘
 ```
 
-The popover shows the Today and Week totals side by side (decided 2026-10-08). It has no Today/Week control. Today starts at local midnight. Week is the rolling last 7 days. The café-index line uses today's cost. The tuition line shows in the Funny style only (Section 7.6).
+The popover shows the Today and Week totals side by side (decided 2026-10-08). It has no Today/Week control. Today starts at local midnight. Week is the rolling last 7 days. The index line shows the selected index only (Section 2.5). The example shows the Café Index.
 
 ### 3.4 Warning state
 
@@ -278,21 +285,25 @@ v1 has no API keys and no API key screen (PRD 7.4). Keep these rules for the Lat
 | Launch at login | Show a toggle in the welcome screen. Default on after onboarding (Section 5). The user can turn it off. | As a system dialog at launch. |
 | Folder access | Only if the TRD requires a sandbox. Then explain the folder before the open panel shows. | Without an explanation. |
 
-### 4.5 Bar style choice
+### 4.5 Index choice
 
-After detection, the onboarding window asks the user to select a bar style (Section 2.5). Show the two options with a live preview of the menu bar item. The user cannot continue without a selection.
+After detection, the onboarding window asks the user to select one index (Section 2.5). Show the three options with a live preview of the menu bar item. The user cannot continue without a selection.
 
 ```
 ┌──────────────────────────────────────────┐
-│ How do you want the bar?                 │
+│ Pick your index                          │
 │                                          │
-│  [ ☕ 3.4 ]  Funny                        │
-│  Your spend in cafés con leche. Roasts.  │
+│  [ ☕ 3.4 ]  Café Index                   │
+│  Today's spend in cafés con leche.       │
 │                                          │
-│  [ ◐ 62% ]  Serious                      │
-│  Numbers only. No jokes.                 │
+│  [ 🎓 0.04% ]  Tuition Meter              │
+│  Your AI spend as a % of MBA tuition.    │
+│                                          │
+│  [ 💧 22 L ]  Water Footprint             │
+│  The water your AI drank today.          │
 │                                          │
 │  Warnings always show the real number.   │
+│  You can turn off roasts in Settings.    │
 └──────────────────────────────────────────┘
 ```
 
@@ -300,17 +311,17 @@ After detection, the onboarding window asks the user to select a bar style (Sect
 
 TokenBar has no Dock icon and no main window. Thus onboarding is a window, not the popover (TRD-T28).
 
-1. The window opens in front of other apps at launch when no bar style is saved.
-2. The window opens again at each launch until the user selects a bar style and clicks **Done**. No menu item opens it again. Settings has all the same choices.
+1. The window opens in front of other apps at launch when no index is saved.
+2. The window opens again at each launch until the user selects an index and clicks **Done**. No menu item opens it again. Settings has all the same choices.
 3. TokenBar checks only that the log folders exist. It does not read a log in onboarding.
 
 | Step | Content | Condition |
 |---|---|---|
 | 1. Welcome | Welcome line (Section 4.7). Claude Code and Codex: found or not found. TokenBar cannot see web chat, such as claude.ai or ChatGPT. Your data stays on this Mac. | Always |
-| 2. Bar style | Section 4.5. | Always |
+| 2. Index | Section 4.5. | Always |
 | 3. Claude limits | Optional **Connect** (Section 5, D39). The current status line keeps working. Errors show below the button. The user can skip. | Only if TokenBar found Claude Code |
 | 4. Keep TokenBar visible | macOS hides the icons near the notch first, without a warning. An open app with many menus pushes icons out. "Hold ⌘ and drag TokenBar to the right, toward the clock." | Always. No Skip button (D40). |
-| 5. Done | "Open TokenBar at login" toggle, on by default (Section 4.4). **Done** saves the bar style and turns on launch at login. A login item failure is quiet. Settings shows the real state. | Always |
+| 5. Done | "Open TokenBar at login" toggle, on by default (Section 4.4). **Done** saves the index and turns on launch at login. A login item failure is quiet. Settings shows the real state. | Always |
 
 Target: the user completes all steps in less than two minutes (PRD-US-18).
 
@@ -334,9 +345,10 @@ Settings has 3 tabs: General, Alerts and About (decided 2026-10-08). No Provider
 ┌─ TokenBar Settings ─────────────────────────────────────┐
 │ [General] [Alerts] [About]                              │
 ├─────────────────────────────────────────────────────────┤
-│ Bar style           ( ) Funny  (•) Serious              │
-│ Roasts              [ ]                                 │
-│ Café index          [ ]                                 │
+│ Index               (•) Café Index                      │
+│                     ( ) Tuition Meter                   │
+│                     ( ) Water Footprint                 │
+│ Roasts              [✓]                                 │
 │ Launch at login     [✓]                                 │
 │                                                         │
 │ Claude limits (optional)                                │
@@ -350,9 +362,8 @@ Settings has 3 tabs: General, Alerts and About (decided 2026-10-08). No Provider
 
 | Tab | Field | Type | Default |
 |---|---|---|---|
-| General | Bar style | Funny / Serious (Section 2.5) | Selected in onboarding |
-| General | Roasts | Toggle | On (Funny), off (Serious) |
-| General | Café index | Toggle | On (Funny), off (Serious) |
+| General | Index | Café Index / Tuition Meter / Water Footprint (Section 2.5) | Selected in onboarding |
+| General | Roasts | Toggle | On |
 | General | Launch at login | Toggle | On after onboarding (decided 2026-10-08) |
 | General | Claude limits | Status ("Not connected", "Connected. Waiting for the next Claude Code reply.", "Connected · updated 3 min ago"), **Connect** or **Disconnect** button, caption text, "Show manual setup" with the snippet and a **Copy** button (D39) | Not connected |
 | General | Command-drag tip | Text (Section 2.3) | — |
@@ -367,9 +378,9 @@ Rules:
 3. Without the setup, the Claude Code row shows tokens and cost only (Section 3.2).
 4. TokenBar refreshes every 60 seconds. No refresh setting exists. The popover **Refresh** button reads at once.
 5. No currency setting exists. All costs are in EUR (Section 7.6).
-6. If the Funny style is on and **Café index** is off, the menu bar item shows the primary metric.
+6. No Café index toggle exists (D41). The index choice replaces it.
 
-When Roasts and Café index are off, TokenBar shows numbers only. It must work fully.
+When Roasts is off, TokenBar shows the index and the numbers only. It must work fully.
 
 ---
 
@@ -394,7 +405,7 @@ TokenBar sends two notification events only (decided 2026-10-08). It sends no 80
 
 ### 6.3 Copy
 
-The title is literal. The body has the number first, then an optional roast. Add the roast only in the Funny style with **Roasts** on (Section 2.5, rule 4). Else use the body without the roast.
+The title is literal. The body has the number first, then an optional roast. Add the roast only when the user selected an index and **Roasts** is on (Section 2.5, rule 4). Else use the body without the roast.
 
 | Event | Title | Body |
 |---|---|---|
@@ -436,7 +447,7 @@ Roasts are data, not code. Store roasts in a data file next to the café-index u
 | `provider` | string, optional | `codex` |
 | `locale` | string | `en` |
 
-Placeholders: `{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{time}`, `{cost}`, `{unit_value}`, `{unit_plural}`, `{tuition_percent}`, `{tuition_years}`. If a placeholder has no value, do not select the roast.
+Placeholders: `{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{time}`, `{cost}`, `{unit_value}`, `{unit_plural}`, `{tuition_percent}`, `{tuition_years}`, `{water}`. If a placeholder has no value, do not select the roast. Only the selected index fills its placeholders (Section 2.5, rule 6).
 
 ### 7.3 Categories and triggers
 
@@ -453,6 +464,7 @@ Placeholders: `{percent}`, `{remaining}`, `{model}`, `{provider}`, `{reset}`, `{
 | `career` | Any time. Recruiting, consulting and banking jokes. |
 | `tuition` | 7 or more days of data. Uses the tuition benchmark (Section 7.6). |
 | `provider` | A provider-specific condition, for example Codex use only. |
+| `water` | Water Footprint selected and output tokens today. Uses `{water}` (Section 7.8). |
 
 Selection order:
 
@@ -503,6 +515,9 @@ Selection order:
 | tuition-02 | tuition | `{tuition_percent} of your MBA tuition, paid in tokens. The ROI case writes itself.` |
 | tuition-03 | tuition | `You have now spent {tuition_percent} of an MBA on asking a model to explain the MBA.` |
 | provider-02 | provider | `Claude and Codex both used today. Diversified portfolio. Your finance professor would approve of the risk profile, not the cost.` |
+| water-01 | water | `Your prompts drank {water} of water today. Somewhere a cooling tower is writing its own case study.` |
+| water-02 | water | `{water} of fresh water evaporated so a model could summarize a case you did not read. Discuss the externalities.` |
+| water-03 | water | `{water} today. The sustainability elective would like a word. Several, actually. All of them about you.` |
 
 The `provider-01` line uses a fixed number as a joke. Do not present it as data. If the TRD supplies a line count, replace the number with a placeholder.
 
@@ -559,7 +574,14 @@ TokenBar calculates two values from it:
 
 Rules:
 
-1. Show the tuition benchmark in the popover under the café-index line, in the Funny style only. Format: `🎓 {tuition_percent} of your {label}, in tokens`. Example: `🎓 0.04% of your MBA tuition, in tokens`. Code takes the label from the data file. Code has no hardcoded "IESE" string.
+1. Show the tuition benchmark as the popover line of the Tuition Meter only (D41). Format: `🎓 {tuition_percent} of your {label}, in tokens (since install)`. Example: `🎓 0.04% of your MBA tuition, in tokens (since install)`. Code takes the label from the data file. Code has no hardcoded "IESE" string.
+5. Tuition Meter menu bar value, in 68 pt: `0.04%` and `9.99%` below 10, `12.3%` below 100, else `123%`. Below 0.005%, show `<.01%`. `<0.01%` does not fit 68 pt.
+6. Tuition Meter burn line, under the tuition line in the popover and on the share card. Year = current year + (tuition − spend since install) ÷ (spend since install ÷ days since install) ÷ 365.25, rounded to a whole year. Text: `At this pace, you'll burn through it by the year 2033.`
+   - Less than 1 day since install, or zero spend: no line.
+   - Year above 99,999: `At this pace, you'll burn through it by the year 99,999+. Bring snacks.`
+   - Spend at or above tuition: `Tuition fully burned. The tokens graduated before you did.`
+   - The year has a thousands separator only from 5 digits: `2033`, `12,704`.
+   - `CafeIndex.burnLine` has all of this logic. It is a pure function with tests.
 2. Use it in roasts with the `tuition` category (Section 7.3).
 3. The joke is about the tokens, not about the cost of tuition. Do not suggest that the user cannot pay tuition.
 4. If there are less than 7 days of data, do not show `{tuition_years}`.
@@ -589,16 +611,15 @@ The share card lets the user post the joke in a class chat. It is the main word-
 1. The popover footer has a **Share** button (`square.and.arrow.up`).
 2. **Share** copies an image and a text to the clipboard. The user pastes them into WhatsApp or LinkedIn.
 3. Render the image with SwiftUI `ImageRenderer`. Do not add a dependency.
-4. The card contains: today's café-index value, the tuition benchmark (if available), the current roast and the text "TokenBar · github.com/patronofalltrades/TokenBar".
+4. The card contains: the line of the selected index only (Section 2.5), the Tuition Meter burn line (Section 7.6, if available), the current roast and the text "TokenBar · github.com/patronofalltrades/TokenBar".
 5. The card does not contain the user name, file paths, project names or prompt content. It shows model names only if the roast uses `{model}`.
 6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat." The confirmation replaces the "Prices verified" line for 3 seconds.
-7. In the Serious style, the card shows the numbers only: the cost today and the cost this week (API-equivalent).
-8. The image is 360 pt wide, at scale 2, with a white background and the light appearance. The clipboard text uses the unit emoji (Section 7.6).
+7. Before the user selects an index, the card shows the numbers only: the cost today and the cost this week (API-equivalent).
+8. The image is 360 pt wide, at scale 2, with a white background and the light appearance. The clipboard text uses the emoji of the index: the café unit emoji (Section 7.6), `🎓` or `💧`.
 
 ```
 ┌──────────────────────────────┐
 │  ☕ 3.4 cafés con leche today │
-│  🎓 0.04% of MBA tuition      │
 │                              │
 │  "The cold call is coming.   │
 │   The tokens are not."       │
@@ -606,6 +627,30 @@ The share card lets the user post the joke in a class chat. It is the main word-
 │  TokenBar · github.com/…     │
 └──────────────────────────────┘
 ```
+
+### 7.8 Water Footprint
+
+The Water Footprint converts today's output tokens into water (D41). The tone is dramatic. The value is an estimate, so the popover shows `≈`.
+
+Data file: `water.json`.
+
+| Field | Value |
+|---|---|
+| `ml_per_output_token` | 0.1125 (45 mL ÷ 400 tokens) |
+| `basis` | Output tokens only. |
+| `source` | https://mistral.ai/news/our-contribution-to-a-global-environmental-standard-for-ai |
+| `source_note` | Mistral AI life cycle analysis of Mistral Large 2, published 2025-07-22: 45 mL of water for a 400-token Le Chat response (marginal inference). |
+| `last_verified` | 2026-10-09 |
+| `units` | glass 250 mL, bottle 1.5 L, bathtub 150 L |
+
+Rules:
+
+1. Count output tokens only, for all providers, since local midnight. Codex output includes reasoning tokens.
+2. Do not count input or cache tokens. Coding agents read large caches again and again. With input tokens, the value is meaningless.
+3. The source is a high published estimate. A second source, Li et al. 2023 ("Making AI Less Thirsty", arXiv:2304.03271), gives 500 mL for 10 to 50 GPT-3 responses, so 10 to 50 mL for each response. The Mistral value is at the top of that range.
+4. Popover: `Today ≈ {amount} of water · {count} {unit}`. Use the largest unit with a count of 1 or more, else the glass. Amount: `45 mL`, `2.3 L`, `22 L`.
+5. Menu bar: `0.1 L` to `9.9 L`, `22 L` to `999 L`, then `1.1kL` and `99kL`. These values fit 52 pt.
+6. Example: 200,000 output tokens = 22.5 L = 15 bottles. The popover shows `Today ≈ 22 L of water · 15 bottles (1.5 L)`.
 
 ## 8. Visual style
 

@@ -30,7 +30,7 @@ Use these terms with these meanings in all TokenBar documents.
 | Roast | A short joke in the style of an IESE case. Roasts are in a data file. |
 | Menu bar item | The icon and text that TokenBar shows in the macOS menu bar. |
 | Popover | The panel that opens when the user clicks the menu bar item. |
-| Bar style | The user choice for the menu bar item: Funny or Serious (DRD 2.5). |
+| Index | The user choice for the menu bar item: Café Index, Tuition Meter or Water Footprint (DRD 2.5, D41). |
 | Tuition benchmark | The spend since first launch as a percentage of IESE MBA tuition (DRD 7.6). It is not a café unit. |
 | Share card | An image of today's café index that the user copies to the clipboard (DRD 7.7). |
 | Alpha tester | A person who installs an alpha build before the class launch. |
@@ -160,11 +160,11 @@ As P2, I want a cost in EUR for my subscription usage, so that I know its value.
 
 **PRD-US-04 See one number in the menu bar** (Must)
 As any user, I want one short value next to the notch, so that I see my usage with no click.
-- AC1: The menu bar item shows one value. The bar style selects the value (DRD 2.5). Examples: `☕ 3.4` (Funny), `◐ 62%` (Serious).
+- AC1: The menu bar item shows one value. The index choice selects the value (DRD 2.5). Examples: `☕ 3.4` (Café Index), `🎓 0.04%` (Tuition Meter), `💧 22 L` (Water Footprint).
 - AC2: The primary metric is always Auto: the closest limit, else today's cost (DRD 2.1). No setting exists.
 - AC3: The text does not exceed the width that the DRD specifies (52 pt).
-- AC4: The user selects a bar style: Funny or Serious (DRD 2.5). No default exists. The user can change the style later.
-- AC5: In the Warning and Limit hit states, both bar styles show the limit value (DRD 2.5, rule 1).
+- AC4: The user selects one index: Café Index, Tuition Meter or Water Footprint (DRD 2.5). No default exists. The user can change the index later.
+- AC5: In the Warning and Limit hit states, all indexes show the limit value (DRD 2.5, rule 1).
 
 **PRD-US-05 See the full report in the popover** (Must)
 As any user, I want details when I click, so that I understand the number.
@@ -181,7 +181,7 @@ As any user, I want my cost in IESE units, so that I remember it.
 - AC3: The popover shows one café-index line with one unit that TokenBar selects automatically (DRD 7.6). No unit setting exists.
 - AC4: A contributor can add a unit with one pull request that changes only the data file.
 - AC5: A test fails if a unit has a missing field or a price of zero or less.
-- AC6: In the Funny bar style, the popover shows the tuition benchmark: the share of IESE tuition that the spend since first launch has cost (DRD 7.6).
+- AC6: With the Tuition Meter, the popover shows the tuition benchmark: the share of IESE tuition that the spend since first launch has cost (DRD 7.6).
 - AC7: The data file has one tuition entry, `iese_mba_tuition`. TokenBar shows the years-to-tuition value only with 7 or more days of data.
 
 **PRD-US-07 Trust the privacy promise** (Must)
@@ -200,7 +200,7 @@ As any user, I want a short joke about my usage, so that the app is fun to open.
 - AC1: Roasts are in a data file. Adding a roast needs no code change.
 - AC2: A roast can use placeholders for live values, for example the limit percentage.
 - AC3: TokenBar selects a roast that matches the current state (low, medium or high usage).
-- AC4: The user can turn off roasts. In v0.1, the Serious bar style turns off roasts (DRD 2.5). From v0.2, Settings has a Roasts toggle.
+- AC4: The user can turn off roasts with the Roasts toggle in Settings (DRD 2.5, D41).
 - AC5: Roasts follow the DRD voice rules. Roasts do not mention a real classmate, professor or section by name.
 
 Example roast (humor string, not STE): *"The protagonist has 38% of Opus left and a 9 AM case deadline. Discuss."*
@@ -226,7 +226,7 @@ As P2, I want a macOS notification before I hit a limit, so that a limit does no
 - AC1: TokenBar sends two notifications: at 95% of a limit and at limit hit (DRD 6.1). It sends no 80% notification and no reset notification. The menu bar shows the Warning state from 80%.
 - AC2: The user can turn off each of the two alerts.
 - AC3: TokenBar sends each alert a maximum of one time in each limit window.
-- AC4: In the Funny bar style, the notification can include a roast. In the Serious bar style, it has no roast.
+- AC4: When Roasts is on, the notification can include a roast. When Roasts is off, it has no roast.
 - AC5: TokenBar has no quiet hours. macOS Focus controls the delivery.
 
 **PRD-US-21 Share today's café index** (Must)
@@ -236,7 +236,7 @@ As any user, I want to copy an image of today's café index, so that I can post 
 - AC3: The card contains no user name, file paths, project names or prompt content. A test proves this.
 - AC4: The card shows a model name only if the roast uses `{model}`.
 - AC5: TokenBar renders the image with SwiftUI `ImageRenderer`. The feature adds no dependency.
-- AC6: In the Serious bar style, the card shows numbers only.
+- AC6: The card shows the selected index only. Before the user selects an index, the card shows numbers only.
 - AC7: After the copy, the popover shows a one-line confirmation.
 - AC8: **Share** makes no network request. The user decides where to paste the card.
 
@@ -258,7 +258,7 @@ As P2 or P3, I want a short first-run setup, so that I see a value quickly.
 - AC1: The first run detects the available usage sources and shows them.
 - AC2: The first run states what TokenBar can see and what it cannot see.
 - AC3: Test with 5 people from the target audience (AI-coding-tool users). A minimum of 2 are not software engineers by background. 4 or more reach a value in the menu bar in 2 minutes or less (target).
-- AC4: After detection, the first run asks the user to select a bar style: Funny or Serious. It shows a live preview of each style (DRD 4.5). No default exists.
+- AC4: After detection, the first run asks the user to select one index: Café Index, Tuition Meter or Water Footprint. It shows a live preview of each index (DRD 4.5). No default exists.
 
 **PRD-US-19 Start at login** (Must)
 As any user, I want TokenBar to start when I log in, so that I do not need to open it.

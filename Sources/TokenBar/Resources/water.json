@@ -1,0 +1,28 @@
+{
+  "ml_per_output_token": 0.1125,
+  "basis": "Output tokens only. 45 mL for one 400-token response = 0.1125 mL per output token. Cache reads and input tokens do not count.",
+  "source": "https://mistral.ai/news/our-contribution-to-a-global-environmental-standard-for-ai",
+  "source_note": "Mistral AI life cycle analysis of Mistral Large 2, published 2025-07-22: 45 mL of water for a 400-token Le Chat response (marginal inference, without user devices). A high published estimate. Other models and data centers use less or more water.",
+  "last_verified": "2026-10-09",
+  "units": [
+    {
+      "id": "glass",
+      "singular": "glass (250 mL)",
+      "plural": "glasses (250 mL)",
+      "ml": 250
+    },
+    {
+      "id": "bottle",
+      "singular": "bottle (1.5 L)",
+      "plural": "bottles (1.5 L)",
+      "ml": 1500
+    },
+    {
+      "id": "bathtub",
+      "singular": "bathtub (150 L)",
+      "plural": "bathtubs (150 L)",
+      "ml": 150000
+    }
+  ],
+  "units_note": "Typical sizes: a 250 mL glass, a 1.5 L bottle and a 150 L bath."
+}

@@ -45,7 +45,7 @@ private func withSelector(_ roasts: [Roast], seed: UInt64 = 1, _ body: (inout Ro
 
 @Test func shippedFileIsValid() throws {
     let roasts = try Roast.shipped()
-    #expect(roasts.count == 30)
+    #expect(roasts.count == 33)
     #expect(Set(roasts.map(\.category)) == Set(Roast.Category.allCases))
     for r in roasts {
         #expect(r.text.count <= 140, "\(r.id) is longer than 140 characters")
@@ -102,6 +102,8 @@ private func withSelector(_ roasts: [Roast], seed: UInt64 = 1, _ body: (inout Ro
     #expect(!fires(.tuition) { $0.daysOfData = 6 })
     #expect(fires(.provider) { $0.providersToday = ["codex"] })
     #expect(!fires(.provider) { _ in })
+    #expect(fires(.water) { $0.water = "22 L" })
+    #expect(!fires(.water) { _ in })
 }
 
 @Test func optionalFilters() throws {

@@ -24,17 +24,17 @@ struct DisplaySnapshot: Equatable, Sendable {
     }
 
     let state: State
-    let barStyle: BarStyle?         // nil until the user picks a style (DRD 2.5)
+    let index: IndexChoice?         // nil until the user picks an index (DRD 2.5)
     let menuBarText: String         // for example "3.4", "62%", "87%", "1h48"
     let menuBarSymbol: String       // SF Symbol name (DRD 2.4)
     let rows: [ProviderRow]
     let costTodayEUR: Decimal
     let costWeekEUR: Decimal
-    let cafeLine: String?           // nil in Serious, or when the café index is off
-    let cafeSymbol: String?         // SF Symbol of the café unit in `cafeLine`
-    var cafeEmoji: String? = nil    // emoji of the same unit, for the share card text (DRD 7.6, 7.7)
-    let tuitionLine: String?        // nil in Serious, or before there is data
-    let roast: String?              // nil in Serious, when roasts are off, or when none matches
+    let indexLine: String?          // the one line of the selected index. Nil for Numbers only or without data.
+    let indexSymbol: String?        // SF Symbol for `indexLine`
+    var indexEmoji: String? = nil   // emoji for the share card text (DRD 7.7)
+    var indexDetail: String? = nil  // small second line. Tuition Meter only: the burn year (DRD 7.6).
+    let roast: String?              // nil before the user picks an index, when roasts are off, or when none matches
     let lastRefresh: Date?
     let pricesVerified: String      // the `last_verified` date of prices.json
 }

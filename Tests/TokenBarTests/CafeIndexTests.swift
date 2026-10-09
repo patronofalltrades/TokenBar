@@ -107,8 +107,29 @@ func formatsValue(value: String, expected: String) {
 @Test func tuitionPercentAndLine() {
     let spend = tuition.priceEUR * Decimal(string: "0.0004")!
     #expect(CafeIndex.tuitionPercent(spendEUR: spend, tuition: tuition) == "0.04%")
-    #expect(CafeIndex.tuitionLine(spendEUR: spend, tuition: tuition) == "0.04% of your MBA tuition, in tokens")
+    #expect(CafeIndex.tuitionLine(spendEUR: spend, tuition: tuition) == "0.04% of your MBA tuition, in tokens (since install)")
     #expect(CafeIndex.tuitionPercent(spendEUR: 0, tuition: tuition) == "0.00%")
+}
+
+/// €117,000 tuition. €100 a day for 10 days: €116,000 left = 1160 days ≈ 3.18 years.
+@Test func burnLineCases() {
+    func line(_ spend: String, days: Double) -> String? {
+        CafeIndex.burnLine(spendEUR: Decimal(string: spend)!, days: days, tuition: tuition, year: 2026)
+    }
+    #expect(line("1000", days: 10) == "At this pace, you'll burn through it by the year 2029.")
+    #expect(line("0.3", days: 10) == "At this pace, you'll burn through it by the year 12,704.")
+    #expect(line("1000", days: 0.9) == nil)       // less than 1 day of data
+    #expect(line("0", days: 30) == nil)           // zero spend
+    #expect(line("0.01", days: 30) == "At this pace, you'll burn through it by the year 99,999+. Bring snacks.")
+    #expect(line("117000", days: 30) == "Tuition fully burned. The tokens graduated before you did.")
+}
+
+/// A tiny value shows "<.01%" (D41: "<0.01%" does not fit 68 pt).
+@Test func tuitionBarValueHasFiveCharactersMaximum() {
+    let values = ["0", "0.000049", "0.00005", "0.0004", "0.09994", "0.1234", "0.99949", "1.234"].map {
+        CafeIndex.tuitionBarValue(spendEUR: tuition.priceEUR * Decimal(string: $0)!, tuition: tuition)
+    }
+    #expect(values == ["<.01%", "<.01%", "0.01%", "0.04%", "9.99%", "12.3%", "99.9%", "123%"])
 }
 
 private struct Clock {

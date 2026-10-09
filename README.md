@@ -5,8 +5,9 @@ TokenBar is a macOS menu bar app. It shows how much AI you use, and it makes fun
 TokenBar shows your Claude Code and Codex usage in the menu bar, next to the camera notch. It does not show only euros. It shows the cost in units that an MBA student in Barcelona understands: cafés con leche, menús del día and a share of the MBA tuition fee.
 
 ```
- ☕ 3.4      ← Funny style: this is all you see in the menu bar
- ◐ 62%      ← Serious style
+ ☕ 3.4      ← Café Index: this is all you see in the menu bar
+ 🎓 0.04%    ← Tuition Meter: your spend since install, as a % of MBA tuition
+ 💧 22 L     ← Water Footprint: the water your AI drank today (a high estimate)
 ```
 
 Click the icon to see the full report:
@@ -62,7 +63,11 @@ Providers publish prices in USD. TokenBar converts them to EUR with one fixed ra
 
 The conversion units are in a plain data file. Anyone can add a unit or correct a price with a pull request. Prices are community estimates, not official prices.
 
-TokenBar also shows how much of your MBA tuition your tokens have cost since you first opened TokenBar.
+You pick one index. TokenBar shows only that index:
+
+- **Café Index**: today's cost in cafés con leche and other campus food.
+- **Tuition Meter**: the share of MBA tuition that your tokens have cost since you installed TokenBar.
+- **Water Footprint**: the water for today's output tokens. TokenBar uses a high published estimate: 45 mL for a 400-token response (Mistral AI, 2025). The source is in `water.json`.
 
 ## Privacy
 
