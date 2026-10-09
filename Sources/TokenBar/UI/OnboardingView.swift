@@ -116,12 +116,14 @@ struct OnboardingView: View {
             HStack {
                 Text("Step \(index + 1) of \(steps.count)").font(.caption).foregroundStyle(Theme.secondary)
                 Spacer()
-                if index > 0 { Button("Back") { index -= 1 } }
+                if index > 0 { Button("Back") { index -= 1 }.buttonStyle(ThemeButtonStyle(filled: false)) }
                 if step == .finish {
                     Button("Done") { if let choice { done(choice, launchAtLogin) } }
+                        .buttonStyle(ThemeButtonStyle())
                         .keyboardShortcut(.defaultAction)
                 } else {
                     Button(step == .claudeLimits && !connected ? "Skip" : "Continue") { index += 1 }
+                        .buttonStyle(ThemeButtonStyle())
                         .keyboardShortcut(.defaultAction)
                         .disabled(step == .index && choice == nil)
                 }
@@ -181,7 +183,7 @@ struct OnboardingView: View {
                 Image(nsImage: MenuBarLabel.image(symbol: value.rawValue, text: sample, width: MenuBarLabel.width(value)))
                     .frame(width: MenuBarLabel.tuitionWidth, alignment: .leading)  // aligns the three titles
                     .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 5))
+                    .background(Theme.track, in: RoundedRectangle(cornerRadius: 5))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(value.title).font(.headline)
                     Text(detail).foregroundStyle(Theme.secondary).fixedSize(horizontal: false, vertical: true)
@@ -192,7 +194,7 @@ struct OnboardingView: View {
             .padding(8)
             .contentShape(Rectangle())
             .overlay(RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(selected ? Theme.accent : Color.secondary.opacity(0.3), lineWidth: selected ? 2 : 1))
+                .strokeBorder(selected ? Theme.ink : Theme.rule, lineWidth: selected ? 2 : 1))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -217,7 +219,7 @@ struct OnboardingView: View {
                 if connected { Label("Connected", systemImage: "checkmark.circle.fill") }
             }
             if let connectError {
-                Text(connectError).font(.caption).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
+                Text(connectError).font(.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
             }
             Text("Your current Claude Code status line keeps working. Restart open Claude Code sessions. You can connect or disconnect later in Settings.")
                 .font(.caption).foregroundStyle(Theme.secondary).fixedSize(horizontal: false, vertical: true)

@@ -53,7 +53,7 @@ enum ShareCard {
     }
 }
 
-/// A receipt, 360 pt wide: white paper, an IESE red headline and dashed rules (D45). Light appearance and an opaque background,
+/// A receipt, 360 pt wide: IESE red on white paper, with dashed rules (D45). Light appearance and an opaque background,
 /// so the card looks the same in every chat app.
 struct ShareCardView: View {
     let lines: [ShareCard.Line]
@@ -67,7 +67,6 @@ struct ShareCardView: View {
                     Icon.label(line.text, icon: line.symbol ?? IndexChoice.cafe.rawValue, style: index == 0 ? .title3 : .callout)
                         .font(index == 0 ? .title3.weight(.semibold) : .callout)
                         .monospacedDigit()
-                        .foregroundStyle(index == 0 ? Theme.red : Theme.cardInk)
                 }
                 Theme.dashed
             }

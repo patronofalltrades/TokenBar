@@ -15,7 +15,7 @@ struct SettingsView: View {
             AboutSettings().tabItem { Label("About", systemImage: "info.circle") }
         }
         .frame(width: 480)
-        .tint(Theme.accent)
+        .tint(Theme.control)
     }
 }
 
@@ -41,7 +41,7 @@ struct GeneralSettings: View {
                 Text("Allow TokenBar in System Settings > General > Login Items.").font(.caption)
             }
             if loginFailed {
-                Text("Could not change this setting. Open TokenBar from the app in Applications and try again.").font(.caption).foregroundStyle(.secondary)
+                Text("Could not change this setting. Open TokenBar from the app in Applications and try again.").font(.caption).foregroundStyle(Theme.secondary)
             }
 
             Section("Claude limits (optional)") {
@@ -56,10 +56,10 @@ struct GeneralSettings: View {
                     }
                 }
                 if let connectError {
-                    Text(connectError).font(.caption).foregroundStyle(.red)
+                    Text(connectError).font(.caption).foregroundStyle(Theme.ink)
                 }
                 Text("Your current Claude Code status line keeps working. Restart open Claude Code sessions. Claude Code runs it only in trusted folders and not when disableAllHooks is true.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.secondary)
                 DisclosureGroup("Show manual setup") {
                     HStack(alignment: .top) {
                         Text(SettingsView.statusLineSnippet)
@@ -141,7 +141,7 @@ struct AboutSettings: View {
             Link("Send feedback", destination: Links.feedback)
             Text("TokenBar is not affiliated with any business school, Anthropic, OpenAI or xAI.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.secondary)
         }
         .formStyle(.grouped)
     }

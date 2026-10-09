@@ -29,7 +29,7 @@ struct PopoverView: View {
             if snapshot.state == .noData {
                 NoDataView(check: actions.refresh)
             } else {
-                Text("TokenBar").font(.headline).foregroundStyle(Theme.accent)
+                Text("TokenBar").font(.headline)
                 headline
                 Theme.hairline
                 // DRD 3.1: the list scrolls only when it is taller than its share of the 560 pt.
@@ -99,8 +99,8 @@ struct PopoverView: View {
             }
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .foregroundStyle(.white)  // white on IESE red, 5:1
-            .background(Theme.red, in: RoundedRectangle(cornerRadius: 8))
+            .foregroundStyle(Theme.paper)  // white on red, or near-black on white
+            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 8))
         }
     }
 
@@ -199,7 +199,7 @@ private struct ProviderRowView: View {
     private func limitView(_ limit: DisplaySnapshot.Limit) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Capsule()
-                .fill(Color.secondary.opacity(0.2))
+                .fill(Theme.track)
                 .overlay(alignment: .leading) {
                     Capsule()
                         .fill(PopoverFormat.barColor(limit.usedPercent))
@@ -270,7 +270,7 @@ private extension DisplaySnapshot.ProviderRow {
 enum PopoverFormat {
     /// DRD 8.1.
     static func barColor(_ percent: Double) -> Color {
-        percent >= 100 ? Theme.danger : percent >= 80 ? Theme.warning : Theme.bar
+        percent >= 80 ? Theme.high : Theme.bar
     }
 
     /// The footnote under the headline. The Water Footprint counts tokens, not prices, so it has none.
