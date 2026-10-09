@@ -25,11 +25,11 @@ struct DisplaySnapshot: Equatable, Sendable {
     let state: State
     let index: IndexChoice?         // nil until the user picks an index (DRD 2.5)
     let menuBarText: String         // for example "3.4", "62%", "87%", "1h48"
-    let menuBarSymbol: String       // SF Symbol name (DRD 2.4)
+    let menuBarSymbol: String       // icon name (`Icon`): an index or an SF Symbol (DRD 2.4)
     let rows: [ProviderRow]
     // No EUR value in the snapshot (D42). The costs stay in `DisplayBuilder`. The indexes come from them.
     let indexLine: String?          // the headline of the selected index (DRD 3.1). Nil before the index choice or without data.
-    let indexSymbol: String?        // SF Symbol for `indexLine`. IES-213 replaces it with a custom icon.
+    let indexSymbol: String?        // the index icon name for `indexLine` (`Icon`, D43)
     var indexEmoji: String? = nil   // emoji for the share card text (DRD 7.7)
     var indexDetail: String? = nil  // small second line: the unit equivalent and the week, or the burn year (DRD 3.1)
     let roast: String?              // nil before the user picks an index, when roasts are off, or when none matches

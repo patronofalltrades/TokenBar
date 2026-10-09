@@ -42,11 +42,11 @@ import SwiftUI
 
     /// The menu bar preview of each index choice in step 2 (DRD 4.5).
     /// The café text comes from `cafe-units.json`, because it names the school (D25).
-    static func preview(_ choice: IndexChoice) -> (symbol: String, sample: String, detail: String) {
+    static func preview(_ choice: IndexChoice) -> (sample: String, detail: String) {
         switch choice {
-        case .cafe: ("cup.and.saucer.fill", "3.4", (try? CafeData.shipped().pickerDescription) ?? "")
-        case .tuition: (DisplayBuilder.tuitionSymbol, "0.04%", "How much of your MBA tuition your AI has burned. Spoiler: not much. Yet.")
-        case .water: (DisplayBuilder.waterSymbol, "22 L", "How many liters of water your AI drank today. We used the scary estimate.")
+        case .cafe: ("3.4", (try? CafeData.shipped().pickerDescription) ?? "")
+        case .tuition: ("0.04%", "How much of your MBA tuition your AI has burned. Spoiler: not much. Yet.")
+        case .water: ("22 L", "How many liters of water your AI drank today. We used the scary estimate.")
         }
     }
 
@@ -165,19 +165,19 @@ struct OnboardingView: View {
             Text("Pick your index").font(.title2.bold())
             ForEach(IndexChoice.allCases, id: \.self) { value in
                 let preview = Onboarding.preview(value)
-                option(value, symbol: preview.symbol, sample: preview.sample, detail: preview.detail)
+                option(value, sample: preview.sample, detail: preview.detail)
             }
             Text("TokenBar shows one index. Warnings always show the real number. You can change the index or turn off roasts later in Settings.")
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    private func option(_ value: IndexChoice, symbol: String, sample: String, detail: String) -> some View {
+    private func option(_ value: IndexChoice, sample: String, detail: String) -> some View {
         let selected = choice == value
         return Button { choice = value } label: {
             HStack(spacing: 12) {
                 // The same image as the real menu bar item.
-                Image(nsImage: MenuBarLabel.image(symbol: symbol, text: sample, width: MenuBarLabel.width(value)))
+                Image(nsImage: MenuBarLabel.image(symbol: value.rawValue, text: sample, width: MenuBarLabel.width(value)))
                     .frame(width: MenuBarLabel.tuitionWidth, alignment: .leading)  // aligns the three titles
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 5))

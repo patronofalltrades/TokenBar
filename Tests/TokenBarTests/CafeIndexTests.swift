@@ -29,7 +29,7 @@ private func pick(_ cost: String, kept: String? = nil) -> String? {
 private func json(unitPrice: String = "1.8", tuitionPrice: String = "1000", ids: [String] = ["a"],
                   dropping field: String? = nil) -> Data {
     let unitsJSON = ids.map { id in
-        let fields = ["id": "\"\(id)\"", "singular": "\"x\"", "plural": "\"xs\"", "symbol": "\"s\"",
+        let fields = ["id": "\"\(id)\"", "singular": "\"x\"", "plural": "\"xs\"",
                       "emoji": "\"e\"", "price_eur": unitPrice, "price_note": "\"n\"",
                       "source": "\"src\"", "updated": "\"2026-10-08\""]
         return "{" + fields.filter { $0.key != field }.map { "\"\($0.key)\": \($0.value)" }.joined(separator: ",") + "}"
@@ -42,7 +42,7 @@ private func json(unitPrice: String = "1.8", tuitionPrice: String = "1000", ids:
     #expect(try CafeData.decode(json()).units.count == 1)
 }
 
-@Test(arguments: ["id", "singular", "plural", "symbol", "emoji", "price_eur", "price_note", "source", "updated"])
+@Test(arguments: ["id", "singular", "plural", "emoji", "price_eur", "price_note", "source", "updated"])
 func missingFieldRejectsFile(field: String) {
     #expect(throws: DecodingError.self) { try CafeData.decode(json(dropping: field)) }
 }

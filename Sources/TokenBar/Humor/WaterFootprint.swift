@@ -48,7 +48,7 @@ struct WaterData: Decodable, Sendable {
         return String(format: litres < 10 ? "%.1f L" : "%.0f L", litres)
     }
 
-    /// Fits 52 pt with `drop.fill`: "0.1 L", "9.9 L", "999 L", "1.1kL", "99kL".
+    /// Fits 52 pt with the water icon (D43): "0.1 L", "9.9 L", "999 L", "1.1kL", "99kL".
     static func barValue(_ ml: Double) -> String {
         let litres = ml / 1000
         return switch litres {
