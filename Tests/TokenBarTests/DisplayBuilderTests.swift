@@ -147,7 +147,7 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
     #expect(MenuBarLabel.voiceOverLabel(s, now: noon) == "TokenBar. Claude Code, 62 percent of 5-hour limit. 3.4 cafés con leche today.")
 }
 
-/// €46.80 of €117,000 is 0.04%. On the first day, the spend since install is today's cost.
+/// €46.80 of €114,000 is 0.04%. On the first day, the spend since install is today's cost.
 @Test func tuitionShowsTheShareOfTuition() {
     let s = Fixture(index: .tuition).build([snapshot([record(eur: 46.80, output: 200_000)], limits: [limit(62)])])
     #expect(s.menuBarText == "0.04%" && s.menuBarSymbol == "tuition")

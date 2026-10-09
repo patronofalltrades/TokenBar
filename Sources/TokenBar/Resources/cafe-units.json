@@ -45,8 +45,8 @@
   "tuition": {
     "id": "iese_mba_tuition",
     "label": "MBA tuition",
-    "price_eur": 117000,
-    "source": "IESE Business School, full-time MBA, September 2027 intake, total program fee. https://www.iese.edu/mba/admissions-fees/ Verify.",
-    "updated": "2026-10-08"
+    "price_eur": 114000,
+    "source": "IESE Business School, full-time MBA, total program fee. The maintainer confirmed the value (2026-10-10). https://www.iese.edu/mba/admissions-fees/",
+    "updated": "2026-10-10"
   }
 }

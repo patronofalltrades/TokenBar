@@ -114,17 +114,17 @@ func formatsValue(value: String, expected: String) {
     #expect(CafeIndex.tuitionPercent(spendEUR: 0, tuition: tuition) == "0.00%")
 }
 
-/// €117,000 tuition. €100 a day for 10 days: €116,000 left = 1160 days ≈ 3.18 years.
+/// €114,000 tuition. €100 a day for 10 days: €113,000 left = 1130 days ≈ 3.09 years.
 @Test func burnLineCases() {
     func line(_ spend: String, days: Double) -> String? {
         CafeIndex.burnLine(spendEUR: Decimal(string: spend)!, days: days, tuition: tuition, year: 2026)
     }
     #expect(line("1000", days: 10) == "At this pace, you'll burn through it by the year 2029.")
-    #expect(line("0.3", days: 10) == "At this pace, you'll burn through it by the year 12,704.")
+    #expect(line("0.3", days: 10) == "At this pace, you'll burn through it by the year 12,430.")
     #expect(line("1000", days: 0.9) == nil)       // less than 1 day of data
     #expect(line("0", days: 30) == nil)           // zero spend
     #expect(line("0.01", days: 30) == "At this pace, you'll burn through it by the year 99,999+. Bring snacks.")
-    #expect(line("117000", days: 30) == "Tuition fully burned. The tokens graduated before you did.")
+    #expect(line("114000", days: 30) == "Tuition fully burned. The tokens graduated before you did.")
 }
 
 /// A tiny value shows "<.01%" (D41: "<0.01%" does not fit 68 pt).
@@ -203,8 +203,8 @@ private struct Clock {
     _ = c.total.update(now: c.day(0, hour: 10), dailyCostsEUR: [:], todayEUR: 0)
     let daily = c.costs(-10...40, 10)
     #expect(c.total.years(now: c.day(6), dailyCostsEUR: daily, tuition: tuition) == nil)
-    // 117,000 / 10 per day / 365 = 32.05
-    #expect(c.total.years(now: c.day(7), dailyCostsEUR: daily, tuition: tuition) == "32 years")
+    // 114,000 / 10 per day / 365 = 31.2
+    #expect(c.total.years(now: c.day(7), dailyCostsEUR: daily, tuition: tuition) == "31 years")
 }
 
 @Test func tuitionYearsUsesTheLast30Days() {
@@ -212,7 +212,7 @@ private struct Clock {
     _ = c.total.update(now: c.day(0), dailyCostsEUR: [:], todayEUR: 0)
     var daily = c.costs(0...9, 1000)
     daily.merge(c.costs(10...39, 10)) { $1 }
-    #expect(c.total.years(now: c.day(40), dailyCostsEUR: daily, tuition: tuition) == "32 years")
+    #expect(c.total.years(now: c.day(40), dailyCostsEUR: daily, tuition: tuition) == "31 years")
 }
 
 @Test func tuitionYearsSingularAndZeroSpend() {
