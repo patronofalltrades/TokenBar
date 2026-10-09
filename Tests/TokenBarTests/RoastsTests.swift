@@ -45,7 +45,7 @@ private func withSelector(_ roasts: [Roast], seed: UInt64 = 1, _ body: (inout Ro
 
 @Test func shippedFileIsValid() throws {
     let roasts = try Roast.shipped()
-    #expect(roasts.count == 34)
+    #expect(roasts.count == 33)
     #expect(Set(roasts.map(\.category)) == Set(Roast.Category.allCases))
     for r in roasts {
         #expect(r.text.count <= 140, "\(r.id) is longer than 140 characters")

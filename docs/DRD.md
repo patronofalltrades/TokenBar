@@ -54,8 +54,11 @@ TokenBar has one display mode: Compact, on all displays (decided 2026-10-08). No
 | Content | Maximum width |
 |---|---|
 | Symbol and one value. The index choice (Section 2.5) selects the value. | 52 pt |
+| The same, with the Tuition Meter selected (D41). All states use this width. | 64 pt |
 
 The symbol changes with the state (Section 2.4).
+
+The Tuition Meter is the only exception to 52 pt. `🎓 0.04%` needs about 64 pt. The maintainer chose the clear `%` over the cap (D41).
 
 Use monospaced digits. The width must not change when the number changes from `9%` to `10%`. Reserve the width for the longest value.
 
@@ -97,7 +100,7 @@ The user selects one index in onboarding (Section 4.5). The user can change it i
 | Index | Normal state | Popover line | Data |
 |---|---|---|---|
 | Café Index | `☕ 3.4` | `Today = 3.4 cafés con leche` | Today's cost (Section 7.6) |
-| Tuition Meter | `🏛 0.04` | `🎓 0.04% of your MBA tuition, in tokens (since install)`, and a small line: `At this pace, you'll burn through it by the year 2033.` | The tuition benchmark: spend since install (Section 7.6) |
+| Tuition Meter | `🎓 0.04%` | `🎓 0.04% of your MBA tuition, in tokens (since install)`, and a small line: `At this pace, you'll burn through it by the year 2033.` | The tuition benchmark: spend since install (Section 7.6) |
 | Water Footprint | `💧 22 L` | `Today ≈ 22 L of water · 15 bottles (1.5 L)` | Today's output tokens (Section 7.8) |
 
 In the Warning and Limit hit states, each index shows the limit value: `⚠ 87%` or `⌛ 1h48`.
@@ -105,7 +108,7 @@ In the Warning and Limit hit states, each index shows the limit value: `⚠ 87%`
 Rules:
 
 1. In the Warning and Limit hit states, all indexes show the limit value. The joke never hides a warning (principle 4).
-2. The `☕` is the symbol of the selected café unit. The `🏛` is `building.columns.fill`. The `💧` is `drop.fill`. `0.04%` with any symbol is wider than 52 pt, so the Tuition Meter value in the menu bar has no `%`.
+2. The `☕` is the symbol of the selected café unit. The `🎓` is `graduationcap.fill`. The `💧` is `drop.fill`. The Tuition Meter item is 64 pt wide (Section 2.2).
 3. If the index has no value (for example no cost today), the menu bar item shows the primary metric.
 4. **Roasts** is a separate toggle, on by default. An alert includes a roast only when **Roasts** is on. No separate alert roast setting exists (decided 2026-10-08).
 5. Before the user selects an index, TokenBar shows numbers only and no roast.
@@ -293,7 +296,7 @@ After detection, the onboarding window asks the user to select one index (Sectio
 │  [ ☕ 3.4 ]  Café Index                   │
 │  Today's spend in cafés con leche.       │
 │                                          │
-│  [ 🏛 0.04 ]  Tuition Meter               │
+│  [ 🎓 0.04% ]  Tuition Meter              │
 │  Your AI spend as a % of MBA tuition.    │
 │                                          │
 │  [ 💧 22 L ]  Water Footprint             │
@@ -512,10 +515,9 @@ Selection order:
 | tuition-02 | tuition | `{tuition_percent} of your MBA tuition, paid in tokens. The ROI case writes itself.` |
 | tuition-03 | tuition | `You have now spent {tuition_percent} of an MBA on asking a model to explain the MBA.` |
 | provider-02 | provider | `Claude and Codex both used today. Diversified portfolio. Your finance professor would approve of the risk profile, not the cost.` |
-| water-01 | water | `Your prompts drank {water} of water today. Somewhere a cooling tower is writing its own case study.` (pending approval) |
-| water-02 | water | `{water} of fresh water evaporated so a model could summarize a case you did not read. Discuss the externalities.` (pending approval) |
-| water-03 | water | `{water} today. The sustainability elective would like a word. Several, actually. All of them about you.` (pending approval) |
-| water-04 | water | `A data center sweated {water} for your slides today. The slides are still not MECE.` (pending approval) |
+| water-01 | water | `Your prompts drank {water} of water today. Somewhere a cooling tower is writing its own case study.` |
+| water-02 | water | `{water} of fresh water evaporated so a model could summarize a case you did not read. Discuss the externalities.` |
+| water-03 | water | `{water} today. The sustainability elective would like a word. Several, actually. All of them about you.` |
 
 The `provider-01` line uses a fixed number as a joke. Do not present it as data. If the TRD supplies a line count, replace the number with a placeholder.
 
@@ -573,7 +575,7 @@ TokenBar calculates two values from it:
 Rules:
 
 1. Show the tuition benchmark as the popover line of the Tuition Meter only (D41). Format: `🎓 {tuition_percent} of your {label}, in tokens (since install)`. Example: `🎓 0.04% of your MBA tuition, in tokens (since install)`. Code takes the label from the data file. Code has no hardcoded "IESE" string.
-5. Tuition Meter menu bar value: the percent without `%`, to fit 52 pt. `0.04` and `9.99` below 10, `12.3` below 100, else `123`. Below 0.005%, show `<.01`.
+5. Tuition Meter menu bar value, in 64 pt: `0.04%` and `9.99%` below 10, `12.3%` below 100, else `123%`. Below 0.005%, show `<.01%`. `<0.01%` does not fit 64 pt.
 6. Tuition Meter burn line, under the tuition line in the popover and on the share card. Year = current year + (tuition − spend since install) ÷ (spend since install ÷ days since install) ÷ 365.25, rounded to a whole year. Text: `At this pace, you'll burn through it by the year 2033.`
    - Less than 1 day since install, or zero spend: no line.
    - Year above 99,999: `At this pace, you'll burn through it by the year 99,999+. Bring snacks.`

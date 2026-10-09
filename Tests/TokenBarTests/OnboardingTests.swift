@@ -83,11 +83,12 @@ struct OnboardingTests {
         #expect(defaults.string(forKey: SettingsKey.index) == "cafe")
     }
 
-    /// Step 2 shows the real menu bar image of each choice. Each one fits 52 pt.
+    /// Step 2 shows the real menu bar image of each choice, at the real width.
     @Test func eachChoiceHasAMenuBarPreview() {
         let previews = IndexChoice.allCases.map(Onboarding.preview)
-        #expect(previews.map(\.sample) == ["3.4", "0.04", "22 L"])
-        #expect(previews.map(\.symbol) == ["cup.and.saucer.fill", "building.columns.fill", "drop.fill"])
+        #expect(IndexChoice.allCases.map(MenuBarLabel.width) == [52, 64, 52])
+        #expect(previews.map(\.sample) == ["3.4", "0.04%", "22 L"])
+        #expect(previews.map(\.symbol) == ["cup.and.saucer.fill", "graduationcap.fill", "drop.fill"])
         for p in previews { #expect(MenuBarLabel.image(symbol: p.symbol, text: p.sample).size.width == MenuBarLabel.width) }
     }
 

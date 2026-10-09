@@ -97,13 +97,13 @@ enum CafeIndex {
         fixed(rounded(spendEUR / tuition.priceEUR * 100, 2), 2) + "%"
     }
 
-    /// The menu bar value of the Tuition Meter. "0.04%" does not fit 52 pt with any symbol, so the bar has no "%":
-    /// "0.04", "12.3", "123". Below 0.005% it shows "<.01".
+    /// The menu bar value of the Tuition Meter. Fits 64 pt (D41): "0.04%", "12.3%", "123%".
+    /// Below 0.005% it shows "<.01%". "<0.01%" does not fit.
     static func tuitionBarValue(spendEUR: Decimal, tuition: Tuition) -> String {
         let percent = spendEUR / tuition.priceEUR * 100
-        guard percent >= Decimal(string: "0.005")! else { return "<.01" }
+        guard percent >= Decimal(string: "0.005")! else { return "<.01%" }
         let places = percent < Decimal(string: "9.995")! ? 2 : percent < Decimal(string: "99.95")! ? 1 : 0
-        return fixed(rounded(percent, places), places)
+        return fixed(rounded(percent, places), places) + "%"
     }
 
     /// The popover line of the Tuition Meter (DRD 7.6 rule 1).

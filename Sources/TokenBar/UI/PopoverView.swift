@@ -352,7 +352,7 @@ enum PopoverSamples {
     /// The index line and the menu bar value of each choice, for the samples.
     private static let lines: [IndexChoice: (line: String, symbol: String, emoji: String, bar: String)] = [
         .cafe: ("Today = 3.4 cafés con leche", "cup.and.saucer.fill", "☕", "3.4"),
-        .tuition: ("0.04% of your MBA tuition, in tokens (since install)", "graduationcap.fill", "🎓", "0.04"),
+        .tuition: ("0.04% of your MBA tuition, in tokens (since install)", DisplayBuilder.tuitionSymbol, "🎓", "0.04%"),
         .water: ("Today ≈ 22 L of water · 15 bottles (1.5 L)", DisplayBuilder.waterSymbol, "💧", "22 L"),
     ]
 
@@ -360,7 +360,7 @@ enum PopoverSamples {
                                  index: IndexChoice = .cafe, roast: String?) -> DisplaySnapshot {
         let line = lines[index]
         return DisplaySnapshot(
-            state: state, index: index, menuBarText: line?.bar ?? "62%", menuBarSymbol: index == .tuition ? DisplayBuilder.tuitionSymbol : line?.symbol ?? "circle.lefthalf.filled",
+            state: state, index: index, menuBarText: line?.bar ?? "62%", menuBarSymbol: line?.symbol ?? "circle.lefthalf.filled",
             rows: rows, costTodayEUR: 6.10, costWeekEUR: 21.80,
             indexLine: line?.line, indexSymbol: line?.symbol, indexEmoji: line?.emoji,
             indexDetail: index == .tuition ? "At this pace, you'll burn through it by the year 4210." : nil,

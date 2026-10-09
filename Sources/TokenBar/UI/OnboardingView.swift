@@ -44,7 +44,7 @@ import SwiftUI
     static func preview(_ choice: IndexChoice) -> (symbol: String, sample: String, detail: String) {
         switch choice {
         case .cafe: ("cup.and.saucer.fill", "3.4", "Today's spend in cafés con leche. Roasts.")
-        case .tuition: (DisplayBuilder.tuitionSymbol, "0.04", "Your AI spend since install, as a % of MBA tuition. Roasts.")
+        case .tuition: (DisplayBuilder.tuitionSymbol, "0.04%", "Your AI spend since install, as a % of MBA tuition. Roasts.")
         case .water: (DisplayBuilder.waterSymbol, "22 L", "The water your AI drank today. High estimate. Roasts.")
         }
     }
@@ -167,7 +167,8 @@ struct OnboardingView: View {
         return Button { choice = value } label: {
             HStack(spacing: 12) {
                 // The same image as the real menu bar item.
-                Image(nsImage: MenuBarLabel.image(symbol: symbol, text: sample))
+                Image(nsImage: MenuBarLabel.image(symbol: symbol, text: sample, width: MenuBarLabel.width(value)))
+                    .frame(width: MenuBarLabel.tuitionWidth, alignment: .leading)  // aligns the three titles
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 5))
                 VStack(alignment: .leading, spacing: 2) {

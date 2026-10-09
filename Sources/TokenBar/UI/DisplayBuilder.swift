@@ -76,7 +76,7 @@ struct DisplayBuilder {
         let tuitionSpend = index == .tuition ? spend : nil
         let line: (text: String, symbol: String, emoji: String)? =
             if let pick { ("Today = \(pick.text)", pick.unit.symbol, pick.unit.emoji) }
-            else if let tuitionSpend { (CafeIndex.tuitionLine(spendEUR: tuitionSpend, tuition: cafe.tuition), "graduationcap.fill", "🎓") }
+            else if let tuitionSpend { (CafeIndex.tuitionLine(spendEUR: tuitionSpend, tuition: cafe.tuition), Self.tuitionSymbol, "🎓") }
             else if let waterML { (water.line(ml: waterML), Self.waterSymbol, "💧") }
             else { nil }
 
@@ -124,8 +124,7 @@ struct DisplayBuilder {
             roast: roast, lastRefresh: lastRefresh, pricesVerified: prices.lastVerified)
     }
 
-    /// Menu bar only. `graduationcap.fill` is 3 pt wider, so "0.04" does not fit 52 pt. The popover uses the cap.
-    static let tuitionSymbol = "building.columns.fill"
+    static let tuitionSymbol = "graduationcap.fill"
     static let waterSymbol = "drop.fill"
 
     static func isNotInstalled(_ error: any Error) -> Bool {

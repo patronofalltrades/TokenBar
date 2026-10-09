@@ -148,7 +148,7 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
 /// €46.80 of €117,000 is 0.04%. On the first day, the spend since install is today's cost.
 @Test func tuitionShowsTheShareOfTuition() {
     let s = Fixture(index: .tuition).build([snapshot([record(eur: 46.80, output: 200_000)], limits: [limit(62)])])
-    #expect(s.menuBarText == "0.04" && s.menuBarSymbol == "building.columns.fill")
+    #expect(s.menuBarText == "0.04%" && s.menuBarSymbol == "graduationcap.fill")
     #expect(s.indexLine == "0.04% of your MBA tuition, in tokens (since install)" && s.indexEmoji == "🎓")
     #expect(MenuBarLabel.voiceOverLabel(s, now: noon)
             == "TokenBar. Claude Code, 62 percent of 5-hour limit. 0.04% of your MBA tuition, in tokens (since install).")
@@ -255,8 +255,7 @@ func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
         ("999", units.max { $0.priceEUR < $1.priceEUR }!.symbol),  // above the range: the most expensive unit
     ]
     labels += units.flatMap { [("9.9", $0.symbol), ("20", $0.symbol)] }
-    // The longest Tuition Meter and Water Footprint values (D41).
-    labels += ["<.01", "0.04", "99.9", "999"].map { ($0, DisplayBuilder.tuitionSymbol) }
+    // The longest Water Footprint values (D41).
     labels += ["0.1 L", "9.9 L", "999 L", "9.9kL", "99kL"].map { ($0, DisplayBuilder.waterSymbol) }
     for (text, symbol) in labels {
         let image = try #require(NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
@@ -264,6 +263,29 @@ func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
         let textWidth = text.isEmpty ? 0 : NSAttributedString(string: text, attributes: [.font: font]).size().width + MenuBarLabel.spacing
         #expect(image.size.width + textWidth <= MenuBarLabel.width, "\(symbol) \(text): \(image.size.width + textWidth) pt")
         #expect(MenuBarLabel.image(symbol: symbol, text: text).size.width == MenuBarLabel.width)
+    }
+}
+
+/// D41: the Tuition Meter has 64 pt for "0.04%", in each state. The advance width of "0.04%" is 64.07 pt,
+/// so the test checks the drawn pixels: the last column of the image must be empty.
+@Test func tuitionLabelsFit64Points() throws {
+    let tuition = MenuBarLabel.width(.tuition)
+    #expect(tuition == 64)
+    let labels: [(String, String)] = ["<.01%", "0.04%", "12.3%", "99.9%", "123%"].map { ($0, DisplayBuilder.tuitionSymbol) }
+        + [("99%", "exclamationmark.triangle.fill"), ("100%", "hourglass"), ("9h59", "hourglass")]
+    for (text, symbol) in labels {
+        let image = MenuBarLabel.image(symbol: symbol, text: text, width: tuition)
+        #expect(image.size.width == tuition)
+        let rep = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(tuition) * 2, pixelsHigh: Int(image.size.height) * 2,
+                                                bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                                colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        rep.size = image.size
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        image.draw(in: NSRect(origin: .zero, size: image.size))
+        NSGraphicsContext.restoreGraphicsState()
+        let lastColumn = (0..<rep.pixelsHigh).map { rep.colorAt(x: rep.pixelsWide - 1, y: $0)?.alphaComponent ?? 0 }
+        #expect(lastColumn.allSatisfy { $0 < 0.05 }, "\(symbol) \(text) is cut at \(tuition) pt")
     }
 }
 

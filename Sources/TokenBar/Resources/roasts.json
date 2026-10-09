@@ -207,12 +207,6 @@
       "text": "{water} today. The sustainability elective would like a word. Several, actually. All of them about you.",
       "category": "water",
       "locale": "en"
-    },
-    {
-      "id": "water-04",
-      "text": "A data center sweated {water} for your slides today. The slides are still not MECE.",
-      "category": "water",
-      "locale": "en"
     }
   ]
 }

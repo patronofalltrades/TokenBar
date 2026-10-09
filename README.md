@@ -6,7 +6,7 @@ TokenBar shows your Claude Code and Codex usage in the menu bar, next to the cam
 
 ```
  ☕ 3.4      ← Café Index: this is all you see in the menu bar
- 🏛 0.04     ← Tuition Meter: your spend since install, as a % of MBA tuition
+ 🎓 0.04%    ← Tuition Meter: your spend since install, as a % of MBA tuition
  💧 22 L     ← Water Footprint: the water your AI drank today (a high estimate)
 ```
 

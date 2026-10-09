@@ -160,7 +160,7 @@ As P2, I want a cost in EUR for my subscription usage, so that I know its value.
 
 **PRD-US-04 See one number in the menu bar** (Must)
 As any user, I want one short value next to the notch, so that I see my usage with no click.
-- AC1: The menu bar item shows one value. The index choice selects the value (DRD 2.5). Examples: `☕ 3.4` (Café Index), `🏛 0.04` (Tuition Meter, % of tuition), `💧 22 L` (Water Footprint).
+- AC1: The menu bar item shows one value. The index choice selects the value (DRD 2.5). Examples: `☕ 3.4` (Café Index), `🎓 0.04%` (Tuition Meter), `💧 22 L` (Water Footprint).
 - AC2: The primary metric is always Auto: the closest limit, else today's cost (DRD 2.1). No setting exists.
 - AC3: The text does not exceed the width that the DRD specifies (52 pt).
 - AC4: The user selects one index: Café Index, Tuition Meter or Water Footprint (DRD 2.5). No default exists. The user can change the index later.

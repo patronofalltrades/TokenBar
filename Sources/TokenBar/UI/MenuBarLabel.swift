@@ -5,17 +5,22 @@ import SwiftUI
 /// The width is fixed, so a new value does not move the other menu bar items (TRD 8).
 struct MenuBarLabel: View {
     nonisolated static let width: CGFloat = 52
+    /// D41: the maintainer chose a clear "0.04%" over the 52 pt cap for the Tuition Meter only.
+    nonisolated static let tuitionWidth: CGFloat = 64
+
+    /// Each state uses the same width for one index, so a warning does not move the other menu bar items.
+    nonisolated static func width(_ index: IndexChoice?) -> CGFloat { index == .tuition ? tuitionWidth : width }
     nonisolated static let spacing: CGFloat = 3
 
     let snapshot: DisplaySnapshot
 
     var body: some View {
-        Image(nsImage: Self.image(symbol: snapshot.menuBarSymbol, text: snapshot.menuBarText))
+        Image(nsImage: Self.image(symbol: snapshot.menuBarSymbol, text: snapshot.menuBarText, width: Self.width(snapshot.index)))
             .accessibilityLabel(Self.voiceOverLabel(snapshot, now: .now))
     }
 
-    /// `MenuBarExtra` ignores SwiftUI frames: the item width follows the text. A fixed-width template image keeps 52 pt.
-    nonisolated static func image(symbol: String, text: String) -> NSImage {
+    /// `MenuBarExtra` ignores SwiftUI frames: the item width follows the text. A fixed-width template image keeps the width.
+    nonisolated static func image(symbol: String, text: String, width: CGFloat = width) -> NSImage {
         let font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.menuBarFont(ofSize: 0).pointSize, weight: .regular)
         let icon = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: font.pointSize, weight: .regular)) ?? NSImage()
