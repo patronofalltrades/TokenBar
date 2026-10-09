@@ -137,6 +137,8 @@ struct AboutSettings: View {
         Form {
             LabeledContent("Version", value: version)
             LabeledContent("License", value: "MIT")
+            // Moved from the popover footer (D46).
+            LabeledContent("Prices verified", value: (try? PriceTable.shipped().lastVerified) ?? "Unknown")
             Link("TokenBar on GitHub", destination: Links.repository)
             Link("Send feedback", destination: Links.feedback)
             Text("TokenBar is not affiliated with any business school, Anthropic, OpenAI or xAI.")

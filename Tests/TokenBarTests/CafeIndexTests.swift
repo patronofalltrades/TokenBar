@@ -16,7 +16,7 @@ private func pick(_ cost: String, kept: String? = nil) -> String? {
     let data = try CafeData.shipped()
     #expect(data.units.map(\.id) == ["cafe_con_leche", "pa_amb_tomaquet", "bravas_bar_tomas", "menu_del_dia"])
     #expect(unit("cafe_con_leche").priceEUR == Decimal(string: "1.80"))
-    #expect(data.units.allSatisfy { $0.priceNote == "community estimate — verify" && !$0.source.isEmpty })
+    #expect(data.units.allSatisfy { !$0.priceNote.isEmpty && !$0.source.isEmpty })
     #expect(data.tuition.id == "iese_mba_tuition")
     #expect(data.tuition.label == "MBA tuition")
     #expect(data.tuition.priceEUR > 0)
@@ -58,16 +58,16 @@ func missingFieldRejectsFile(field: String) {
 // MARK: - Unit selection (DRD 7.6 rules 2–7)
 
 @Test func selectsInRangeUnitClosestToThree() {
-    // café 3.0, pa 1.5, bravas 0.9, menú 0.36
+    // café 3.0, pa 1.5, bravas 0.9, menú 0.54
     #expect(pick("5.40") == "3.0 cafés con leche")
-    // café 6.7, pa 3.4, bravas 2.0, menú 0.8
+    // café 6.7, pa 3.4, bravas 2.0, menú 1.2
     #expect(pick("12") == "3.4 pa amb tomàquets")
 }
 
 @Test func keepsTheDaysUnitWhileInRange() {
     #expect(pick("12", kept: "cafe_con_leche") == "6.7 cafés con leche")
-    // café 27.8 is out of range, so select again: menú 3.3 is closest to 3.
-    #expect(pick("50", kept: "cafe_con_leche") == "3.3 menús del día")
+    // café 27.8 is out of range, so select again: menú 5.0 is closest to 3.
+    #expect(pick("50", kept: "cafe_con_leche") == "5.0 menús del día")
 }
 
 @Test func belowRangeUsesCheapestUnitWithTwoDecimals() {
@@ -75,7 +75,7 @@ func missingFieldRejectsFile(field: String) {
 }
 
 @Test func aboveRangeUsesMostExpensiveUnit() {
-    #expect(pick("400") == "27 menús del día")
+    #expect(pick("400") == "40 menús del día")
 }
 
 @Test func zeroCostShowsNoLine() {

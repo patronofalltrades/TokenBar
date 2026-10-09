@@ -14,7 +14,7 @@ private func snapshot(_ limits: [DisplaySnapshot.Limit], index: IndexChoice? = .
                                           hasUnpricedModels: false)
     return DisplaySnapshot(state: .warning, index: index, menuBarText: "", menuBarSymbol: "", rows: [row],
                            indexLine: nil, indexSymbol: nil, roast: roast,
-                           lastRefresh: t0, pricesVerified: "")
+                           lastRefresh: t0)
 }
 
 /// Runs a test with a fresh `UserDefaults` suite, so tests do not share the sent-alert record.

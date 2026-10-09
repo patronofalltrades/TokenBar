@@ -40,7 +40,7 @@ private let secret = "SECRET-MARKER"
 
 private let noIndex = DisplaySnapshot(
     state: .normal, index: nil, menuBarText: "", menuBarSymbol: "", rows: [],
-    indexLine: "café", indexSymbol: nil, roast: "roast", lastRefresh: nil, pricesVerified: "")
+    indexLine: "café", indexSymbol: nil, roast: "roast", lastRefresh: nil)
 
 /// No index yet: no card lines, also when a snapshot has index lines. The popover has no Share button (D42).
 @Test func noIndexCardHasNoLines() {
@@ -57,7 +57,7 @@ private let noIndex = DisplaySnapshot(
         let s = DisplaySnapshot(
             state: .normal, index: index, menuBarText: secret, menuBarSymbol: secret, rows: [row],
             indexLine: nil, indexSymbol: secret, roast: nil,
-            lastRefresh: .now, pricesVerified: secret)
+            lastRefresh: .now)
         #expect(!ShareCard.text(s).contains(secret))
         #expect(!ShareCard.lines(s).contains { $0.text.contains(secret) })
     }

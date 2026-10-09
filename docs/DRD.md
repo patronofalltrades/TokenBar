@@ -515,7 +515,7 @@ Selection order:
 | weekday-01 | weekday | `Monday, 8 AM. You are opening the case for the first time. The model already read it twice.` |
 | weekday-02 | weekday | `Saturday in Barcelona. Your Claude usage is up. Your beach usage is down. Discuss the trade-off.` |
 | weekday-03 | weekday | `Friday evening, tokens still flowing. Either a deadline, or you are the group member who "will just finish the deck".` |
-| spend-01 | spend | `Today's API-equivalent cost is {cost}. That is lunch for two at the campus menú del día. The model did not share.` Does not show: `{cost}` has no value (D42). |
+| spend-01 | spend | `Your tokens cost more than lunch for two at the campus menú del día today. The model did not share.` True above €20, because a menú costs €10 or less (D46). |
 | spend-02 | spend | `Your tokens cost more today than your coffee habit this week. Only one of them helps you stay awake in class.` |
 | career-01 | career | `The protagonist asked the model to "make it more MECE". The model agreed. Nobody knows what changed.` |
 | career-02 | career | `{percent}% utilization. Banking recruiters call this "a great culture fit".` |
@@ -564,7 +564,7 @@ Café units root in two things only: the MBA tuition fee (as a benchmark) and ca
 | `cafe_con_leche` | café con leche | cafés con leche | ☕ | 1.80 | Typical Barcelona café bar. Verify. |
 | `pa_amb_tomaquet` | pa amb tomàquet | pa amb tomàquets | 🍅 | 3.50 | Typical Barcelona bar. Verify. |
 | `bravas_bar_tomas` | Bar Tomàs patatas bravas | Bar Tomàs patatas bravas | 🥔 | 6.00 | Bar Tomàs, Sarrià. Verify. |
-| `menu_del_dia` | menú del día | menús del día | 🍽️ | 15.00 | Typical Barcelona lunch menu. Verify. |
+| `menu_del_dia` | menú del día | menús del día | 🍽️ | 10.00 | IESE campus menú del día. The maintainer confirmed the maximum price (2026-10-09). |
 
 With these units, the range `0.5 ≤ value ≤ 20` covers a cost from €0.90 to €300. TokenBar has no other units in v1. Contributors can add a food or drink unit by pull request. The maintainer approves it.
 
@@ -630,7 +630,7 @@ The share card lets the user post the joke in a class chat. It is the main word-
 3. Render the image with SwiftUI `ImageRenderer`. Do not add a dependency.
 4. The card contains: the headline of the selected index only (Section 2.5), its second line (Section 3.1, if available), the current roast and the text "TokenBar · github.com/patronofalltrades/TokenBar". The card shows no EUR (D42).
 5. The card does not contain the user name, file paths, project names or prompt content. It shows model names only if the roast uses `{model}`.
-6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat." The confirmation replaces the "Prices verified" line for 3 seconds.
+6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat." The confirmation shows under the footer for 3 seconds.
 7. Before the user selects an index, there is no card. The popover has no **Share** button (D42).
 8. The image is 360 pt wide, at scale 2, with the light appearance. It looks like a receipt: red text on white paper, a dashed rule after each line and a monospaced footer (D45). The clipboard text uses the emoji of the index: the café unit emoji (Section 7.6), `🎓` or `💧`.
 

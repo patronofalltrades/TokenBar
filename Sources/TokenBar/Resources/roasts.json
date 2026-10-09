@@ -125,7 +125,7 @@
     },
     {
       "id": "spend-01",
-      "text": "Today's API-equivalent cost is {cost}. That is lunch for two at the campus menú del día. The model did not share.",
+      "text": "Your tokens cost more than lunch for two at the campus menú del día today. The model did not share.",
       "category": "spend",
       "locale": "en"
     },

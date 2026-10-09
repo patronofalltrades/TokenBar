@@ -124,8 +124,6 @@ struct PopoverView: View {
             }
             if copied {
                 Text("Copied. Paste it in your Section chat.").font(.caption2)
-            } else {
-                Text("Prices verified \(snapshot.pricesVerified)").font(.caption2).foregroundStyle(Theme.tertiary)
             }
         }
         .font(.caption)
@@ -359,7 +357,7 @@ enum PopoverSamples {
         return DisplaySnapshot(
             state: state, index: index, menuBarText: line?.bar ?? "62%", menuBarSymbol: line?.symbol ?? "circle.lefthalf.filled",
             rows: rows, indexLine: line?.line, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
-            roast: roast, lastRefresh: ago(2), pricesVerified: "2026-10-08")
+            roast: roast, lastRefresh: ago(2))
     }
 
     static let normal = snapshot(.normal, rows: [claude(62), codex],
@@ -385,7 +383,7 @@ enum PopoverSamples {
             .init(provider: $0, installed: false, errorText: nil, limits: [], hasUnpricedModels: false)
         },
         indexLine: nil, indexSymbol: nil, roast: nil,
-        lastRefresh: nil, pricesVerified: "2026-10-08")
+        lastRefresh: nil)
 
     static let all: [(name: String, snapshot: DisplaySnapshot)] = [
         ("cafe", normal), ("tuition", tuition), ("water", water),

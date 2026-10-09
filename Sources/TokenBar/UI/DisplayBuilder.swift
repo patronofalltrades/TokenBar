@@ -131,7 +131,7 @@ struct DisplayBuilder {
         return DisplaySnapshot(
             state: state, index: index, menuBarText: text, menuBarSymbol: symbol, rows: rows,
             indexLine: line?.text, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
-            roast: roast, lastRefresh: lastRefresh, pricesVerified: prices.lastVerified)
+            roast: roast, lastRefresh: lastRefresh)
     }
 
     static func isNotInstalled(_ error: any Error) -> Bool {

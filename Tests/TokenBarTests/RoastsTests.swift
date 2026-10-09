@@ -51,6 +51,7 @@ private func withSelector(_ roasts: [Roast], seed: UInt64 = 1, _ body: (inout Ro
         #expect(r.text.count <= 140, "\(r.id) is longer than 140 characters")
         #expect(!r.text.localizedCaseInsensitiveContains("IESE"), "\(r.id) names the school")
         #expect(r.placeholders.allSatisfy(Roast.knownPlaceholders.contains), "\(r.id)")
+        #expect(!r.placeholders.contains("cost"), "\(r.id) never shows: `{cost}` has no value (D42)")
         #expect(r.id.hasPrefix(r.category.rawValue + "-"), "\(r.id)")
         #expect(r.locale == "en")
     }
