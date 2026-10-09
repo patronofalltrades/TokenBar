@@ -8,6 +8,8 @@ struct DisplayBuilder {
     let water: WaterData
     var defaults = UserDefaults.standard
     var calendar = Calendar.current
+    /// Shared by the copies of this builder. The prices do not change while the app runs.
+    var costs = CostCache()
 
     /// The café unit of the day: `["day": Date, "id": String]` (DRD 7.6 rule 4).
     static let cafeUnitKey = "displayCafeUnitOfDay"
@@ -24,6 +26,10 @@ struct DisplayBuilder {
         var records: [UsageRecord] = []
         var dailyCosts: [Date: Decimal] = [:]
         var costToday: Decimal = 0, costWeek: Decimal = 0, outputToday = 0, outputWeek = 0
+        costs.prune(before: today.addingTimeInterval(-40 * 24 * 3600), day: today)  // providers keep 35 days
+        // The day starts of the last 40 days, newest first. A `Calendar` call for each record was most of the CPU (IES-225).
+        let dayStarts = sequence(first: today) { calendar.date(byAdding: .day, value: -1, to: $0) }.prefix(40).map { $0 }
+        func dayStart(_ date: Date) -> Date { dayStarts.first { date >= $0 } ?? calendar.startOfDay(for: date) }
         for id in ProviderID.allCases {
             let error = errors[id]
             let installed = error.map { !Self.isNotInstalled($0) } ?? (snapshots[id] != nil)
@@ -31,7 +37,7 @@ struct DisplayBuilder {
             var unpriced = false
             for record in snapshot?.records ?? [] where record.timestamp <= now {
                 records.append(record)
-                let cost = prices.costEUR(record)
+                let cost = costs.costEUR(record, prices: prices)
                 if record.timestamp >= weekStart {
                     outputWeek += record.tokens.output
                     if cost == nil { unpriced = true }
@@ -41,7 +47,7 @@ struct DisplayBuilder {
                     costToday += cost ?? 0
                 }
                 guard let cost else { continue }
-                dailyCosts[calendar.startOfDay(for: record.timestamp), default: 0] += cost
+                dailyCosts[dayStart(record.timestamp), default: 0] += cost
                 if record.timestamp >= weekStart { costWeek += cost }
             }
             let limits = (snapshot?.limits ?? []).map {

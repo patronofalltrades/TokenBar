@@ -22,14 +22,14 @@ final class UsageStore {
         self.now = now
     }
 
-    /// Reads all providers at the same time. A failed provider keeps its last snapshot.
-    func refresh() async {
+    /// Reads the providers at the same time: all, or only `ids`. A failed provider keeps its last snapshot.
+    func refresh(only ids: Set<ProviderID>? = nil) async {
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
         let date = now()
         await withTaskGroup(of: (ProviderID, Result<ProviderSnapshot, any Error>).self) { group in
-            for provider in providers {
+            for provider in providers where ids?.contains(provider.id) ?? true {
                 group.addTask {
                     do { return (provider.id, .success(try await provider.fetch(now: date))) }
                     catch { return (provider.id, .failure(error)) }

@@ -6,7 +6,7 @@ enum ProviderID: String, Codable, Sendable, CaseIterable {
 }
 
 /// All values are token counts.
-struct TokenCounts: Equatable, Sendable {
+struct TokenCounts: Hashable, Sendable {
     var input = 0          // uncached input
     var output = 0         // includes reasoning or thinking tokens
     var cacheRead = 0
@@ -15,7 +15,7 @@ struct TokenCounts: Equatable, Sendable {
 }
 
 /// One API response, or one API bucket.
-struct UsageRecord: Sendable {
+struct UsageRecord: Hashable, Sendable {
     let provider: ProviderID
     let model: String
     let timestamp: Date

@@ -13,8 +13,13 @@ final class AppModel {
     private var roasts = RoastSelector(roasts: try! Roast.shipped())
     private let tuition = TuitionTotal(defaults: .standard)
     private var shown = DisplaySettings()
+    private var watcher: FileWatcher?
+    private var pending: Set<ProviderID> = []
+    private var scheduled: Set<ProviderID> = []
+    private static let minimumGap: TimeInterval = 5
 
-    /// Refreshes every 60 s (TRD 7) and builds the snapshot one time after each refresh.
+    /// Refreshes 1.5 to 6.5 s after a log change (IES-225), and every 60 s as a fallback (TRD 7).
+    /// Builds the snapshot one time after each refresh.
     /// A change of the index or the roasts setting builds it again at once, from the last data (IES-224).
     init() {
         Task {
@@ -30,12 +35,42 @@ final class AppModel {
                 if DisplaySettings() != shown, store.lastRefresh != nil { build() }
             }
         }
+        // The bridge writes the Claude limits file in this folder. Make it, so the watcher can include it.
+        let limits = ClaudeCodeLimits.defaultFile.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: limits, withIntermediateDirectories: true)
+        let codex = CodexProvider.defaultHome.appending(path: "sessions").path
+        watcher = FileWatcher(paths: ClaudeCodeProvider.defaultRoots() + [URL(fileURLWithPath: codex), limits]) { [weak self] paths in
+            // Read only the provider of the changed files.
+            self?.logsChanged(Set(paths.map { $0.hasPrefix(codex) ? ProviderID.codex : .claudeCode }))
+        }
     }
 
-    func refresh() async {
-        await store.refresh()
+    /// At most one refresh for changes each 5 s: Claude Code writes often while it works.
+    /// A change during a refresh starts one more refresh after it, so the last write always shows.
+    private func logsChanged(_ ids: Set<ProviderID>) {
+        let new = ids.subtracting(scheduled)
+        guard !new.isEmpty else { return }
+        let start = scheduled.isEmpty
+        scheduled.formUnion(new)
+        guard start else { return }
+        let wait = max(0, Self.minimumGap - Date().timeIntervalSince(store.lastRefresh ?? .distantPast))
+        Task {
+            try? await Task.sleep(for: .seconds(wait))
+            let ids = scheduled
+            scheduled = []
+            if store.isRefreshing { pending.formUnion(ids) } else { await refresh(only: ids) }
+        }
+    }
+
+    func refresh(only ids: Set<ProviderID>? = nil) async {
+        await store.refresh(only: ids)
         build()
         if let snapshot { LimitAlerts().refreshed(snapshot) }
+        if !pending.isEmpty {
+            let ids = pending
+            pending = []
+            await refresh(only: ids)
+        }
     }
 
     private func build() {

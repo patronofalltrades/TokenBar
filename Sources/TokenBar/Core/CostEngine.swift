@@ -114,3 +114,26 @@ struct PriceTable: Decodable, Sendable {
         price(for: record.model).map { $0.usd(record.tokens) * usdToEUR }
     }
 }
+
+/// Remembers the EUR cost of each record, so a refresh prices only the new records (IES-225).
+/// Without it, each refresh priced 35 days of records again: about 0.3 s of CPU.
+final class CostCache: @unchecked Sendable {  // used only on the main actor
+    private var costs: [UsageRecord: Decimal?] = [:]
+    private var prunedDay: Date?
+
+    var count: Int { costs.count }
+
+    func costEUR(_ record: UsageRecord, prices: PriceTable) -> Decimal? {
+        if let hit = costs[record] { return hit }
+        let cost = prices.costEUR(record)
+        costs[record] = cost
+        return cost
+    }
+
+    /// One time each day, drops the records before `start`. The cache then does not grow without a limit.
+    func prune(before start: Date, day: Date) {
+        guard prunedDay != day else { return }
+        prunedDay = day
+        costs = costs.filter { $0.key.timestamp >= start }
+    }
+}
