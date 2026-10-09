@@ -81,7 +81,7 @@ struct DisplayBuilder {
         case .limitHit: (reset ?? "100%", "hourglass")
         case .warning: ("\(Int(percent))%", "exclamationmark.triangle.fill")
         case .normal:
-            if let pick { (pick.value, pick.unit.symbol) }
+            if let pick { (Self.barValue(pick.value), pick.unit.symbol) }
             else if let top { ("\(Int(top.limit.usedPercent))%", "circle.lefthalf.filled") }
             else { (Self.shortEUR(costToday), "circle.lefthalf.filled") }
         }
@@ -142,6 +142,13 @@ struct DisplayBuilder {
     }
 
     /// Fits 52 pt, so it has no "≈": "€3.4", "€12", "€123", "€4k". The limits keep "€10.0" and "€1000" out.
+    /// The menu bar has no room for two decimals (52 pt). Below 1, show one decimal, minimum "0.1".
+    /// The popover keeps the full value.
+    static func barValue(_ value: String) -> String {
+        guard let number = Double(value), number < 1 else { return value }
+        return String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), max(0.1, (number * 10).rounded() / 10))
+    }
+
     static func shortEUR(_ cost: Decimal) -> String {
         if cost >= Decimal(string: "999.5")! { return "€\(NSDecimalNumber(decimal: CafeIndex.rounded(cost / 1000, 0)).intValue)k" }
         let places = cost > 0 && cost < Decimal(string: "9.95")! ? 1 : 0

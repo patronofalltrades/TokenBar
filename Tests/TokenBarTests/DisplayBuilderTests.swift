@@ -204,7 +204,7 @@ func limitHitShowsTimeToReset(style: BarStyle) {
         ("100%", "hourglass"), ("9h59", "hourglass"), ("23h", "hourglass"), ("59m", "hourglass"), ("99d", "hourglass"),
         ("99%", "exclamationmark.triangle.fill"),
         ("79%", normal), ("€9.9", normal), ("€999", normal), ("€99k", normal),
-        ("0.49", units[0].symbol),  // only the cheapest unit goes below 0.5 (DRD 7.6 rule 5)
+        ("0.5", units[0].symbol),  // only the cheapest unit goes below 0.5 (DRD 7.6 rule 5); the bar shows one decimal
         ("999", units.max { $0.priceEUR < $1.priceEUR }!.symbol),  // above the range: the most expensive unit
     ]
     labels += units.flatMap { [("9.9", $0.symbol), ("20", $0.symbol)] }
@@ -214,4 +214,11 @@ func limitHitShowsTimeToReset(style: BarStyle) {
         let textWidth = text.isEmpty ? 0 : NSAttributedString(string: text, attributes: [.font: font]).size().width + MenuBarLabel.spacing
         #expect(image.size.width + textWidth <= MenuBarLabel.width, "\(symbol) \(text): \(image.size.width + textWidth) pt")
     }
+}
+
+@Test func barValueKeepsOneDecimalBelowOne() {
+    #expect(DisplayBuilder.barValue("0.49") == "0.5")
+    #expect(DisplayBuilder.barValue("0.04") == "0.1")
+    #expect(DisplayBuilder.barValue("3.4") == "3.4")
+    #expect(DisplayBuilder.barValue("12") == "12")
 }
