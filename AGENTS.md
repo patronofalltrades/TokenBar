@@ -4,6 +4,8 @@ This file is the agreement for all AI coding agents that work on TokenBar. It ap
 
 Read this file completely before you change the repository.
 
+**Do you only want to install TokenBar for a user?** This file is not for you. Follow the "For AI agents" section in [README.md](README.md#for-ai-agents). Do not clone or build the repository.
+
 ## 1. Project summary
 
 TokenBar is a macOS menu bar app. It shows LLM usage and converts the cost into funny MBA units, for example cafés con leche in Barcelona.
