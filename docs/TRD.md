@@ -481,7 +481,7 @@ Facts for this decision (checked 2026-10-08):
 6. After the first approved publish, add the trusted publisher. Then set the package to "Require two-factor authentication and disallow tokens".
 7. Do not keep an npm token in GitHub secrets after step 6.
 
-npm adds a trusted publisher only to a package that exists (verified 2026-10-10). The first stage uses a short-lived token in the `NPM_TOKEN` secret. npm plans to stop direct publish with 2FA-bypass tokens in January 2027, so do not use a direct publish (decided 2026-10-10, D49). Do not publish from a laptop.
+npm adds a trusted publisher only to a package that exists (verified 2026-10-10). The first stage used a short-lived token. The trusted publisher replaced it on 2026-10-10, and the token and the `NPM_TOKEN` secret are deleted. npm plans to stop direct publish with 2FA-bypass tokens in January 2027, so do not use a direct publish (decided 2026-10-10, D49). Do not publish from a laptop.
 
 **Homebrew formula (TRD-T11, decide after the alpha).** Build this only if the maintainer approves it after the alpha. Formula `Formula/tokenbar.rb` in `patronofalltrades/homebrew-tap`:
 
