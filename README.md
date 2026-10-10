@@ -1,148 +1,140 @@
 # TokenBar
 
-TokenBar is a macOS menu bar app. It shows how much AI you use, and it makes fun of you for it.
+**Your AI habit, priced in cafés con leche.**
 
-TokenBar shows your Claude Code and Codex usage in the menu bar, next to the camera notch. It does not show only euros. It shows the cost in units that an MBA student in Barcelona understands: cafés con leche, menús del día and a share of the MBA tuition fee.
-
-```
- ☕ 3.4      ← Café Index: this is all you see in the menu bar
- 🎓 0.04%    ← Tuition Meter: your spend since install, as a % of MBA tuition
- 💧 22 L     ← Water Footprint: the water your AI drank today (a high estimate)
-```
-
-Click the icon to see the full report:
+TokenBar is a macOS menu bar app for MBA students who use Claude Code and Codex more than they admit in class. It reads your local usage logs, shows how close you are to your limits, and converts the damage into units that a student in Barcelona understands. Then it roasts you, case-method style.
 
 ```
-┌───────────────────────────────────────────┐
-│  ☕ 3.4 cafés con leche today              │
-│  12 this week                             │
-│                                           │
-│  Claude Code      62% of 5-hour limit     │
-│                   resets in 1 h 48 min    │
-│                   as of 14:02             │
-│  Codex            18% of weekly limit     │
-│                                           │
-│  "The protagonist has 38% of Opus left    │
-│   and a 9 AM case deadline. Discuss."     │
-└───────────────────────────────────────────┘
+ ☕ 3.4      ← Café Index: today's tokens, in cafés con leche
+ 🎓 0.04%    ← Tuition Meter: share of a €114,000 MBA, burned in tokens
+ 💧 22 L     ← Water Footprint: what your prompts drank today
 ```
 
-> **Status:** Pre-alpha. The specification is in progress. There is no build yet. The first alpha is planned for early November 2026.
+Click the icon for the full teaching note:
 
-## Why TokenBar exists
+```
+┌──────────────────────────────────────────────┐
+│  3.4 cafés con leche today                   │
+│  €6.12 of tokens ÷ €1.80 per café con leche  │
+│  12 this week                                │
+│                                              │
+│  Claude Code   62% of 5-hour limit           │
+│                resets in 1 h 48 min          │
+│  Codex         18% of weekly limit           │
+│                                              │
+│  "The protagonist has 38% of Opus left       │
+│   and a 9 AM deadline. Discuss."             │
+└──────────────────────────────────────────────┘
+```
 
-Engineering teams track the token and credit usage of each LLM provider. Most students do not. They find out about a limit when they hit it, usually the night before a deadline.
+> **Status:** Alpha. `tokenbar@0.1.0-alpha.2` is on npm. It works on the maintainer's Mac and on a few brave classmates' Macs. Expect bugs. Report them with the feedback link in the app.
 
-TokenBar has one job: **show you how much AI you have used, so that a limit or a bill does not surprise you.**
+## Why this exists
 
-The humor is part of the product, not decoration. A number that makes you laugh is a number you remember.
+Engineering teams track every token. MBA students track nothing, then hit the limit at 1 AM, the night before a group deck is due.
 
-## Features (v1)
+TokenBar has one job: **show you how much AI you use, before a limit surprises you.**
 
-| Feature | Description |
-|---|---|
-| Menu bar usage | Shows one usage number next to the notch. |
-| Claude Code usage | Reads local Claude Code session logs. You do not need an API key. An optional status line setup adds the 5-hour and weekly limits. Click **Connect** in Settings. TokenBar edits `~/.claude/settings.json` with a backup, and your current status line keeps working. Without it, TokenBar shows tokens and cost only. |
-| Codex usage | Reads local Codex CLI session logs, including limits. You do not need an API key. |
-| MBA cost conversions | Shows your cost in euros, then converts it into Barcelona units, for example cafés con leche. |
-| Case-method roasts | Shows short jokes in the style of a business school case. |
-| Limit alerts | Sends a macOS notification when you approach a limit. |
-
-### What TokenBar cannot see
-
-TokenBar cannot see usage in the ChatGPT, Claude.ai or Grok web and desktop chat apps. These apps do not supply a public usage source. TokenBar does not read browser cookies to get this data.
-
-### How TokenBar calculates cost
-
-Subscription usage (Claude Pro or Max, ChatGPT Plus or Pro) has no per-token bill. Thus TokenBar calculates an **API-equivalent cost**: tokens × the provider's public API price. This number tells you the value that you get from your subscription.
-
-Providers publish prices in USD. TokenBar converts them to EUR with one fixed rate from its price file. The rate is a community estimate with a date. TokenBar uses the EUR cost only to calculate the index. It does not show EUR, because a subscription user does not pay API prices (D42).
-
-### The café index
-
-The conversion units are in a plain data file. Anyone can add a unit or correct a price with a pull request. Prices are community estimates, not official prices.
-
-You pick one index. TokenBar shows only that index:
-
-- **Café Index**: today's cost in cafés con leche and other campus food.
-- **Tuition Meter**: the share of MBA tuition that your tokens have cost since you installed TokenBar.
-- **Water Footprint**: the water for today's output tokens. TokenBar uses a high published estimate: 45 mL for a 400-token response (Mistral AI, 2025). The source is in `water.json`.
-
-## Privacy
-
-- TokenBar reads data only on your Mac.
-- TokenBar does not send usage data to any server. There is no telemetry.
-- TokenBar v1 reads only local files. It has no API keys.
-- TokenBar makes no network request unless you turn on the update check. The update check is off by default.
-- TokenBar does not read the content of your prompts. It reads only token counts, model names, timestamps, limit percentages and limit reset times.
-
-## Requirements
-
-- macOS 14 (Sonoma) or later
-- Apple silicon Mac. TokenBar does not support Intel Macs.
+The jokes are part of the product. You forget "€6.12". You remember "3.4 cafés con leche, and it is only Tuesday".
 
 ## Install
 
-> Not available yet. The alpha releases will be on npm only.
-
-TokenBar is free and open source. Builds are not signed with an Apple Developer ID. Use the npm method. With this method, macOS opens TokenBar with no security prompt.
-
-### npm (recommended)
-
-You need [Node.js](https://nodejs.org) 18 or later.
+You need an Apple silicon Mac, macOS 14 or later, and [Node.js](https://nodejs.org) 18 or later.
 
 ```sh
-npm install -g tokenbar
-tokenbar install
+npx tokenbar install
 ```
 
-`tokenbar install` copies TokenBar.app to `~/Applications` and opens it. To get a new version, run `npm update -g tokenbar`, then run `tokenbar install` again.
+That's it. TokenBar copies itself to `~/Applications`, opens, and walks you through a short setup. It is faster than a coffee chat and less awkward.
 
-To remove TokenBar, run `tokenbar uninstall`, then run `npm uninstall -g tokenbar`. The uninstall also removes the TokenBar status line from Claude Code and puts back your old status line.
+### Let your AI install it
 
-### Homebrew (after the alpha)
+You already use Claude Code or Codex. Make it do the work. Paste this into your agent:
 
-> Not decided yet. The maintainer decides after the alpha if this method ships.
-
-This method builds TokenBar from source. You need the Xcode Command Line Tools.
-
-```sh
-brew trust --tap patronofalltrades/tap
-brew install patronofalltrades/tap/tokenbar
-cp -R "$(brew --prefix)/opt/tokenbar/TokenBar.app" ~/Applications/
+```text
+Install TokenBar for me: https://github.com/patronofalltrades/TokenBar
+Follow the "For AI agents" section of the README.
 ```
 
-After each `brew upgrade`, copy the app again.
+### Update and remove
 
-### DMG (after the alpha)
+- **Update:** run `npx tokenbar@latest install` again.
+- **Remove:** run `npx tokenbar uninstall`. It also removes the TokenBar status line from Claude Code and puts back your old one. No hard feelings.
 
-> Not decided yet. The maintainer decides after the alpha if this method ships.
+## What you get
 
-Download the DMG from [Releases](https://github.com/patronofalltrades/TokenBar/releases). macOS blocks the first launch of a DMG build. To open the app:
+| Feature | What it does |
+|---|---|
+| One number in the menu bar | Pick one index: Café Index, Tuition Meter or Water Footprint. The number sits next to the notch and judges you quietly. |
+| Claude Code and Codex usage | Reads the local logs on your Mac. No API key, no login. |
+| Real limits | Codex limits come from its logs. For Claude Code limits, click **Connect** in setup. TokenBar adds a status line to `~/.claude/settings.json` with a backup, and your old status line keeps working. |
+| The receipt | A line under the headline shows the math, for example "€45.60 of tokens since install ÷ €114,000 MBA tuition". Trust, but verify. |
+| Case-method roasts | About 40 short jokes about cold calls, cover letters, decks and coffee chats. |
+| Limit alerts | A macOS notification at 95% and at the limit, so you can save your work before the model leaves you. |
+| Share card | Copy a card and paste it in your Section chat. Bragging rights, or a cry for help. |
+| Serious mode | A plain bar style for days when you cannot take a joke. |
 
-1. Open **System Settings > Privacy & Security**.
-2. Find the TokenBar message.
-3. Click **Open Anyway**.
+### Three indexes
 
-### Check a download
+- **Café Index.** Today's spend in cafés con leche (€1.80), menús del día (€10) and other campus prices. The prices are community estimates in a plain JSON file. Your pull request is welcome.
+- **Tuition Meter.** Your spend since install, as a share of a €114,000 MBA. It also tells you the year in which your tokens finish the tuition. When you reach 100%: "Tuition fully burned. The tokens graduated before you did."
+- **Water Footprint.** The water for today's output tokens, from a high published estimate (Mistral AI, 2025: 45 mL for a 400-token response). The number is dramatic on purpose. The source is in `water.json`.
 
-Each release lists the SHA-256 checksum of each file. The npm package has a provenance statement that links it to the GitHub Actions build.
+### A few roasts
+
+> "Limit reached. You must now read the case yourself."
+
+> "You used AI to write a cover letter about your passion for the firm. The firm used AI to read it."
+
+> "Your finance professor would call this a sunk cost. Your AI calls it a Tuesday."
+
+> "The model gave you three frameworks and a 2x2. You are now ready for consulting."
+
+## How the cost is calculated
+
+Claude Pro, Claude Max, ChatGPT Plus and ChatGPT Pro have no per-token bill. TokenBar calculates an **API-equivalent cost**: your tokens × the provider's public API price, converted to EUR at one fixed rate. This number tells you how much value you get from your subscription. It is not money that you paid. Each price has a source URL and a "last verified" date in `prices.json`.
+
+## What TokenBar cannot see
+
+ChatGPT, Claude.ai and Grok in the browser or in their desktop apps. These apps have no public usage source, and TokenBar does not read your browser cookies. Your 3 AM ChatGPT therapy sessions stay between you and OpenAI.
+
+## Privacy
+
+- Everything stays on your Mac. TokenBar makes no network requests.
+- No telemetry. No analytics. No account.
+- TokenBar never reads your prompts or responses. It reads only token counts, model names, timestamps and limits. Your terrible first drafts are safe.
+
+## For AI agents
+
+If a user asked you to install TokenBar, do these steps. Do not clone or build the repository.
+
+1. Check the Mac. Stop and tell the user if a check fails.
+   - `uname -m` must print `arm64`. TokenBar does not run on Intel Macs.
+   - `sw_vers -productVersion` must be 14.0 or later.
+   - `node --version` must be v18 or later. If Node.js is not installed, tell the user to install it from https://nodejs.org. Do not install it without permission.
+2. Run `npx --yes tokenbar install`. The command checks the app signature, copies `TokenBar.app` to `~/Applications` and opens it.
+3. Tell the user that a TokenBar setup window is open, possibly behind other windows. The user must finish the setup.
+4. Do not edit `~/.claude/settings.json` yourself. The **Connect** button in the setup window does this with a backup.
+
+To remove TokenBar, run `npx --yes tokenbar uninstall`.
+
+The package is `tokenbar` on npm. It is built and published only by the GitHub Actions release workflow of this repository, with a provenance statement.
+
+## Verify a download
+
+Each [GitHub release](https://github.com/patronofalltrades/TokenBar/releases) lists the SHA-256 of `TokenBar.zip`. The npm package contains the same file and has a provenance statement that links it to the GitHub Actions build. The maintainer approves each npm release with 2FA.
 
 ## Roadmap
 
 | Stage | Scope |
 |---|---|
-| v0.1 alpha (early November 2026) | Claude Code logs, menu bar number, popover, café index, case-method roasts. npm install. |
-| v0.2 alpha (mid-December 2026) | Codex logs, Claude limits (status line setup), limit alerts, Settings, share card. |
-| v1.0 (January 2027) | Class launch at the start of the winter term. Onboarding, launch at login, opt-in update check, feedback form. Homebrew and DMG: decided after the alpha. |
-| Later | API keys: OpenAI Admin API and Anthropic Admin API usage. |
-| Later | Spanish language. |
-| Later | MCP server, so that an AI assistant can query your usage. |
-| Later | Opt-in class leaderboard ("Top Token Burner, Section B"). |
-| Later | xAI (Grok) usage, when xAI supplies a usage source. |
-| Later, optional | Signed and notarized build. Only if non-technical users become a target after the alpha. |
+| Alpha (now) | Everything above. Tested with a small group of classmates. |
+| v1.0 (January 2027) | Class launch at the start of the winter term, after the alpha feedback. |
+| Later | Spanish. A class leaderboard ("Top Token Burner, Section B"), opt-in only. An MCP server, so your AI can ask how much AI you use. Grok usage, when xAI gives a usage source. |
 
-## Documentation
+## Contributing
+
+Pull requests are welcome, especially new café units and better roasts. A good roast is about MBA life (cold calls, LinkedIn, case interviews, decks), not about generic AI. The maintainer approves each roast. Read [AGENTS.md](AGENTS.md) first. The same rules apply to people and to AI agents.
 
 | Document | Content |
 |---|---|
@@ -150,19 +142,14 @@ Each release lists the SHA-256 checksum of each file. The npm package has a prov
 | [Technical Requirements](docs/TRD.md) | Architecture, data sources and release pipeline. |
 | [Design Requirements](docs/DRD.md) | Menu bar, popover, humor voice and the café index. |
 | [Decision log](docs/DECISIONS.md) | Each decision, with its date and reason. |
-| [Workflow](docs/WORKFLOW.md) | How work flows from a Linear issue to a merged pull request. |
-| [AGENTS.md](AGENTS.md) | Rules for AI coding agents that work on this repository. |
-
-## Contributing
-
-Contributions are welcome, especially new café-index units and better roasts. Read [AGENTS.md](AGENTS.md) before you open a pull request. The same rules apply to people and to AI agents.
+| [Workflow](docs/WORKFLOW.md) | How work moves from a Linear issue to a merged pull request. |
 
 ## Prior art
 
-[CodexBar](https://github.com/steipete/CodexBar) by Peter Steinberger is a macOS menu bar app that shows Codex and Claude Code usage. TokenBar is a separate implementation. We studied CodexBar to learn where usage data is kept. TokenBar adds the humor layer and the MBA community focus.
+[CodexBar](https://github.com/steipete/CodexBar) by Peter Steinberger is a macOS menu bar app that shows Codex and Claude Code usage. TokenBar is a separate implementation. We studied CodexBar to learn where usage data is kept. TokenBar adds the humor and the MBA focus.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Free, like the coffee at a corporate presentation.
 
-TokenBar is not affiliated with any business school, Anthropic, OpenAI or xAI.
+TokenBar is not affiliated with any business school, Anthropic, OpenAI or xAI. No business school approved these jokes.
