@@ -231,3 +231,13 @@ private struct Clock {
     #expect(CafeIndex.euro(Decimal(string: "1234.6")!) == "€1,235")
     #expect(try WaterData.shipped().math(outputTokens: 195_556) == "195,556 output tokens × 0.1125 mL each (Mistral estimate)")
 }
+
+/// The meter shows 100% only when the tuition is fully burned. Above 100% it keeps counting.
+@Test func tuitionShowsFullOnlyWhenBurned() {
+    let tuition = try! CafeData.shipped().tuition
+    #expect(CafeIndex.tuitionPercent(spendEUR: 113_999, tuition: tuition) == "99.99%")
+    #expect(CafeIndex.tuitionBarValue(spendEUR: 113_999, tuition: tuition) == "99.9%")
+    #expect(CafeIndex.tuitionPercent(spendEUR: 114_000, tuition: tuition) == "100.00%")
+    #expect(CafeIndex.tuitionBarValue(spendEUR: 114_000, tuition: tuition) == "100%")
+    #expect(CafeIndex.tuitionBarValue(spendEUR: 1_500_000, tuition: tuition) == "1316%")
+}

@@ -102,7 +102,7 @@ enum CafeIndex {
 
     /// `{tuition_percent}`, for example "0.04%".
     static func tuitionPercent(spendEUR: Decimal, tuition: Tuition) -> String {
-        fixed(rounded(spendEUR / tuition.priceEUR * 100, 2), 2) + "%"
+        fixed(belowFull(rounded(spendEUR / tuition.priceEUR * 100, 2), 2, spendEUR, tuition), 2) + "%"
     }
 
     /// The menu bar value of the Tuition Meter. Fits 68 pt (D41): "0.04%", "12.3%", "123%".
@@ -110,8 +110,14 @@ enum CafeIndex {
     static func tuitionBarValue(spendEUR: Decimal, tuition: Tuition) -> String {
         let percent = spendEUR / tuition.priceEUR * 100
         guard percent >= Decimal(string: "0.005")! else { return "<.01%" }
-        let places = percent < Decimal(string: "9.995")! ? 2 : percent < Decimal(string: "99.95")! ? 1 : 0
-        return fixed(rounded(percent, places), places) + "%"
+        let places = percent < Decimal(string: "9.995")! ? 2 : percent < Decimal(string: "99.95")! || spendEUR < tuition.priceEUR ? 1 : 0
+        return fixed(belowFull(rounded(percent, places), places, spendEUR, tuition), places) + "%"
+    }
+
+    /// Shows "100%" only when the tuition is fully burned. €113,999 is "99.99%", not "100.00%".
+    private static func belowFull(_ percent: Decimal, _ places: Int, _ spendEUR: Decimal, _ tuition: Tuition) -> Decimal {
+        guard spendEUR < tuition.priceEUR, percent >= 100 else { return percent }
+        return 100 - pow(Decimal(10), -places)
     }
 
     /// The popover line of the Tuition Meter (DRD 7.6 rule 1).
