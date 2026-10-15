@@ -280,7 +280,7 @@ func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
 @Test func tuitionLabelsFit68Points() throws {
     let tuition = MenuBarLabel.width(.tuition)
     #expect(tuition == 68)
-    let labels: [(String, String)] = ["<.01%", "0.04%", "12.3%", "99.9%", "123%"].map { ($0, "tuition") }
+    let labels: [(String, String)] = ["<.01%", "0.04%", "12.3%", "99.9%", "123%", "1316%"].map { ($0, "tuition") }
         + [("99%", "exclamationmark.triangle.fill"), ("100%", "hourglass"), ("9h59", "hourglass")]
     for (text, symbol) in labels {
         let image = MenuBarLabel.image(symbol: symbol, text: text, width: tuition)
