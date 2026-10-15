@@ -151,6 +151,7 @@ struct DisplayBuilder {
         switch provider {
         case .claudeCode: "Claude Code"
         case .codex: "Codex"
+        case .geminiCLI: "Gemini CLI"
         }
     }
 

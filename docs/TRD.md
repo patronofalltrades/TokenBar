@@ -29,7 +29,8 @@ Technical goals:
             ┌──────────────────────── TokenBar.app (one process) ────────────────────────┐
  ~/.claude/projects/**/*.jsonl ─┐                                                       │
  claude-limits.json ────────────┼─► ClaudeCodeProvider ─┐  UsageProvider                │
- ~/.codex/sessions/**/*.jsonl ──┴─► CodexProvider ──────┘  .fetch() async               │
+ ~/.codex/sessions/**/*.jsonl ──┼─► CodexProvider ──────┤  .fetch() async               │
+ ~/.gemini/tmp/*/chats/** ──────┴─► GeminiCLIProvider ──┘                               │
                                               │                                         │
                                               ▼                                         │
                          UsageStore (@MainActor, @Observable, refresh loop)             │
@@ -51,7 +52,7 @@ Rules:
 2. `UsageStore` owns the refresh loop and the provider list. Views read only from `UsageStore`.
 3. Humor (café index and roasts) is data. Code selects and fills the strings. Code does not contain jokes.
 
-**Why a protocol.** `ponytail` forbids an interface with one implementation. v0.2 has two local providers: Claude Code and Codex. Thus `UsageProvider` has two implementations. The protocol is justified. The Later API providers add more.
+**Why a protocol.** `ponytail` forbids an interface with one implementation. v0.2 has three local providers: Claude Code, Codex and Gemini CLI. Thus `UsageProvider` has three implementations. The protocol is justified. The Later API providers add more.
 
 ## 3. Repository layout
 
@@ -72,6 +73,7 @@ Sources/TokenBar/
   Providers/ClaudeCodeProvider.swift
   Providers/ClaudeCodeLimits.swift    (v0.2) reads the status line limit file
   Providers/CodexProvider.swift       (v0.2)
+  Providers/GeminiCLIProvider.swift   (D50)
   Providers/AnthropicAdminProvider.swift   (Later)
   Providers/OpenAIAdminProvider.swift      (Later)
   Humor/CafeIndex.swift
@@ -107,7 +109,7 @@ Skipped: a separate library target. Add `TokenBarCore` when the MCP server (Sect
 Signatures only. Agents can add fields that an issue needs. Agents must not rename these types.
 
 ```swift
-enum ProviderID: String, Codable, Sendable, CaseIterable { case claudeCode, codex }   // Later: anthropicAPI, openAIAPI
+enum ProviderID: String, Codable, Sendable, CaseIterable { case claudeCode, codex, geminiCLI }   // Later: anthropicAPI, openAIAPI
 
 struct TokenCounts: Equatable, Sendable {           // all values are token counts
     var input = 0          // uncached input
@@ -261,6 +263,26 @@ Source: <https://developers.openai.com/cookbook/examples/completions_usage_api>.
 
 Known: CodexBar reads a prepaid balance and daily spend from `https://management-api.x.ai/v1/billing/teams/{team_id}/prepaid/balance` and `POST …/billing/teams/{team_id}/usage` with a Management API key and team ID (CodexBar `docs/xai.md`). This is **UNVERIFIED** against xAI docs. It covers the developer platform only, not Grok consumer plans. No local Grok log source is known. Do not build an xAI provider until the maintainer approves the new host (AGENTS.md Section 9).
 
+### 5.6 Gemini CLI (local logs)
+
+**Location.** `~/.gemini/tmp/<project>/chats/session-*.jsonl`, and subagent chats in `~/.gemini/tmp/<project>/chats/<parent-session-id>/*.jsonl`. Legacy files are `chats/session-*.json`. Read only files in a `chats` folder. Other files in `<project>` contain content. Do not read `~/.gemini/antigravity` (D50). Skipped: `GEMINI_CLI_HOME`.
+
+**Format.** Source: gemini-cli `chatRecordingService.ts` and `chatRecordingTypes.ts`. JSON Lines. The first line is session metadata. The next lines are message records or control records (`$set`, `$patch`, `$rewindTo`). A legacy `.json` file is one object with a `messages` array. When the CLI resumes a legacy file, it writes a copy to `<name>.jsonl`. Then skip the `.json` file.
+
+| Field | Use |
+|---|---|
+| `type == "gemini"` | Only these messages have tokens. |
+| `id` | Deduplication key in one file. The CLI writes a message again when it adds the tokens. The last line with `tokens` wins. |
+| `timestamp` | ISO 8601 UTC with milliseconds. |
+| `model` | Model name. If absent, `unknown`. |
+| `tokens.input`, `.output`, `.cached`, `.thoughts`, `.tool` | Tokens for one response. |
+
+Mapping: `input = max(0, tokens.input + tokens.tool − tokens.cached)`. `cacheRead = tokens.cached`. `output = tokens.output + tokens.thoughts`. `tokens.input` is `promptTokenCount` and includes the cached tokens. `tokens.output` is `candidatesTokenCount` and does not include the thoughts. Ignore control records. Never decode `content`, `displayContent`, `thoughts` text or `toolCalls`. They hold content.
+
+**Limits.** The files have no limit data. The provider returns no limit windows.
+
+**Verification status.** From the gemini-cli source only. No Gemini CLI data is on this Mac. Tests use synthetic fixtures.
+
 ## 6. Cost engine
 
 API-equivalent cost = Σ over token classes (tokens × price for that model and class) ÷ 1,000,000.
@@ -316,7 +338,7 @@ Energy rules:
 1. If inode or device changed, or size < offset: reset the offset to 0. Drop that file's records.
 2. If size == offset: skip the file.
 3. Else read from the offset to the end with `FileHandle`. Split on `\n`. Keep the bytes after the last `\n` as the partial line.
-4. Before decoding, test the raw line for a marker (`"type":"assistant"` for Claude; `token_usage_record`, `token_count` or `turn_context` for Codex). Skip all other lines without decoding. This skips most bytes.
+4. Before decoding, test the raw line for a marker (`"type":"assistant"` for Claude; `token_usage_record`, `token_count` or `turn_context` for Codex; `"tokens":{` for Gemini CLI). Skip all other lines without decoding. This skips most bytes.
 
 **Startup window.** On launch, scan only files whose modification date is in the last 35 days. This covers "this month" and the weekly window. Keep records in memory only. Skipped: an on-disk cache. Add it if a cold scan takes more than 3 seconds on a 1.5 GB log set. Measure this in TRD-T05 and TRD-T12.
 
@@ -366,7 +388,7 @@ Skipped: loading user-supplied data files from disk. Add it if contributors ask 
 | Keys in Keychain (Later) | v1 has no API keys. When they come back: `SecItemAdd`/`SecItemCopyMatching`, `kSecClassGenericPassword`, service = bundle ID, account = `ProviderID.rawValue`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`. | Unit test with a test-only service name. |
 | No keys in files (Later) | Never write a key to `UserDefaults`, a file or a log. Do not print a key in an error. | Code review. |
 | Host allowlist | `HTTP.swift` has one function. In v1, it rejects any host that is not `api.github.com`. | Unit test. |
-| Read-only on other apps' files | Open `~/.claude` and `~/.codex` files read-only. Never write there. | Code review. |
+| Read-only on other apps' files | Open `~/.claude`, `~/.codex` and `~/.gemini/tmp` files read-only. Never write there. | Code review. |
 | Logs | Use `os.Logger` with `privacy: .private` for paths and model names. Log counts, not values. | Code review. |
 
 Network hosts:

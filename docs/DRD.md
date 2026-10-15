@@ -16,7 +16,7 @@ This document specifies the user interface, the humor system and the café index
 |---|---|
 | Menu bar item | The TokenBar status item in the macOS menu bar. |
 | Popover | The window that opens when the user clicks the menu bar item. |
-| Provider | One usage source. In v1: Claude Code or Codex. OpenAI API and Anthropic API are Later (PRD 7.4). |
+| Provider | One usage source. In v1: Claude Code, Codex or Gemini CLI (D50). The Gemini CLI row shows only when Gemini CLI is installed. OpenAI API and Anthropic API are Later (PRD 7.4). |
 | Limit | A usage cap with a reset time, for example the Claude 5-hour limit. |
 | Primary metric | The single number in the menu bar item. |
 | Cost | API-equivalent cost in EUR. TokenBar uses it only to calculate the indexes. The UI does not show EUR (D42). |
@@ -247,7 +247,7 @@ Keyboard: `⌘,` opens Settings. `⌘R` refreshes. `⌘Q` quits.
 
 ### 4.1 Detection
 
-At first launch, TokenBar looks for Claude Code logs and Codex logs. The TRD specifies the paths.
+At first launch, TokenBar looks for Claude Code logs, Codex logs and Gemini CLI chat files. The TRD specifies the paths.
 
 - If TokenBar finds a provider, show the Normal state with data. Show a one-time welcome line in place of the roast.
 - If TokenBar finds no provider, show the No data state.
@@ -258,10 +258,10 @@ At first launch, TokenBar looks for Claude Code logs and Codex logs. The TRD spe
 ┌──────────────────────────────────────────┐
 │ Welcome to TokenBar                      │
 │                                          │
-│ TokenBar found no Claude Code or Codex   │
-│ logs on this Mac.                        │
+│ TokenBar found no Claude Code, Codex or  │
+│ Gemini CLI logs on this Mac.             │
 │                                          │
-│ ○ I use Claude Code or Codex             │
+│ ○ I use Claude Code, Codex or Gemini CLI │
 │   → Run it one time, then click Check.   │
 │ ○ I use only ChatGPT or Claude.ai        │
 │   → TokenBar cannot read web chat usage  │
@@ -338,7 +338,7 @@ TokenBar has no Dock icon and no main window. Thus onboarding is a window, not t
 
 | Step | Content | Condition |
 |---|---|---|
-| 1. Welcome | Welcome line (Section 4.7). Claude Code and Codex: found or not found. TokenBar cannot see web chat, such as claude.ai or ChatGPT. Your data stays on this Mac. | Always |
+| 1. Welcome | Welcome line (Section 4.7). Claude Code and Codex: found or not found. Gemini CLI: found, only when found. TokenBar cannot see web chat, such as claude.ai or ChatGPT. Your data stays on this Mac. | Always |
 | 2. Index | Section 4.5. | Always |
 | 3. Claude limits | Optional **Connect** (Section 5, D39). The current status line keeps working. Errors show below the button. The user can skip. | Only if TokenBar found Claude Code |
 | 4. Keep TokenBar visible | macOS hides the icons near the notch first, without a warning. An open app with many menus pushes icons out. "Hold ⌘ and drag TokenBar to the right, toward the clock." | Always. No Skip button (D40). |

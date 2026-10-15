@@ -15,7 +15,7 @@ Use these terms with these meanings in all TokenBar documents.
 
 | Term | Meaning |
 |---|---|
-| Usage source | A place where TokenBar reads usage data. In v1, only local files: Claude Code logs and Codex logs. |
+| Usage source | A place where TokenBar reads usage data. In v1, only local files: Claude Code logs, Codex logs and Gemini CLI chat files (D50). |
 | Provider | The code that reads one usage source (`UsageProvider` in AGENTS.md). |
 | Usage record | One unit of usage: timestamp, model name, input tokens, output tokens. It contains no prompt or response text. |
 | API cost | The real cost that a provider usage API reports. Only API-key providers (Later) report it. |

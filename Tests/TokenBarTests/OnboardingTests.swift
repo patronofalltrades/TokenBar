@@ -19,14 +19,18 @@ struct OnboardingTests {
         defer { try? FileManager.default.removeItem(at: tmp) }
         let claude = tmp.appendingPathComponent("claude/projects")
         let codex = tmp.appendingPathComponent("codex")
-        #expect(Onboarding.Detection.scan(claudeRoots: [claude], codexHome: codex) == .init(claudeCode: false, codex: false))
+        let gemini = tmp.appendingPathComponent("gemini/tmp")
+        #expect(Onboarding.Detection.scan(claudeRoots: [claude], codexHome: codex, geminiRoot: gemini) == .init(claudeCode: false, codex: false))
         try FileManager.default.createDirectory(at: claude, withIntermediateDirectories: true)
         // Codex without `sessions` has no logs.
         try FileManager.default.createDirectory(at: codex, withIntermediateDirectories: true)
-        #expect(Onboarding.Detection.scan(claudeRoots: [tmp.appendingPathComponent("none"), claude], codexHome: codex)
+        #expect(Onboarding.Detection.scan(claudeRoots: [tmp.appendingPathComponent("none"), claude], codexHome: codex, geminiRoot: gemini)
             == .init(claudeCode: true, codex: false))
         try FileManager.default.createDirectory(at: codex.appendingPathComponent("sessions"), withIntermediateDirectories: true)
-        #expect(Onboarding.Detection.scan(claudeRoots: [claude], codexHome: codex) == .init(claudeCode: true, codex: true))
+        #expect(Onboarding.Detection.scan(claudeRoots: [claude], codexHome: codex, geminiRoot: gemini) == .init(claudeCode: true, codex: true))
+        try FileManager.default.createDirectory(at: gemini, withIntermediateDirectories: true)
+        #expect(Onboarding.Detection.scan(claudeRoots: [claude], codexHome: codex, geminiRoot: gemini)
+            == .init(claudeCode: true, codex: true, geminiCLI: true))
     }
 
     @Test func claudeLimitsStepOnlyWithClaudeCode() {
@@ -134,7 +138,7 @@ struct OnboardingTests {
     /// Set ONBOARDING_PNG_DIR to save each step as a PNG for a visual check.
     @Test func eachStepRenders() throws {
         let cases: [(String, Onboarding.Detection)] = [
-            ("found", .init(claudeCode: true, codex: true)),
+            ("found", .init(claudeCode: true, codex: true, geminiCLI: true)),
             ("none", .init(claudeCode: false, codex: false)),
         ]
         for (name, detection) in cases {

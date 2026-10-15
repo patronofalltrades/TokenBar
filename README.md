@@ -2,7 +2,7 @@
 
 **Your AI habit, priced in cafés con leche.**
 
-TokenBar is a macOS menu bar app for MBA students who use Claude Code and Codex more than they admit in class. It reads your local usage logs, shows how close you are to your limits, and converts the damage into units that a student in Barcelona understands. Then it roasts you, case-method style.
+TokenBar is a macOS menu bar app for MBA students who use Claude Code, Codex and Gemini CLI more than they admit in class. It reads your local usage logs, shows how close you are to your limits, and converts the damage into units that a student in Barcelona understands. Then it roasts you, case-method style.
 
 ```
  ☕ 3.4      ← Café Index: today's tokens, in cafés con leche
@@ -66,8 +66,8 @@ Follow the "For AI agents" section of the README.
 | Feature | What it does |
 |---|---|
 | One number in the menu bar | Pick one index: Café Index, Tuition Meter or Water Footprint. The number sits next to the notch and judges you quietly. |
-| Claude Code and Codex usage | Reads the local logs on your Mac. No API key, no login. |
-| Real limits | Codex limits come from its logs. For Claude Code limits, click **Connect** in setup. TokenBar adds a status line to `~/.claude/settings.json` with a backup, and your old status line keeps working. |
+| Claude Code, Codex and Gemini CLI usage | Reads the local logs on your Mac. No API key, no login. The Gemini CLI row shows only if you have it. |
+| Real limits | Codex limits come from its logs. For Claude Code limits, click **Connect** in setup. TokenBar adds a status line to `~/.claude/settings.json` with a backup, and your old status line keeps working. Gemini CLI keeps no limit data, so its row shows tokens and cost only. |
 | The receipt | A line under the headline shows the math, for example "€45.60 of tokens since install ÷ €114,000 MBA tuition". Trust, but verify. |
 | Case-method roasts | About 40 short jokes about cold calls, cover letters, decks and coffee chats. |
 | Limit alerts | A macOS notification at 95% and at the limit, so you can save your work before the model leaves you. |
@@ -96,7 +96,7 @@ Claude Pro, Claude Max, ChatGPT Plus and ChatGPT Pro have no per-token bill. Tok
 
 ## What TokenBar cannot see
 
-ChatGPT, Claude.ai and Grok in the browser or in their desktop apps. These apps have no public usage source, and TokenBar does not read your browser cookies. Your 3 AM ChatGPT therapy sessions stay between you and OpenAI.
+ChatGPT, Claude.ai, Gemini and Grok in the browser or in their desktop apps, and Google Antigravity. These apps have no public usage source, and TokenBar does not read your browser cookies. Your 3 AM ChatGPT therapy sessions stay between you and OpenAI.
 
 ## Privacy
 

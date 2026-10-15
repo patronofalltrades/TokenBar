@@ -2,7 +2,7 @@ import Foundation
 
 /// Raw values are stored in data files and settings. Do not change them.
 enum ProviderID: String, Codable, Sendable, CaseIterable {
-    case claudeCode, codex
+    case claudeCode, codex, geminiCLI
 }
 
 /// All values are token counts.

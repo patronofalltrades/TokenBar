@@ -54,12 +54,12 @@ actor CodexProvider: UsageProvider {
         return ProviderSnapshot(provider: .codex, records: records, limits: limits, updatedAt: now)
     }
 
-    /// Paths of the `.jsonl` files in `folders` that changed at or after `start`.
-    static func logFiles(in folders: [URL], since start: Date) -> Set<String> {
+    /// Paths of the files in `folders` with one of `extensions` that changed at or after `start`.
+    static func logFiles(in folders: [URL], since start: Date, extensions: Set<String> = ["jsonl"]) -> Set<String> {
         Set(folders.flatMap { folder -> [String] in
             let items = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: [.contentModificationDateKey])
             return (items?.allObjects as? [URL] ?? []).compactMap { url in
-                guard url.pathExtension == "jsonl",
+                guard extensions.contains(url.pathExtension),
                       let modified = try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
                       modified >= start else { return nil }
                 return url.path

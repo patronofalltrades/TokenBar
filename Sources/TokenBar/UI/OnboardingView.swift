@@ -11,13 +11,16 @@ import SwiftUI
     struct Detection: Equatable {
         var claudeCode: Bool
         var codex: Bool
+        var geminiCLI = false
 
         /// The same folders that the providers read.
         static func scan(claudeRoots: [URL] = ClaudeCodeProvider.defaultRoots(),
-                         codexHome: URL = CodexProvider.defaultHome) -> Detection {
+                         codexHome: URL = CodexProvider.defaultHome,
+                         geminiRoot: URL = GeminiCLIProvider.defaultRoot) -> Detection {
             let fm = FileManager.default
             return Detection(claudeCode: claudeRoots.contains { fm.fileExists(atPath: $0.path) },
-                             codex: fm.fileExists(atPath: codexHome.appendingPathComponent("sessions").path))
+                             codex: fm.fileExists(atPath: codexHome.appendingPathComponent("sessions").path),
+                             geminiCLI: fm.fileExists(atPath: geminiRoot.path))
         }
     }
 
@@ -153,12 +156,14 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 6) {
                 found("Claude Code", detection.claudeCode)
                 found("Codex", detection.codex)
+                // Most users do not have Gemini CLI, so it shows only when found, as in the popover.
+                if detection.geminiCLI { found("Gemini CLI", true) }
             }
-            if !detection.claudeCode && !detection.codex {
-                Text("TokenBar found no Claude Code or Codex logs on this Mac. If you use one of them, run it one time. TokenBar checks again every minute.")
+            if !detection.claudeCode && !detection.codex && !detection.geminiCLI {
+                Text("TokenBar found no Claude Code, Codex or Gemini CLI logs on this Mac. If you use one of them, run it one time. TokenBar checks again every minute.")
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Text("TokenBar cannot see web chat, such as claude.ai or ChatGPT. It sees only Claude Code and Codex on this Mac.")
+            Text("TokenBar cannot see web chat, such as claude.ai, ChatGPT or Gemini. It sees only Claude Code, Codex and Gemini CLI on this Mac.")
                 .fixedSize(horizontal: false, vertical: true)
             Text("Your data stays on this Mac. TokenBar reads token counts, not your prompts.")
                 .font(.caption).foregroundStyle(Theme.secondary)
