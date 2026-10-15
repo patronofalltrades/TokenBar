@@ -68,9 +68,10 @@ struct PopoverView: View {
     }
 
     /// "Not installed" rows show only when no provider is installed.
+    /// Gemini CLI shows only when it is installed: most users do not have it.
     private var visibleRows: [DisplaySnapshot.ProviderRow] {
         let installed = snapshot.rows.filter(\.installed)
-        return installed.isEmpty ? snapshot.rows : installed
+        return installed.isEmpty ? snapshot.rows.filter { $0.provider != .geminiCLI } : installed
     }
 
     /// DRD 3.5: when one provider hits a limit, name a provider that still has capacity.
@@ -247,9 +248,9 @@ private struct NoDataView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Welcome to TokenBar").font(.headline)
-            Text("TokenBar found no Claude Code or Codex logs on this Mac.")
+            Text("TokenBar found no Claude Code, Codex or Gemini CLI logs on this Mac.")
             VStack(alignment: .leading, spacing: 4) {
-                Text("I use Claude Code or Codex").font(.body.weight(.medium))
+                Text("I use Claude Code, Codex or Gemini CLI").font(.body.weight(.medium))
                 Text("Run it one time, then click Check again.").foregroundStyle(Theme.secondary)
             }
             VStack(alignment: .leading, spacing: 4) {

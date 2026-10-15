@@ -17,7 +17,7 @@ private func cost(_ model: String, _ tokens: TokenCounts) -> Decimal? {
     #expect(table.fxNote.hasPrefix("community estimate"))
     for model in table.models {
         #expect(model.source.hasPrefix("https://"), "\(model.id)")
-        #expect(model.lastVerified == "2026-10-08", "\(model.id)")
+        #expect(["2026-10-08", "2026-10-14"].contains(model.lastVerified), "\(model.id)")
         let prices = model.prices.all + (model.longContext?.prices.all ?? [])
         #expect(prices.allSatisfy { $0 >= 0 }, "\(model.id)")
         #expect(model.prices.input != nil && model.prices.output != nil, "\(model.id)")
@@ -100,6 +100,18 @@ func unknownModelHasNoCost(model: String) {
     #expect(table.price(for: "claude-opus-5-5")!.usd(tokens) == usd)
     #expect(cost("claude-opus-5-5", tokens) == usd * d("0.894"))
     #expect(cost("claude-opus-5-5", tokens) == d("0.058177944"))
+}
+
+@Test func geminiCostUsesLongContextAbove200K() {
+    let pro = table.price(for: "gemini-2.5-pro")!
+    // 100K in × $1.25 + 50K cached × $0.125 + 10K out × $10, per 1M tokens.
+    #expect(pro.usd(TokenCounts(input: 100_000, output: 10_000, cacheRead: 50_000)) == d("0.23125"))
+    // 250K prompt > 200K: 150K in × $2.50 + 100K cached × $0.25 + 10K out × $15.
+    #expect(pro.usd(TokenCounts(input: 150_000, output: 10_000, cacheRead: 100_000)) == d("0.55"))
+    let record = UsageRecord(provider: .geminiCLI, model: "gemini-3.6-flash", timestamp: .now, tokens: TokenCounts(output: 1_000_000))
+    #expect(table.costEUR(record) == d("3.75") * d("0.894"))
+    #expect(table.price(for: "gemini-3.1-pro-preview-customtools")?.prices.input == 2)
+    #expect(table.price(for: "gemini-2.5-pro-preview") == nil)
 }
 
 @Test func costFromUsageRecord() {

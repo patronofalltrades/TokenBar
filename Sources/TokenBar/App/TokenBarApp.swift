@@ -7,7 +7,7 @@ final class AppModel {
     /// Nil until the first refresh completes. The cold scan can take some seconds.
     private(set) var snapshot: DisplaySnapshot?
 
-    private let store = UsageStore(providers: [ClaudeCodeProvider(), CodexProvider()])
+    private let store = UsageStore(providers: [ClaudeCodeProvider(), CodexProvider(), GeminiCLIProvider()])
     // The JSON files ship in the app bundle, and tests decode them. A failure is a packaging error.
     private let builder = DisplayBuilder(prices: try! .shipped(), cafe: try! .shipped(), water: try! .shipped())
     private var roasts = RoastSelector(roasts: try! Roast.shipped())
@@ -39,9 +39,13 @@ final class AppModel {
         let limits = ClaudeCodeLimits.defaultFile.deletingLastPathComponent()
         try? FileManager.default.createDirectory(at: limits, withIntermediateDirectories: true)
         let codex = CodexProvider.defaultHome.appending(path: "sessions").path
-        watcher = FileWatcher(paths: ClaudeCodeProvider.defaultRoots() + [URL(fileURLWithPath: codex), limits]) { [weak self] paths in
+        let gemini = GeminiCLIProvider.defaultRoot.path
+        let roots = ClaudeCodeProvider.defaultRoots() + [URL(fileURLWithPath: codex), GeminiCLIProvider.defaultRoot, limits]
+        watcher = FileWatcher(paths: roots) { [weak self] paths in
             // Read only the provider of the changed files.
-            self?.logsChanged(Set(paths.map { $0.hasPrefix(codex) ? ProviderID.codex : .claudeCode }))
+            self?.logsChanged(Set(paths.map {
+                $0.hasPrefix(codex) ? ProviderID.codex : $0.hasPrefix(gemini) ? .geminiCLI : .claudeCode
+            }))
         }
     }
 
