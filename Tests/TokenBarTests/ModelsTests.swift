@@ -3,5 +3,5 @@ import Testing
 
 // Data files and settings store these raw values.
 @Test func providerIDRawValuesAreStable() {
-    #expect(ProviderID.allCases.map(\.rawValue) == ["claudeCode", "codex", "geminiCLI"])
+    #expect(ProviderID.allCases.map(\.rawValue) == ["claudeCode", "codex", "geminiCLI", "grok", "muse"])
 }

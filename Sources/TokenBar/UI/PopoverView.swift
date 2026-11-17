@@ -68,10 +68,10 @@ struct PopoverView: View {
     }
 
     /// "Not installed" rows show only when no provider is installed.
-    /// Gemini CLI shows only when it is installed: most users do not have it.
+    /// Gemini CLI, Grok Build and Muse Code show only when they are installed: most users do not have them.
     private var visibleRows: [DisplaySnapshot.ProviderRow] {
         let installed = snapshot.rows.filter(\.installed)
-        return installed.isEmpty ? snapshot.rows.filter { $0.provider != .geminiCLI } : installed
+        return installed.isEmpty ? snapshot.rows.filter { [.claudeCode, .codex].contains($0.provider) } : installed
     }
 
     /// DRD 3.5: when one provider hits a limit, name a provider that still has capacity.

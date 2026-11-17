@@ -152,6 +152,8 @@ struct DisplayBuilder {
         case .claudeCode: "Claude Code"
         case .codex: "Codex"
         case .geminiCLI: "Gemini CLI"
+        case .grok: "Grok Build"
+        case .muse: "Muse Code"
         }
     }
 

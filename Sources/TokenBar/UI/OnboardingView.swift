@@ -12,15 +12,21 @@ import SwiftUI
         var claudeCode: Bool
         var codex: Bool
         var geminiCLI = false
+        var grok = false
+        var muse = false
 
         /// The same folders that the providers read.
         static func scan(claudeRoots: [URL] = ClaudeCodeProvider.defaultRoots(),
                          codexHome: URL = CodexProvider.defaultHome,
-                         geminiRoot: URL = GeminiCLIProvider.defaultRoot) -> Detection {
+                         geminiRoot: URL = GeminiCLIProvider.defaultRoot,
+                         grokHome: URL = GrokProvider.defaultHome,
+                         museRoot: URL = MuseProvider.defaultRoot) -> Detection {
             let fm = FileManager.default
             return Detection(claudeCode: claudeRoots.contains { fm.fileExists(atPath: $0.path) },
                              codex: fm.fileExists(atPath: codexHome.appendingPathComponent("sessions").path),
-                             geminiCLI: fm.fileExists(atPath: geminiRoot.path))
+                             geminiCLI: fm.fileExists(atPath: geminiRoot.path),
+                             grok: fm.fileExists(atPath: grokHome.path),
+                             muse: fm.fileExists(atPath: museRoot.path))
         }
     }
 
@@ -158,8 +164,10 @@ struct OnboardingView: View {
                 found("Codex", detection.codex)
                 // Most users do not have Gemini CLI, so it shows only when found, as in the popover.
                 if detection.geminiCLI { found("Gemini CLI", true) }
+                if detection.grok { found("Grok Build", true) }
+                if detection.muse { found("Muse Code", true) }
             }
-            if !detection.claudeCode && !detection.codex && !detection.geminiCLI {
+            if detection == Detection(claudeCode: false, codex: false) {
                 Text("TokenBar found no Claude Code, Codex or Gemini CLI logs on this Mac. If you use one of them, run it one time. TokenBar checks again every minute.")
                     .fixedSize(horizontal: false, vertical: true)
             }

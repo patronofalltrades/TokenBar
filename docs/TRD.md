@@ -30,7 +30,9 @@ Technical goals:
  ~/.claude/projects/**/*.jsonl ─┐                                                       │
  claude-limits.json ────────────┼─► ClaudeCodeProvider ─┐  UsageProvider                │
  ~/.codex/sessions/**/*.jsonl ──┼─► CodexProvider ──────┤  .fetch() async               │
- ~/.gemini/tmp/*/chats/** ──────┴─► GeminiCLIProvider ──┘                               │
+ ~/.gemini/tmp/*/chats/** ──────┼─► GeminiCLIProvider ──┤                               │
+ ~/.grok/logs/unified.jsonl ────┼─► GrokProvider ───────┤                               │
+ ~/.local/share/muse/sessions ──┴─► MuseProvider ───────┘                               │
                                               │                                         │
                                               ▼                                         │
                          UsageStore (@MainActor, @Observable, refresh loop)             │
@@ -52,7 +54,7 @@ Rules:
 2. `UsageStore` owns the refresh loop and the provider list. Views read only from `UsageStore`.
 3. Humor (café index and roasts) is data. Code selects and fills the strings. Code does not contain jokes.
 
-**Why a protocol.** `ponytail` forbids an interface with one implementation. v0.2 has three local providers: Claude Code, Codex and Gemini CLI. Thus `UsageProvider` has three implementations. The protocol is justified. The Later API providers add more.
+**Why a protocol.** `ponytail` forbids an interface with one implementation. TokenBar has five local providers: Claude Code, Codex, Gemini CLI, Grok Build and Muse Code. Thus `UsageProvider` has five implementations. The protocol is justified. The Later API providers add more.
 
 ## 3. Repository layout
 
@@ -74,6 +76,8 @@ Sources/TokenBar/
   Providers/ClaudeCodeLimits.swift    (v0.2) reads the status line limit file
   Providers/CodexProvider.swift       (v0.2)
   Providers/GeminiCLIProvider.swift   (D50)
+  Providers/GrokProvider.swift        (D54)
+  Providers/MuseProvider.swift        (D54)
   Providers/AnthropicAdminProvider.swift   (Later)
   Providers/OpenAIAdminProvider.swift      (Later)
   Humor/CafeIndex.swift
@@ -109,7 +113,7 @@ Skipped: a separate library target. Add `TokenBarCore` when the MCP server (Sect
 Signatures only. Agents can add fields that an issue needs. Agents must not rename these types.
 
 ```swift
-enum ProviderID: String, Codable, Sendable, CaseIterable { case claudeCode, codex, geminiCLI }   // Later: anthropicAPI, openAIAPI
+enum ProviderID: String, Codable, Sendable, CaseIterable { case claudeCode, codex, geminiCLI, grok, muse }   // Later: anthropicAPI, openAIAPI
 
 struct TokenCounts: Equatable, Sendable {           // all values are token counts
     var input = 0          // uncached input
@@ -261,7 +265,7 @@ Source: <https://developers.openai.com/cookbook/examples/completions_usage_api>.
 
 ### 5.5 xAI (later)
 
-Known: CodexBar reads a prepaid balance and daily spend from `https://management-api.x.ai/v1/billing/teams/{team_id}/prepaid/balance` and `POST …/billing/teams/{team_id}/usage` with a Management API key and team ID (CodexBar `docs/xai.md`). This is **UNVERIFIED** against xAI docs. It covers the developer platform only, not Grok consumer plans. No local Grok log source is known. Do not build an xAI provider until the maintainer approves the new host (AGENTS.md Section 9).
+Known: CodexBar reads a prepaid balance and daily spend from `https://management-api.x.ai/v1/billing/teams/{team_id}/prepaid/balance` and `POST …/billing/teams/{team_id}/usage` with a Management API key and team ID (CodexBar `docs/xai.md`). This is **UNVERIFIED** against xAI docs. It covers the developer platform only, not Grok consumer plans. Do not build an xAI API provider until the maintainer approves the new host (AGENTS.md Section 9). The Grok Build CLI has a local log. Section 5.7 specifies it.
 
 ### 5.6 Gemini CLI (local logs)
 
@@ -282,6 +286,63 @@ Mapping: `input = max(0, tokens.input + tokens.tool − tokens.cached)`. `cacheR
 **Limits.** The files have no limit data. The provider returns no limit windows.
 
 **Verification status.** From the gemini-cli source only. No Gemini CLI data is on this Mac. Tests use synthetic fixtures.
+
+### 5.7 Grok Build (local log)
+
+**Location.** `~/.grok/logs/unified.jsonl`. `GROK_HOME` replaces `~/.grok`. The model of a session is in `~/.grok/sessions/<URL-encoded folder>/<session ID>/summary.json`. Do not read `chat_history.jsonl`, `prompt_history.jsonl` or `updates.jsonl`: they contain content.
+
+**Format.** JSON Lines. One line for each log event. Only the event `shell.turn.inference_done` has usage. It is one model call.
+
+| Field | Use |
+|---|---|
+| `msg == "shell.turn.inference_done"` | Only these lines give a record. |
+| `ts` | Timestamp. ISO 8601 text. A number is seconds or milliseconds since 1970. |
+| `sid` | Session ID. It is the name of the session folder. |
+| `ctx.prompt_tokens` | Input tokens. It includes the cached tokens. |
+| `ctx.cached_prompt_tokens` | Cache read tokens. |
+| `ctx.completion_tokens` | Output tokens. It includes `ctx.reasoning_tokens`. |
+| `summary.json`: `current_model_id`, `model_id`, also below `info` | Model name. The log line has no model. |
+
+**Mapping.** `input = prompt_tokens − cached_prompt_tokens`. `cacheRead = cached_prompt_tokens`. `output = completion_tokens`. No cache write count exists.
+
+**Rules.**
+
+1. The log can repeat a line. Count equal lines one time.
+2. When the log starts again (rotation), keep the records that TokenBar read before.
+3. The session ID becomes a path component. Accept only letters, digits, `-` and `_`.
+4. A session without a model in `summary.json` has the model `unknown`. It has no price (Section 6, rule 3).
+5. No limit data exists in the local files. The row has no limit bars.
+
+**Verification status. UNVERIFIED on a real install.** Sources: relayhistory `ingest/grok.rs` (a test literal of the log line), agentpulse issue 31 (observed on grok 1.0.77), tokscale `sessions/grok.rs` (the two "includes" rules). No source shows a line from a real install. The model IDs that Grok Build writes are not confirmed: the fixtures use `grok-4.5-build` and `grok-code-fast`, which are not on the xAI price page. Those models have no price until a person confirms them. The history is only as long as the log. Tests use synthetic fixtures.
+
+### 5.8 Muse Code (local session files)
+
+**Location.** `~/.local/share/muse/sessions/YYYY/MM/DD/<session ID>/session.jsonl`. A subagent has its own file: `<session ID>/subagent/<child ID>/session.jsonl`, to any depth. Skip a folder with a leading dot: it is a derived view. Skipped: `XDG_DATA_HOME`.
+
+**Format.** JSON Lines. One line for each record. The file also contains prompts, replies and tool output. Decode only the fields in this table.
+
+| Field | Use |
+|---|---|
+| `payload_type == "runtime.session"`, `payload.kind == "run"`, `payload.event.kind == "model_completed"` | Only these records give usage. One record is one model call. |
+| `recorded_at` | Timestamp. Microseconds since 1970. |
+| `payload.event.model` | Model name. Remove the prefix `meta/`. |
+| `payload.event.usage.input_tokens` | Input tokens. It includes the cache read tokens. |
+| `payload.event.usage.cache_read_tokens`, `cached_tokens` | Cache read tokens. The two fields have the same value. Use the larger one. |
+| `payload.event.usage.cache_write_tokens` | Cache write tokens. |
+| `payload.event.usage.output_tokens` | Output tokens. It includes `reasoning_tokens`. |
+
+**Mapping.** `input = input_tokens − cache read`. `cacheRead = cache read`. `cacheWrite5m = cache_write_tokens`. `output = output_tokens`.
+
+**Rules.**
+
+1. Do not count `goal_usage_attribution` events. They repeat the usage of `model_completed`.
+2. Do not count `workflow_child_lifecycle` events in the parent file. The subagent file has the same usage.
+3. Count each subagent file. Its usage is not in the parent file.
+4. A replayed line counts one time. The key is the timestamp, the model and the counts.
+5. No limit data exists in the local files. The row has no limit bars.
+6. Meta publishes no price for cache writes. A cache write costs 0 (Section 6, rule 5).
+
+**Verification status.** From three open-source parsers and their fixtures: tokscale `sessions/muse.rs`, relayhistory `ingest/muse/parse.rs` and Irrlicht `agents/muse/parser.go`. They agree on all fields in the table. No Muse Code data is on this Mac. Tests use synthetic fixtures.
 
 ## 6. Cost engine
 
@@ -338,7 +399,7 @@ Energy rules:
 1. If inode or device changed, or size < offset: reset the offset to 0. Drop that file's records.
 2. If size == offset: skip the file.
 3. Else read from the offset to the end with `FileHandle`. Split on `\n`. Keep the bytes after the last `\n` as the partial line.
-4. Before decoding, test the raw line for a marker (`"type":"assistant"` for Claude; `token_usage_record`, `token_count` or `turn_context` for Codex; `"tokens":{` for Gemini CLI). Skip all other lines without decoding. This skips most bytes.
+4. Before decoding, test the raw line for a marker (`"type":"assistant"` for Claude; `token_usage_record`, `token_count` or `turn_context` for Codex; `"tokens":{` for Gemini CLI; `shell.turn.inference_done` for Grok Build; `"model_completed"` for Muse Code). Skip all other lines without decoding. This skips most bytes.
 
 **Startup window.** On launch, scan only files whose modification date is in the last 35 days. This covers "this month" and the weekly window. Keep records in memory only. Skipped: an on-disk cache. Add it if a cold scan takes more than 3 seconds on a 1.5 GB log set. Measure this in TRD-T05 and TRD-T12.
 
@@ -388,7 +449,7 @@ Skipped: loading user-supplied data files from disk. Add it if contributors ask 
 | Keys in Keychain (Later) | v1 has no API keys. When they come back: `SecItemAdd`/`SecItemCopyMatching`, `kSecClassGenericPassword`, service = bundle ID, account = `ProviderID.rawValue`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`. | Unit test with a test-only service name. |
 | No keys in files (Later) | Never write a key to `UserDefaults`, a file or a log. Do not print a key in an error. | Code review. |
 | Host allowlist | `HTTP.swift` has one function. In v1, it rejects any host that is not `api.github.com`. | Unit test. |
-| Read-only on other apps' files | Open `~/.claude`, `~/.codex` and `~/.gemini/tmp` files read-only. Never write there. | Code review. |
+| Read-only on other apps' files | Open `~/.claude`, `~/.codex`, `~/.gemini/tmp`, `~/.grok` and `~/.local/share/muse` files read-only. Never write there. | Code review. |
 | Logs | Use `os.Logger` with `privacy: .private` for paths and model names. Log counts, not values. | Code review. |
 
 Network hosts:

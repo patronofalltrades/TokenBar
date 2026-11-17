@@ -20,16 +20,18 @@ struct OnboardingTests {
         let claude = tmp.appendingPathComponent("claude/projects")
         let codex = tmp.appendingPathComponent("codex")
         let gemini = tmp.appendingPathComponent("gemini/tmp")
-        #expect(Onboarding.Detection.scan(claudeRoots: [claude], codexHome: codex, geminiRoot: gemini) == .init(claudeCode: false, codex: false))
+        let grok = tmp.appendingPathComponent("grok")
+        let muse = tmp.appendingPathComponent("muse/sessions")
+        #expect(Onboarding.Detection.scan(claudeRoots: [claude], codexHome: codex, geminiRoot: gemini, grokHome: grok, museRoot: muse) == .init(claudeCode: false, codex: false))
         try FileManager.default.createDirectory(at: claude, withIntermediateDirectories: true)
         // Codex without `sessions` has no logs.
         try FileManager.default.createDirectory(at: codex, withIntermediateDirectories: true)
-        #expect(Onboarding.Detection.scan(claudeRoots: [tmp.appendingPathComponent("none"), claude], codexHome: codex, geminiRoot: gemini)
+        #expect(Onboarding.Detection.scan(claudeRoots: [tmp.appendingPathComponent("none"), claude], codexHome: codex, geminiRoot: gemini, grokHome: grok, museRoot: muse)
             == .init(claudeCode: true, codex: false))
         try FileManager.default.createDirectory(at: codex.appendingPathComponent("sessions"), withIntermediateDirectories: true)
-        #expect(Onboarding.Detection.scan(claudeRoots: [claude], codexHome: codex, geminiRoot: gemini) == .init(claudeCode: true, codex: true))
+        #expect(Onboarding.Detection.scan(claudeRoots: [claude], codexHome: codex, geminiRoot: gemini, grokHome: grok, museRoot: muse) == .init(claudeCode: true, codex: true))
         try FileManager.default.createDirectory(at: gemini, withIntermediateDirectories: true)
-        #expect(Onboarding.Detection.scan(claudeRoots: [claude], codexHome: codex, geminiRoot: gemini)
+        #expect(Onboarding.Detection.scan(claudeRoots: [claude], codexHome: codex, geminiRoot: gemini, grokHome: grok, museRoot: muse)
             == .init(claudeCode: true, codex: true, geminiCLI: true))
     }
 
