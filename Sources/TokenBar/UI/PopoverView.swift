@@ -188,6 +188,10 @@ private struct ProviderRowView: View {
                 } else {
                     ForEach(row.limits, id: \.name) { limit in limitView(limit) }
                     if row.limits.isEmpty { Text("No limit data").font(.caption).foregroundStyle(Theme.secondary) }
+                    if let models = row.modelLine {
+                        Text("This week: \(models)").font(.caption).foregroundStyle(Theme.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
             .accessibilityElement(children: .ignore)
@@ -255,6 +259,7 @@ private struct ProviderRowView: View {
             return text + ". As of \(PopoverFormat.time(limit.observedAt))."
         }
         if parts.isEmpty { parts.append("\(name), no limit data.") }
+        if let models = row.modelLine { parts.append("Models this week: \(models).") }
         return parts.joined(separator: " ")
     }
 }
@@ -488,7 +493,7 @@ enum PopoverSamples {
                   .init(name: "5-hour", usedPercent: fiveHour, resetsAt: later(108), observedAt: ago(3)),
                   .init(name: "weekly", usedPercent: weekly, resetsAt: later(60 * 67), observedAt: ago(3)),
               ] : [],
-              hasUnpricedModels: false)
+              hasUnpricedModels: false, modelLine: error == nil ? "claude-opus-4-7 82% · claude-haiku-4-5 18%" : nil)
     }
 
     private static let codex = DisplaySnapshot.ProviderRow(

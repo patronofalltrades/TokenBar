@@ -192,6 +192,20 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
     #expect(s.indexLine == "0 cafés con leche today" && s.indexDetail == "2.0 this week" && s.indexSymbol == "cafe")
 }
 
+/// DRD 3.2: the most used models of the week, by output tokens. A date suffix does not make a second model.
+@Test func modelLineShowsTheShareOfEachModel() {
+    let old = noon.addingTimeInterval(-8 * 24 * 3600)
+    let s = Fixture().build([snapshot([
+        record(eur: 1, output: 700), record(eur: 1, model: "x-20261001", output: 200), record(eur: 1, model: "x", output: 100),
+        record(eur: 1, at: old, model: "old", output: 9_000),
+    ])])
+    #expect(s.rows.first { $0.provider == .claudeCode }?.modelLine == "m 70% · x 30%")
+    #expect(Fixture().build([snapshot([record(eur: 1)])]).rows.first?.modelLine == nil)
+    // Only the first 3 models show. Equal counts are in name order.
+    #expect(DisplayBuilder.modelLine(["d": 1, "c": 1, "b": 1, "a": 5]) == "a 63% · b 13% · c 13%")
+    #expect(!s.rows.contains { $0.modelLine?.contains("€") == true })
+}
+
 /// DRD 3.1: one point for each of the last 30 days, oldest first, in the unit of the index. No EUR (D42).
 @Test(arguments: IndexChoice.allCases)
 func trendHasThirtyDaysInTheIndexUnit(index: IndexChoice) {

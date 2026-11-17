@@ -20,6 +20,7 @@ struct DisplaySnapshot: Equatable, Sendable {
         let errorText: String?      // set only when TokenBar cannot read an existing source
         let limits: [Limit]
         let hasUnpricedModels: Bool // true: the cost of part of the usage is not counted
+        var modelLine: String? = nil // the most used models of the last 7 days: "claude-opus-4-7 70% · claude-haiku-4-5 30%"
     }
 
     /// One day of the sparkline in the index headline (DRD 3.1). No EUR (D42).

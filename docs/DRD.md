@@ -157,6 +157,7 @@ Each enabled provider has one row.
 | Limit bar | One bar for each limit of the provider. Width 100% of the row. Height 6 pt. |
 | Reset | `resets in 1 h 48 min`. Use relative time below 24 hours. Use weekday and time above 24 hours: `resets Mon 09:00`. |
 | Age | `as of 14:02`. The time when the limit source last reported the value. Show it under each limit. |
+| Models | `This week: claude-opus-4-7 82% · claude-haiku-4-5 18%`. The 3 models with the most output tokens in the last 7 days, each with its share (D56). `.caption`, secondary. No line without output tokens. No EUR (D42). |
 
 Below the provider rows, a radar chart shows the most used providers (D53).
 
@@ -790,6 +791,7 @@ Use the system font (SF Pro) only. Do not bundle a font.
 | Change pill | "Up 12 percent against the 7 days before." |
 | Provider radar | "Output tokens in the last 7 days: Claude Code 60 percent, Codex 30 percent, Gemini CLI 10 percent." One element. |
 | Limit age | "As of 14:02." Add it after the limit bar label. |
+| Models | "Models this week: claude-opus-4-7 82%, claude-haiku-4-5 18%." Add it at the end of the provider row. |
 | Roast | "Roast:" then the text. |
 | Footer buttons | "Settings", "Refresh", "Quit TokenBar". |
 
