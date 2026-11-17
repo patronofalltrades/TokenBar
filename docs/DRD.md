@@ -662,6 +662,7 @@ The share card lets the user post the joke in a class chat. It is the main word-
 6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat." The confirmation shows under the footer for 3 seconds.
 7. Before the user selects an index, there is no card. The popover has no **Share** button (D42).
 8. The image is 360 pt wide, at scale 2, with the light appearance. It looks like a receipt: red text on white paper, a dashed rule after each line and a monospaced footer (D45). The clipboard text uses the emoji of the index: the café unit emoji (Section 7.6), `🎓` or `💧`.
+9. After the calculation line, the card has the line "Last 7 days" with a sparkline of the last 7 days (D58). The clipboard text shows the same line with block characters: `📈 Last 7 days ▃▅▁▇▄█▆`. The largest value is the full block. A week without usage has no line.
 
 ```
 ┌──────────────────────────────┐
