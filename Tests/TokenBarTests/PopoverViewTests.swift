@@ -55,6 +55,13 @@ func sampleRendersAt320Points(name: String) throws {
     #expect(PopoverFormat.updated(now.addingTimeInterval(-3 * 3600), now: now) == "Updated 3 h ago")
 }
 
+@Test func trendText() {
+    let day = PopoverFormat.day(now, locale: gb, timeZone: utc)  // "Sun 11 Oct". The separators depend on the OS version.
+    #expect(day.contains("Sun") && day.contains("11") && day.contains("Oct"))
+    #expect(PopoverFormat.delta(12) == "▲ 12%" && PopoverFormat.delta(-8) == "▼ 8%" && PopoverFormat.delta(0) == "0%")
+    #expect(PopoverFormat.delta(-8, spoken: true) == "Down 8 percent against the 7 days before")
+}
+
 @Test func barColorThresholds() {
     #expect(PopoverFormat.barColor(79.9) == Theme.bar)
     #expect(PopoverFormat.barColor(80) == Theme.high)
@@ -95,7 +102,7 @@ func barColorsDiffer(appearance: NSAppearance.Name) throws {
 /// The snapshot text that the popover shows. The other popover text is literals in the UI files.
 private func popoverText(_ s: DisplaySnapshot) -> String {
     let rows: [String?] = s.rows.flatMap { row -> [String?] in [row.errorText] + row.limits.map(\.name) }
-    return ([s.indexLine, s.indexDetail, s.roast, s.menuBarText] + rows).compactMap { $0 }.joined(separator: "\n")
+    return ([s.indexLine, s.indexDetail, s.roast, s.menuBarText] + rows + s.trend.map(\.text)).compactMap { $0 }.joined(separator: "\n")
 }
 
 /// D42, D47: no EUR in the popover and the share card, except in the calculation line, for each index and state.
