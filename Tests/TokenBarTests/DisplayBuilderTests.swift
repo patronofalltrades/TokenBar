@@ -221,6 +221,22 @@ func trendHasSevenDaysInTheIndexUnit(index: IndexChoice) {
     #expect(s.trend.count == 7 && s.trendDelta == nil)
 }
 
+/// DRD 3.2: the share of each installed provider in the output tokens of the last 7 days.
+@Test func sharesAreOutputTokensOfTheWeek() {
+    let old = noon.addingTimeInterval(-8 * 24 * 3600)
+    let s = Fixture().build([
+        snapshot([record(eur: 1, output: 600), record(eur: 1, at: old, output: 9_000)]),
+        snapshot([record(.codex, eur: 1, output: 300)], of: .codex),
+        snapshot([record(.geminiCLI, eur: 1, output: 100)], of: .geminiCLI),
+    ], errors: [:])
+    #expect(s.shares == [.init(provider: .claudeCode, percent: 60), .init(provider: .codex, percent: 30),
+                         .init(provider: .geminiCLI, percent: 10)])
+    #expect(PopoverFormat.shares(s.shares) == "Output tokens in the last 7 days: Claude Code 60 percent, Codex 30 percent, Gemini CLI 10 percent.")
+    // A provider that is not installed has no axis. A week without output gives 0 for each axis.
+    let one = Fixture().build([snapshot([record(eur: 1)])])
+    #expect(one.shares == [.init(provider: .claudeCode, percent: 0)])
+}
+
 /// Each index fills only its own placeholders, so a roast never shows a second index (D41).
 @Test(arguments: IndexChoice.allCases)
 func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
