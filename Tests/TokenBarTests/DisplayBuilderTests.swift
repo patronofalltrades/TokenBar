@@ -207,7 +207,9 @@ func trendHasThirtyDaysInTheIndexUnit(index: IndexChoice) {
     #expect(!s.trend.contains { $0.text.contains("€") })
     let texts = s.trend.suffix(3).map(\.text)
     // The record of 8 days ago is in the 30 days, and not in the last 7.
-    #expect(s.trend[21].value > 0 && s.trend.suffix(7).filter { $0.value > 0 }.count == (index == .tuition ? 1 : 2))
+    // The Tuition Meter counts from the first launch, which is today in this test.
+    #expect((s.trend[21].value > 0) == (index != .tuition))
+    #expect(s.trend.suffix(7).filter { $0.value > 0 }.count == (index == .tuition ? 1 : 2))
     switch index {
     case .cafe: #expect(texts == ["2.0 cafés con leche", "0 cafés con leche", "1.0 café con leche"])
     // The first launch is today, so the total is the cost of today. Earlier days are at zero.
