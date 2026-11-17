@@ -152,6 +152,7 @@ Each enabled provider has one row.
 
 | Element | Rule |
 |---|---|
+| Logo | The provider logo, 16 pt, at the left of the name, in its brand colors (D55). |
 | Name | Provider name, for example "Claude Code". `.headline`. |
 | Limit label | Above the bar. The limit name at the left: `5-hour limit`, `.body`, medium weight. The percent at the right: `62%`, `.caption`. Always show the number as text (D52). |
 | Limit bar | One bar for each limit of the provider. Width 100% of the row. Height 6 pt. |
@@ -736,7 +737,7 @@ Rules:
 4. The bar fill below 80%, the bar fill from 80% and the track have an sRGB distance of 0.3 or more in each mode. A test checks the distance.
 5. Use `ThemeButtonStyle` for the main onboarding buttons. A white system tint hides the button text.
 
-Do not use a brand color for a provider. Do not use green for "good". Low usage is normal, not a success.
+A provider logo keeps its brand colors (D55). This is the only brand color in the UI. Do not use a brand color for a bar, a text or a chart. Do not use green for "good". Low usage is normal, not a success.
 
 ### 8.2 Typography
 
@@ -764,6 +765,10 @@ Use the system font (SF Pro) only. Do not bundle a font.
 6. Use `.hierarchical` rendering in the popover for SF Symbols. Use template rendering in the menu bar.
 7. Use the same icon for the same meaning everywhere. Section 2.4 and Section 3.9 list the symbols.
 8. The app icon is a separate design task. It is not in this document.
+9. Each provider has a logo: `provider-<ProviderID>.svg` in `Sources/TokenBar/Resources/Icons` (D55). The files come from the `@lobehub/icons-static-svg` package, version 1.103.0 (MIT). Each file is on a 24-unit grid.
+10. The Claude, Codex, Gemini and Muse logos keep their brand colors. The Grok logo is black, so `Icon` makes it a template image and it takes the ink color.
+11. Show a provider logo only in the provider row of the popover. Do not show it in the menu bar or on the share card.
+12. The logos are trademarks of their owners. The README says that TokenBar is not affiliated with them.
 
 ### 8.4 Motion
 

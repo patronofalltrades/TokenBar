@@ -12,6 +12,22 @@ enum Icon {
         return (index, image)
     })
 
+    /// The provider logos (D55), loaded one time. A missing file gives no entry. A test checks all providers.
+    /// The logos keep their brand colors. The Grok logo is black, so it is a template image and takes the ink color.
+    nonisolated static let logos: [ProviderID: NSImage] = Dictionary(uniqueKeysWithValues: ProviderID.allCases.compactMap { id in
+        guard let url = Bundle.tokenBar.url(forResource: "provider-\(id.rawValue)", withExtension: "svg"),
+              let image = NSImage(contentsOf: url) else { return nil }
+        image.isTemplate = id == .grok
+        return (id, image)
+    })
+
+    /// The logo of a provider as a square with a side of `side` points. Nil if the file is missing.
+    nonisolated static func logo(_ id: ProviderID, side: CGFloat) -> NSImage? {
+        guard let image = logos[id]?.copy() as? NSImage else { return nil }  // a copy keeps the cached size
+        image.size = NSSize(width: side, height: side)
+        return image
+    }
+
     /// A template image for a font of `pointSize`. A custom icon is 15/13 of the font size high:
     /// at 13 pt (menu bar) its ink height is 13 to 14 pt, the same as `cup.and.saucer.fill` and `drop.fill`.
     /// The width keeps the aspect ratio of the SVG. `water.svg` has a narrow view box, so "999 L" fits in 52 pt.

@@ -177,6 +177,7 @@ private struct ProviderRowView: View {
         VStack(alignment: .leading, spacing: 6) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
+                    if let logo = Icon.logo(row.provider, side: 16) { Image(nsImage: logo) }
                     Text(DisplayBuilder.name(row.provider)).font(.headline)
                     Spacer()
                     badge
