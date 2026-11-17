@@ -136,6 +136,13 @@ Rules:
 - Order from top to bottom: header, index headline, provider rows, roast, footer (D42).
 - The index headline shows the value of the selected index in a large font (`.title2`, semibold), with the custom index icon (Section 8.3). The snapshot keeps the icon name in `indexSymbol`.
 - Below the headline, one small line (`.callout`, secondary): the week value in the same café unit, the water unit equivalent and the week, or the Tuition Meter burn year (Section 2.5).
+- Below these lines, the headline shows a sparkline of the last 7 days or the last 30 days in the unit of the selected index (D51, D57). Height 32 pt. No axes. A dot marks today.
+- The Café Index and the Water Footprint show the value of each day. The Tuition Meter shows the running total.
+- A text button in the caption changes the view: "30 days" in the 7-day view, "7 days" in the 30-day view. The app keeps the selection (`SettingsKey.trendDays`). The default is 7 days.
+- The 30-day view has no change pill, because the providers keep only 35 days.
+- A caption above the sparkline says "Last 7 days" or "Last 30 days". The pointer on a day changes the caption to the day and its value, for example "Tue 6 Oct: 2.1 cafés con leche".
+- A pill at the right of the caption shows the change in percent: the usage of the last 7 days against the 7 days before. Example: `▲ 12%`. The usage is the output tokens for the Water Footprint and the cost for the other indexes. Without usage in the 7 days before, the pill does not show.
+- A week without usage has no sparkline. When the sparkline shows, the provider list scrolls from 260 pt.
 - If some models have no price, a tiny footnote under the headline says "Some models not counted". The Water Footprint counts tokens, not prices, so it has no footnote.
 - The popover shows no EUR, no "API-equivalent" text and no "price unknown" line (D42). Subscription users do not pay API prices.
 
@@ -151,6 +158,16 @@ Each enabled provider has one row.
 | Reset | `resets in 1 h 48 min`. Use relative time below 24 hours. Use weekday and time above 24 hours: `resets Mon 09:00`. |
 | Age | `as of 14:02`. The time when the limit source last reported the value. Show it under each limit. |
 
+Below the provider rows, a radar chart shows the most used providers (D53).
+
+- Each installed provider is one axis. The first axis points up.
+- The value of an axis is the share of the provider in the output tokens of the last 7 days.
+- The most used provider reaches the outer ring. Each axis has a label with the provider name and the percent.
+- The radar shows only with 3 or more installed providers. A radar with fewer axes has no area.
+- A caption above the radar says "Most used, last 7 days". The height of the chart is 130 pt.
+- The radar is part of the provider list, so it scrolls with the list.
+- The radar uses the ink and the bar tint. It uses no brand color.
+
 A provider row has no cost (D42). A provider without a limit source shows "No limit data". It has no bar. Example: Claude Code without the status line setup (Section 5).
 
 ### 3.3 Normal state
@@ -161,6 +178,8 @@ A provider row has no cost (D42). A provider without a limit source shows "No li
 │ ☕ 3.4 cafés con leche today              │  ← large
 │ 12 this week                             │
 │ Some models not counted                  │  ← tiny, only if needed
+│ Last 7 days                       ▲ 12%  │
+│ ▁▃▁▅▃▇▅                                  │  ← sparkline
 ├──────────────────────────────────────────┤
 │ Claude Code                              │
 │ 5-hour limit                         62% │
@@ -648,6 +667,7 @@ The share card lets the user post the joke in a class chat. It is the main word-
 6. Show a one-line confirmation in the popover: "Copied. Paste it in your Section chat." The confirmation shows under the footer for 3 seconds.
 7. Before the user selects an index, there is no card. The popover has no **Share** button (D42).
 8. The image is 360 pt wide, at scale 2, with the light appearance. It looks like a receipt: red text on white paper, a dashed rule after each line and a monospaced footer (D45). The clipboard text uses the emoji of the index: the café unit emoji (Section 7.6), `🎓` or `💧`.
+9. After the calculation line, the card has the line "Last 7 days" with a sparkline of the last 7 days (D58). The clipboard text shows the same line with block characters: `📈 Last 7 days ▃▅▁▇▄█▆`. The largest value is the full block. A week without usage has no line.
 
 ```
 ┌──────────────────────────────┐
@@ -750,7 +770,8 @@ Use the system font (SF Pro) only. Do not bundle a font.
 2. Rotate the refresh symbol while a read runs.
 3. Cross-fade the roast when it changes, 0.2 s.
 4. Do not animate the menu bar item.
-5. When **Reduce Motion** is on, remove all animation. Change values immediately.
+5. Do not animate the sparkline.
+6. When **Reduce Motion** is on, remove all animation. Change values immediately.
 
 ---
 
@@ -765,6 +786,9 @@ Use the system font (SF Pro) only. Do not bundle a font.
 | Menu bar item, No data | "TokenBar. No usage data. Click to set up." |
 | Limit bar | "Claude Code 5-hour limit, 62 percent used, resets in 1 hour 48 minutes." Use `.accessibilityValue`. |
 | Index headline | "3.4 cafés con leche today." No EUR (D42). |
+| Sparkline | "Last 7 days." Each day: "Tue 6 Oct, 2.1 cafés con leche." No EUR (D42). |
+| Change pill | "Up 12 percent against the 7 days before." |
+| Provider radar | "Output tokens in the last 7 days: Claude Code 60 percent, Codex 30 percent, Gemini CLI 10 percent." One element. |
 | Limit age | "As of 14:02." Add it after the limit bar label. |
 | Roast | "Roast:" then the text. |
 | Footer buttons | "Settings", "Refresh", "Quit TokenBar". |
