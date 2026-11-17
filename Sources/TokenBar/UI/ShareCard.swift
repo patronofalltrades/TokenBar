@@ -1,4 +1,5 @@
 import AppKit
+import Charts
 import SwiftUI
 
 /// The share card (DRD 7.7, TRD-T27). The card uses only the snapshot lines that the popover
@@ -10,6 +11,7 @@ enum ShareCard {
         var symbol: String? = nil   // icon name for the image (`Icon`)
         var emoji: String? = nil    // prefix for the clipboard text
         var isRoast = false
+        var trend: [Double] = []    // the values of the sparkline below the line. Empty: no sparkline.
     }
 
     /// "TokenBar · github.com/patronofalltrades/TokenBar".
@@ -23,6 +25,11 @@ enum ShareCard {
         if let line = s.indexLine { lines.append(Line(text: line, symbol: s.indexSymbol, emoji: s.indexEmoji)) }
         if let detail = s.indexDetail { lines.append(Line(text: detail, symbol: "calendar")) }
         if let math = s.indexMath { lines.append(Line(text: math, symbol: "function")) }
+        // The last 7 days (DRD 7.7 rule 9). A week without usage has no line.
+        let trend = s.trend.suffix(7).map(\.value)
+        if trend.contains(where: { $0 > 0 }) {
+            lines.append(Line(text: "Last 7 days", symbol: "chart.line.uptrend.xyaxis", emoji: "📈", trend: trend))
+        }
         if let roast = s.roast { lines.append(Line(text: "“\(roast)”", isRoast: true)) }
         return lines
     }
@@ -31,8 +38,17 @@ enum ShareCard {
     static func text(_ s: DisplaySnapshot) -> String {
         let body = lines(s).map { line in
             (line.isRoast ? "\n" : "") + (line.emoji.map { $0 + " " } ?? "") + line.text
+                + (line.trend.isEmpty ? "" : " " + bars(line.trend))
         }
         return (body + ["", footer]).joined(separator: "\n")
+    }
+
+    /// The sparkline of the clipboard text: one block character for each value, for example "▃▅▁▇▄█▆".
+    /// The largest value is the full block.
+    static func bars(_ values: [Double]) -> String {
+        let blocks = Array("▁▂▃▄▅▆▇█")
+        let top = values.max() ?? 0
+        return String(values.map { blocks[top > 0 ? Int((max(0, $0) / top * 7).rounded()) : 0] })
     }
 
     @MainActor static func image(_ s: DisplaySnapshot) -> CGImage? {
@@ -68,6 +84,18 @@ struct ShareCardView: View {
                     Icon.label(line.text, icon: line.symbol ?? IndexChoice.cafe.rawValue, style: index == 0 ? .title3 : .callout)
                         .font(index == 0 ? .title3.weight(.semibold) : .callout)
                         .monospacedDigit()
+                }
+                if !line.trend.isEmpty {
+                    // ponytail: the popover has a second copy of this chart, with the pointer. Share one view at the third use.
+                    Chart(Array(line.trend.enumerated()), id: \.offset) { day, value in
+                        LineMark(x: .value("Day", day), y: .value("Value", value))
+                            .interpolationMethod(.monotone)
+                            .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                            .foregroundStyle(Theme.cardInk)
+                    }
+                    .chartXAxis(.hidden)
+                    .chartYAxis(.hidden)
+                    .frame(height: 36)
                 }
                 Theme.dashed
             }

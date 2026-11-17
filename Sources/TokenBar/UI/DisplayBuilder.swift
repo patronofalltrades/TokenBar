@@ -25,6 +25,8 @@ struct DisplayBuilder {
         var rows: [DisplaySnapshot.ProviderRow] = []
         var records: [UsageRecord] = []
         var dailyCosts: [Date: Decimal] = [:]
+        var dailyOutput: [Date: Int] = [:]
+        var weekOutput: [ProviderID: Int] = [:]
         var costToday: Decimal = 0, costWeek: Decimal = 0, outputToday = 0, outputWeek = 0
         costs.prune(before: today.addingTimeInterval(-40 * 24 * 3600), day: today)  // providers keep 35 days
         // The day starts of the last 40 days, newest first. A `Calendar` call for each record was most of the CPU (IES-225).
@@ -35,19 +37,24 @@ struct DisplayBuilder {
             let installed = error.map { !Self.isNotInstalled($0) } ?? (snapshots[id] != nil)
             let snapshot = installed ? snapshots[id] : nil
             var unpriced = false
+            var modelOutput: [String: Int] = [:]
             for record in snapshot?.records ?? [] where record.timestamp <= now {
                 records.append(record)
                 let cost = costs.costEUR(record, prices: prices)
                 if record.timestamp >= weekStart {
                     outputWeek += record.tokens.output
+                    modelOutput[record.model, default: 0] += record.tokens.output
+                    weekOutput[id, default: 0] += record.tokens.output
                     if cost == nil { unpriced = true }
                 }
                 if record.timestamp >= today {
                     outputToday += record.tokens.output
                     costToday += cost ?? 0
                 }
+                let day = dayStart(record.timestamp)
+                dailyOutput[day, default: 0] += record.tokens.output
                 guard let cost else { continue }
-                dailyCosts[dayStart(record.timestamp), default: 0] += cost
+                dailyCosts[day, default: 0] += cost
                 if record.timestamp >= weekStart { costWeek += cost }
             }
             let limits = (snapshot?.limits ?? []).map {
@@ -56,7 +63,7 @@ struct DisplayBuilder {
             }
             rows.append(.init(provider: id, installed: installed,
                               errorText: installed && error != nil ? "TokenBar cannot read the \(Self.name(id)) logs. The log format possibly changed." : nil,
-                              limits: limits, hasUnpricedModels: unpriced))
+                              limits: limits, hasUnpricedModels: unpriced, modelLine: Self.modelLine(modelOutput)))
         }
 
         let installedRows = rows.filter(\.installed)
@@ -105,6 +112,43 @@ struct DisplayBuilder {
         case nil: line = nil
         }
 
+        // The sparkline (DRD 3.1): one point for each of the last 30 days, in the unit of the index. No EUR (D42).
+        // The popover shows the last 7 or all 30. The providers keep 35 days.
+        var trend: [DisplaySnapshot.TrendPoint] = []
+        var trendDelta: Int?
+        if let index, hasData {
+            func double(_ value: Decimal) -> Double { NSDecimalNumber(decimal: value).doubleValue }
+            // The change compares usage: output tokens for the Water Footprint, cost for the other indexes.
+            func usage(_ days: some Sequence<Date>) -> Double {
+                days.reduce(0) { $0 + (index == .water ? Double(dailyOutput[$1] ?? 0) : double(dailyCosts[$1] ?? 0)) }
+            }
+            let before = usage(dayStarts.dropFirst(7).prefix(7))
+            if before > 0 { trendDelta = Int(((usage(dayStarts.prefix(7)) - before) / before * 100).rounded()) }
+            let unit = pick?.unit ?? cafe.units[0]
+            var total = spend ?? 0  // the Tuition Meter is a running total: go back one day at a time
+            for day in dayStarts.prefix(30) {
+                switch index {
+                case .cafe:
+                    let value = (dailyCosts[day] ?? 0) / unit.priceEUR
+                    trend.append(.init(day: day, value: double(value), text: CafeIndex.format(value, unit: unit).text))
+                case .tuition:
+                    trend.append(.init(day: day, value: double(total / cafe.tuition.priceEUR * 100),
+                                       text: "\(CafeIndex.tuitionPercent(spendEUR: total, tuition: cafe.tuition)) of tuition"))
+                    total = max(0, total - (dailyCosts[day] ?? 0))
+                case .water:
+                    let ml = water.ml(outputTokens: dailyOutput[day] ?? 0)
+                    trend.append(.init(day: day, value: ml, text: WaterData.amount(ml)))
+                }
+            }
+            trend.reverse()
+        }
+
+        // The provider radar (DRD 3.2). Output tokens, as for the Water Footprint: cache reads would hide the real use.
+        let shares = installedRows.map {
+            DisplaySnapshot.ProviderShare(provider: $0.provider,
+                                          percent: outputWeek > 0 ? Double(weekOutput[$0.provider] ?? 0) / Double(outputWeek) * 100 : 0)
+        }
+
         // Menu bar (DRD 2.4 and 2.5). Each choice shows the limit value in Warning and Limit hit.
         let reset = top?.limit.resetsAt.map { Self.shortDuration($0.timeIntervalSince(now)) }
         let (text, symbol): (String, String) = switch state {
@@ -139,7 +183,21 @@ struct DisplayBuilder {
         return DisplaySnapshot(
             state: state, index: index, menuBarText: text, menuBarSymbol: symbol, rows: rows,
             indexLine: line?.text, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
-            indexMath: line?.math, roast: roast, lastRefresh: lastRefresh)
+            indexMath: line?.math, trend: trend, trendDelta: trendDelta, shares: shares, roast: roast, lastRefresh: lastRefresh)
+    }
+
+    /// DRD 3.2: the 3 models with the most output tokens, each with its share. Nil without output tokens.
+    /// Output tokens, as for the Water Footprint: cache reads would hide the real use. No EUR (D42).
+    /// A date suffix goes, so "claude-haiku-4-5-20251001" and "claude-haiku-4-5" are one model.
+    static func modelLine(_ output: [String: Int]) -> String? {
+        var models: [String: Int] = [:]
+        for (model, tokens) in output { models[model.replacing(/-\d{4}-?\d{2}-?\d{2}$/, with: ""), default: 0] += tokens }
+        let total = models.values.reduce(0, +)
+        guard total > 0 else { return nil }
+        // The most tokens first. Equal counts are in name order, so the line does not change between refreshes.
+        return models.sorted { ($0.value, $1.key) > ($1.value, $0.key) }.prefix(3)
+            .map { "\($0.key) \(Int((Double($0.value) / Double(total) * 100).rounded()))%" }
+            .joined(separator: " · ")
     }
 
     static func isNotInstalled(_ error: any Error) -> Bool {

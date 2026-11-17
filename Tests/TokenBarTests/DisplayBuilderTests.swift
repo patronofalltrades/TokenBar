@@ -192,6 +192,69 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
     #expect(s.indexLine == "0 cafés con leche today" && s.indexDetail == "2.0 this week" && s.indexSymbol == "cafe")
 }
 
+/// DRD 3.2: the most used models of the week, by output tokens. A date suffix does not make a second model.
+@Test func modelLineShowsTheShareOfEachModel() {
+    let old = noon.addingTimeInterval(-8 * 24 * 3600)
+    let s = Fixture().build([snapshot([
+        record(eur: 1, output: 700), record(eur: 1, model: "x-20261001", output: 200), record(eur: 1, model: "x", output: 100),
+        record(eur: 1, at: old, model: "old", output: 9_000),
+    ])])
+    #expect(s.rows.first { $0.provider == .claudeCode }?.modelLine == "m 70% · x 30%")
+    #expect(Fixture().build([snapshot([record(eur: 1)])]).rows.first?.modelLine == nil)
+    // Only the first 3 models show. Equal counts are in name order.
+    #expect(DisplayBuilder.modelLine(["d": 1, "c": 1, "b": 1, "a": 5]) == "a 63% · b 13% · c 13%")
+    #expect(!s.rows.contains { $0.modelLine?.contains("€") == true })
+}
+
+/// DRD 3.1: one point for each of the last 30 days, oldest first, in the unit of the index. No EUR (D42).
+@Test(arguments: IndexChoice.allCases)
+func trendHasThirtyDaysInTheIndexUnit(index: IndexChoice) {
+    func days(_ count: Double) -> Date { noon.addingTimeInterval(-count * 24 * 3600) }
+    // Today, 2 days ago, and 8 days ago in the week before: usage goes from 2 to 3, +50%.
+    let s = Fixture(index: index).build([snapshot([
+        record(eur: 1.8, output: 20_000), record(eur: 3.6, at: days(2), output: 10_000),
+        record(eur: 3.6, at: days(8), output: 20_000),
+    ], limits: [limit(10)])])
+    #expect(s.trend.count == 30)
+    #expect(s.trend.map(\.day) == (0..<30).reversed().map { madrid.date(byAdding: .day, value: -$0, to: madrid.startOfDay(for: noon))! })
+    #expect(s.trendDelta == 50)
+    #expect(!s.trend.contains { $0.text.contains("€") })
+    let texts = s.trend.suffix(3).map(\.text)
+    // The record of 8 days ago is in the 30 days, and not in the last 7.
+    // The Tuition Meter counts from the first launch, which is today in this test.
+    #expect((s.trend[21].value > 0) == (index != .tuition))
+    #expect(s.trend.suffix(7).filter { $0.value > 0 }.count == (index == .tuition ? 1 : 2))
+    switch index {
+    case .cafe: #expect(texts == ["2.0 cafés con leche", "0 cafés con leche", "1.0 café con leche"])
+    // The first launch is today, so the total is the cost of today. Earlier days are at zero.
+    case .tuition: #expect(s.trend.dropLast().allSatisfy { $0.value == 0 } && s.trend[29].value > 0)
+    case .water: #expect(texts == [WaterData.amount(1125), "0 mL", WaterData.amount(2250)])
+    }
+}
+
+@Test func trendIsEmptyWithoutIndexAndDeltaNeedsEarlierUsage() {
+    let records = [record(eur: 1.8)]
+    #expect(Fixture().build([snapshot(records)]).trend.isEmpty)
+    let s = Fixture(index: .cafe).build([snapshot(records)])
+    #expect(s.trend.count == 30 && s.trendDelta == nil)
+}
+
+/// DRD 3.2: the share of each installed provider in the output tokens of the last 7 days.
+@Test func sharesAreOutputTokensOfTheWeek() {
+    let old = noon.addingTimeInterval(-8 * 24 * 3600)
+    let s = Fixture().build([
+        snapshot([record(eur: 1, output: 600), record(eur: 1, at: old, output: 9_000)]),
+        snapshot([record(.codex, eur: 1, output: 300)], of: .codex),
+        snapshot([record(.geminiCLI, eur: 1, output: 100)], of: .geminiCLI),
+    ], errors: [:])
+    #expect(s.shares == [.init(provider: .claudeCode, percent: 60), .init(provider: .codex, percent: 30),
+                         .init(provider: .geminiCLI, percent: 10)])
+    #expect(PopoverFormat.shares(s.shares) == "Output tokens in the last 7 days: Claude Code 60 percent, Codex 30 percent, Gemini CLI 10 percent.")
+    // A provider that is not installed has no axis. A week without output gives 0 for each axis.
+    let one = Fixture().build([snapshot([record(eur: 1)])])
+    #expect(one.shares == [.init(provider: .claudeCode, percent: 0)])
+}
+
 /// Each index fills only its own placeholders, so a roast never shows a second index (D41).
 @Test(arguments: IndexChoice.allCases)
 func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
