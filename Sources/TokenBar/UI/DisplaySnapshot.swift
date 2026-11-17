@@ -46,7 +46,7 @@ struct DisplaySnapshot: Equatable, Sendable {
     var indexEmoji: String? = nil   // emoji for the share card text (DRD 7.7)
     var indexDetail: String? = nil  // small second line: the unit equivalent and the week, or the burn year (DRD 3.1)
     var indexMath: String? = nil    // the calculation of the headline. The only EUR text in the UI (D47).
-    var trend: [TrendPoint] = []    // the last 7 days, oldest first. Empty before the index choice or without data.
+    var trend: [TrendPoint] = []    // the last 30 days, oldest first. Empty before the index choice or without data.
     var trendDelta: Int? = nil      // percent change: the last 7 days against the 7 days before. Nil without earlier usage.
     var shares: [ProviderShare] = []  // one for each installed provider. The radar needs 3 or more.
     let roast: String?              // nil before the user picks an index, when roasts are off, or when none matches

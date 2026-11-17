@@ -136,9 +136,11 @@ Rules:
 - Order from top to bottom: header, index headline, provider rows, roast, footer (D42).
 - The index headline shows the value of the selected index in a large font (`.title2`, semibold), with the custom index icon (Section 8.3). The snapshot keeps the icon name in `indexSymbol`.
 - Below the headline, one small line (`.callout`, secondary): the week value in the same café unit, the water unit equivalent and the week, or the Tuition Meter burn year (Section 2.5).
-- Below these lines, the headline shows a sparkline of the last 7 days in the unit of the selected index (D51). Height 32 pt. No axes. A dot marks today.
+- Below these lines, the headline shows a sparkline of the last 7 days or the last 30 days in the unit of the selected index (D51, D57). Height 32 pt. No axes. A dot marks today.
 - The Café Index and the Water Footprint show the value of each day. The Tuition Meter shows the running total.
-- A caption above the sparkline says "Last 7 days". The pointer on a day changes the caption to the day and its value, for example "Tue 6 Oct: 2.1 cafés con leche".
+- A text button in the caption changes the view: "30 days" in the 7-day view, "7 days" in the 30-day view. The app keeps the selection (`SettingsKey.trendDays`). The default is 7 days.
+- The 30-day view has no change pill, because the providers keep only 35 days.
+- A caption above the sparkline says "Last 7 days" or "Last 30 days". The pointer on a day changes the caption to the day and its value, for example "Tue 6 Oct: 2.1 cafés con leche".
 - A pill at the right of the caption shows the change in percent: the usage of the last 7 days against the 7 days before. Example: `▲ 12%`. The usage is the output tokens for the Water Footprint and the cost for the other indexes. Without usage in the 7 days before, the pill does not show.
 - A week without usage has no sparkline. When the sparkline shows, the provider list scrolls from 260 pt.
 - If some models have no price, a tiny footnote under the headline says "Some models not counted". The Water Footprint counts tokens, not prices, so it has no footnote.

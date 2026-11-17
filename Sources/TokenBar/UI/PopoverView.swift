@@ -254,25 +254,34 @@ private struct ProviderRowView: View {
     }
 }
 
-/// The 7-day sparkline in the index headline (DRD 3.1). The pointer on a day shows the day and its value.
+/// The sparkline in the index headline (DRD 3.1): the last 7 days or the last 30 days.
+/// The pointer on a day shows the day and its value.
 /// It has no animation (DRD 8.4).
 private struct TrendView: View {
     let points: [DisplaySnapshot.TrendPoint]
     let delta: Int?
     @State private var pointer: Date?
+    @AppStorage(SettingsKey.trendDays) private var days = 7
+
+    private var shown: [DisplaySnapshot.TrendPoint] { Array(points.suffix(days == 30 ? 30 : 7)) }
+    private var title: String { days == 30 ? "Last 30 days" : "Last 7 days" }
 
     /// The day nearest to the pointer.
     private var active: DisplaySnapshot.TrendPoint? {
         guard let pointer else { return nil }
-        return points.min { abs($0.day.timeIntervalSince(pointer)) < abs($1.day.timeIntervalSince(pointer)) }
+        return shown.min { abs($0.day.timeIntervalSince(pointer)) < abs($1.day.timeIntervalSince(pointer)) }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(active.map { "\(PopoverFormat.day($0.day)): \($0.text)" } ?? "Last 7 days")
+                Text(active.map { "\(PopoverFormat.day($0.day)): \($0.text)" } ?? title)
                 Spacer()
-                if let delta {
+                Button(days == 30 ? "7 days" : "30 days") { days = days == 30 ? 7 : 30 }
+                    .buttonStyle(.plain).underline()
+                    .accessibilityLabel(days == 30 ? "Show the last 7 days" : "Show the last 30 days")
+                // The change compares 7 days with the 7 days before. The 30-day view has no period before it.
+                if let delta, days != 30 {
                     Text(PopoverFormat.delta(delta))
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(Theme.paper.opacity(0.2), in: Capsule())
@@ -281,7 +290,7 @@ private struct TrendView: View {
                 }
             }
             .font(.caption.monospacedDigit())
-            Chart(points, id: \.day) { point in
+            Chart(shown, id: \.day) { point in
                 AreaMark(x: .value("Day", point.day), y: .value("Value", point.value))
                     .interpolationMethod(.monotone)
                     .foregroundStyle(.linearGradient(colors: [Theme.paper.opacity(0.3), Theme.paper.opacity(0)],
@@ -294,7 +303,7 @@ private struct TrendView: View {
                     .accessibilityLabel(PopoverFormat.day(point.day))
                     .accessibilityValue(point.text)
                 // The dot is on the pointer day, else on today.
-                if point.day == (active ?? points.last)?.day {
+                if point.day == (active ?? shown.last)?.day {
                     PointMark(x: .value("Day", point.day), y: .value("Value", point.value))
                         .symbolSize(40)
                         .foregroundStyle(Theme.paper)
@@ -306,7 +315,7 @@ private struct TrendView: View {
             .chartLegend(.hidden)
             .chartXSelection(value: $pointer)
             .frame(height: 32)
-            .accessibilityLabel("Last 7 days")
+            .accessibilityLabel(title)
         }
         .padding(.top, 4)
     }
