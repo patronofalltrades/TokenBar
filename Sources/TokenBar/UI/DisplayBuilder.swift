@@ -108,7 +108,8 @@ struct DisplayBuilder {
         case nil: line = nil
         }
 
-        // The sparkline (DRD 3.1): one point for each of the last 7 days, in the unit of the index. No EUR (D42).
+        // The sparkline (DRD 3.1): one point for each of the last 30 days, in the unit of the index. No EUR (D42).
+        // The popover shows the last 7 or all 30. The providers keep 35 days.
         var trend: [DisplaySnapshot.TrendPoint] = []
         var trendDelta: Int?
         if let index, hasData {
@@ -121,7 +122,7 @@ struct DisplayBuilder {
             if before > 0 { trendDelta = Int(((usage(dayStarts.prefix(7)) - before) / before * 100).rounded()) }
             let unit = pick?.unit ?? cafe.units[0]
             var total = spend ?? 0  // the Tuition Meter is a running total: go back one day at a time
-            for day in dayStarts.prefix(7) {
+            for day in dayStarts.prefix(30) {
                 switch index {
                 case .cafe:
                     let value = (dailyCosts[day] ?? 0) / unit.priceEUR

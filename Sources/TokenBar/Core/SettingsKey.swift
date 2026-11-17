@@ -8,6 +8,7 @@ enum SettingsKey {
     static let roastsEnabled = "roastsEnabled"          // default true
     static let alert95Enabled = "alert95Enabled"        // default true
     static let alertLimitEnabled = "alertLimitEnabled"  // default true
+    static let trendDays = "trendDays"                  // 7 or 30, default 7 (DRD 3.1)
 }
 
 /// The settings that change the display. A change rebuilds the snapshot at once, without a log read (IES-224).
