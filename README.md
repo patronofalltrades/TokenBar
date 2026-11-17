@@ -148,6 +148,10 @@ Pull requests are welcome, especially new café units and better roasts. A good 
 
 [CodexBar](https://github.com/steipete/CodexBar) by Peter Steinberger is a macOS menu bar app that shows Codex and Claude Code usage. TokenBar is a separate implementation. We studied CodexBar to learn where usage data is kept. TokenBar adds the humor and the MBA focus.
 
+## Logos and trademarks
+
+The provider logos come from [lobe-icons](https://github.com/lobehub/lobe-icons) (MIT License, Copyright (c) LobeHub). Claude, Codex, Gemini, Grok and Muse are trademarks of Anthropic, OpenAI, Google, xAI and Meta. TokenBar is not affiliated with these companies. They did not approve it. They will not roast you either.
+
 ## License
 
 [MIT](LICENSE). Free, like the coffee at a corporate presentation.

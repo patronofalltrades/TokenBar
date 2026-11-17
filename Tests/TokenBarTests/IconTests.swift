@@ -33,3 +33,14 @@ func eachIndexHasATemplateIcon(index: IndexChoice) throws {
 @Test func otherNamesAreSFSymbols() {
     #expect(Icon.image("hourglass", pointSize: 13).size.width > 0)
 }
+
+/// D55: each provider has a logo in the resource bundle. This test fails if a file is missing.
+@Test(arguments: ProviderID.allCases)
+func eachProviderHasALogo(provider: ProviderID) throws {
+    let logo = try #require(Icon.logos[provider], "Resources/Icons/provider-\(provider.rawValue).svg is missing")
+    #expect(logo.representations.isEmpty == false)
+    // The Grok logo is black, so it takes the ink color. The other logos keep their brand colors.
+    #expect(logo.isTemplate == (provider == .grok))
+    #expect(Icon.logo(provider, side: 16)?.size == NSSize(width: 16, height: 16))
+    #expect(logo.size == NSSize(width: 24, height: 24))
+}
