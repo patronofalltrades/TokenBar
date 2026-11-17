@@ -201,6 +201,12 @@ private struct ProviderRowView: View {
 
     private func limitView(_ limit: DisplaySnapshot.Limit) -> some View {
         VStack(alignment: .leading, spacing: 2) {
+            // DRD 3.2: the name at the left, the percent at the right, the bar below.
+            HStack {
+                Text("\(limit.name) limit").fontWeight(.medium)
+                Spacer()
+                Text("\(Int(limit.usedPercent))%").font(.caption).monospacedDigit()
+            }
             Capsule()
                 .fill(Theme.track)
                 .overlay(alignment: .leading) {
@@ -210,7 +216,6 @@ private struct ProviderRowView: View {
                 }
                 .frame(height: 6)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: limit.usedPercent)
-            Text("\(Int(limit.usedPercent))% of \(limit.name) limit").monospacedDigit()
             Text(detail(limit)).font(.caption).foregroundStyle(Theme.secondary)
         }
     }

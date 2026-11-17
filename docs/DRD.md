@@ -146,8 +146,8 @@ Each enabled provider has one row.
 | Element | Rule |
 |---|---|
 | Name | Provider name, for example "Claude Code". `.headline`. |
+| Limit label | Above the bar. The limit name at the left: `5-hour limit`, `.body`, medium weight. The percent at the right: `62%`, `.caption`. Always show the number as text (D52). |
 | Limit bar | One bar for each limit of the provider. Width 100% of the row. Height 6 pt. |
-| Limit label | `62% of 5-hour limit`. Always show the number as text. |
 | Reset | `resets in 1 h 48 min`. Use relative time below 24 hours. Use weekday and time above 24 hours: `resets Mon 09:00`. |
 | Age | `as of 14:02`. The time when the limit source last reported the value. Show it under each limit. |
 
@@ -163,13 +163,16 @@ A provider row has no cost (D42). A provider without a limit source shows "No li
 │ Some models not counted                  │  ← tiny, only if needed
 ├──────────────────────────────────────────┤
 │ Claude Code                              │
-│ ███████████████░░░░░░░░░  62% of 5-hour  │
+│ 5-hour limit                         62% │
+│ ███████████████░░░░░░░░░░░░░░░░░░░░░░░░░ │
 │ resets in 1 h 48 min · as of 14:02       │
-│ ██████░░░░░░░░░░░░░░░░░░  24% of weekly  │
+│ weekly limit                         24% │
+│ ██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │
 │ resets Mon 09:00 · as of 14:02           │
 │                                          │
 │ Codex                                    │
-│ ████░░░░░░░░░░░░░░░░░░░░  18% of weekly  │
+│ weekly limit                         18% │
+│ ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │
 │ resets Thu 14:00 · as of 13:55           │
 ├──────────────────────────────────────────┤
 │ "The protagonist has 38% of Opus left    │
@@ -185,7 +188,8 @@ The headline shows the selected index only (Section 2.5). The example shows the 
 
 ```
 │ Claude Code                     ⚠ 87%   │
-│ ████████████████████░░░░  87% of 5-hour  │  ← bar in orange
+│ 5-hour limit                         87% │
+│ ████████████████████░░░░░░░░░░░░░░░░░░░░ │  ← full ink from 80%
 │ resets in 42 min                         │
 ```
 
@@ -195,7 +199,8 @@ Add the `exclamationmark.triangle.fill` symbol next to the provider name. The ro
 
 ```
 │ Claude Code                  ⌛ Limit hit │
-│ ████████████████████████  100% of 5-hour │  ← bar in red
+│ 5-hour limit                        100% │
+│ ████████████████████████████████████████ │
 │ resets in 1 h 48 min  (at 14:30)         │
 │ Codex still available: 82% left this week│
 ```
@@ -718,7 +723,8 @@ Do not use a brand color for a provider. Do not use green for "good". Low usage 
 |---|---|
 | Menu bar text | System menu bar font. `.monospacedDigit()`. |
 | Provider name | `.headline` |
-| Limit label, cost | `.body`, `.monospacedDigit()` |
+| Limit label | `.body`, medium weight |
+| Limit percent | `.caption`, `.monospacedDigit()` |
 | Reset time | `.caption`, secondary |
 | Totals | `.title3`, `.monospacedDigit()` |
 | Café-index line | `.callout` |
