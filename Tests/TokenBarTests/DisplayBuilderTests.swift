@@ -192,6 +192,35 @@ func limitHitShowsTimeToReset(index: IndexChoice?) {
     #expect(s.indexLine == "0 cafés con leche today" && s.indexDetail == "2.0 this week" && s.indexSymbol == "cafe")
 }
 
+/// DRD 3.1: one point for each of the last 7 days, oldest first, in the unit of the index. No EUR (D42).
+@Test(arguments: IndexChoice.allCases)
+func trendHasSevenDaysInTheIndexUnit(index: IndexChoice) {
+    func days(_ count: Double) -> Date { noon.addingTimeInterval(-count * 24 * 3600) }
+    // Today, 2 days ago, and 8 days ago in the week before: usage goes from 2 to 3, +50%.
+    let s = Fixture(index: index).build([snapshot([
+        record(eur: 1.8, output: 20_000), record(eur: 3.6, at: days(2), output: 10_000),
+        record(eur: 3.6, at: days(8), output: 20_000),
+    ], limits: [limit(10)])])
+    #expect(s.trend.count == 7)
+    #expect(s.trend.map(\.day) == (0..<7).reversed().map { madrid.date(byAdding: .day, value: -$0, to: madrid.startOfDay(for: noon))! })
+    #expect(s.trendDelta == 50)
+    #expect(!s.trend.contains { $0.text.contains("€") })
+    let texts = [s.trend[4].text, s.trend[5].text, s.trend[6].text]
+    switch index {
+    case .cafe: #expect(texts == ["2.0 cafés con leche", "0 cafés con leche", "1.0 café con leche"])
+    // The first launch is today, so the total is the cost of today. Earlier days are at zero.
+    case .tuition: #expect(s.trend.map(\.value) == [0, 0, 0, 0, 0, 0, s.trend[6].value] && s.trend[6].value > 0)
+    case .water: #expect(texts == [WaterData.amount(1125), "0 mL", WaterData.amount(2250)])
+    }
+}
+
+@Test func trendIsEmptyWithoutIndexAndDeltaNeedsEarlierUsage() {
+    let records = [record(eur: 1.8)]
+    #expect(Fixture().build([snapshot(records)]).trend.isEmpty)
+    let s = Fixture(index: .cafe).build([snapshot(records)])
+    #expect(s.trend.count == 7 && s.trendDelta == nil)
+}
+
 /// Each index fills only its own placeholders, so a roast never shows a second index (D41).
 @Test(arguments: IndexChoice.allCases)
 func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {

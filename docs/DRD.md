@@ -136,6 +136,11 @@ Rules:
 - Order from top to bottom: header, index headline, provider rows, roast, footer (D42).
 - The index headline shows the value of the selected index in a large font (`.title2`, semibold), with the custom index icon (Section 8.3). The snapshot keeps the icon name in `indexSymbol`.
 - Below the headline, one small line (`.callout`, secondary): the week value in the same café unit, the water unit equivalent and the week, or the Tuition Meter burn year (Section 2.5).
+- Below these lines, the headline shows a sparkline of the last 7 days in the unit of the selected index (D51). Height 32 pt. No axes. A dot marks today.
+- The Café Index and the Water Footprint show the value of each day. The Tuition Meter shows the running total.
+- A caption above the sparkline says "Last 7 days". The pointer on a day changes the caption to the day and its value, for example "Tue 6 Oct: 2.1 cafés con leche".
+- A pill at the right of the caption shows the change in percent: the usage of the last 7 days against the 7 days before. Example: `▲ 12%`. The usage is the output tokens for the Water Footprint and the cost for the other indexes. Without usage in the 7 days before, the pill does not show.
+- A week without usage has no sparkline. When the sparkline shows, the provider list scrolls from 260 pt.
 - If some models have no price, a tiny footnote under the headline says "Some models not counted". The Water Footprint counts tokens, not prices, so it has no footnote.
 - The popover shows no EUR, no "API-equivalent" text and no "price unknown" line (D42). Subscription users do not pay API prices.
 
@@ -161,6 +166,8 @@ A provider row has no cost (D42). A provider without a limit source shows "No li
 │ ☕ 3.4 cafés con leche today              │  ← large
 │ 12 this week                             │
 │ Some models not counted                  │  ← tiny, only if needed
+│ Last 7 days                       ▲ 12%  │
+│ ▁▃▁▅▃▇▅                                  │  ← sparkline
 ├──────────────────────────────────────────┤
 │ Claude Code                              │
 │ ███████████████░░░░░░░░░  62% of 5-hour  │
@@ -744,7 +751,8 @@ Use the system font (SF Pro) only. Do not bundle a font.
 2. Rotate the refresh symbol while a read runs.
 3. Cross-fade the roast when it changes, 0.2 s.
 4. Do not animate the menu bar item.
-5. When **Reduce Motion** is on, remove all animation. Change values immediately.
+5. Do not animate the sparkline.
+6. When **Reduce Motion** is on, remove all animation. Change values immediately.
 
 ---
 
@@ -759,6 +767,8 @@ Use the system font (SF Pro) only. Do not bundle a font.
 | Menu bar item, No data | "TokenBar. No usage data. Click to set up." |
 | Limit bar | "Claude Code 5-hour limit, 62 percent used, resets in 1 hour 48 minutes." Use `.accessibilityValue`. |
 | Index headline | "3.4 cafés con leche today." No EUR (D42). |
+| Sparkline | "Last 7 days." Each day: "Tue 6 Oct, 2.1 cafés con leche." No EUR (D42). |
+| Change pill | "Up 12 percent against the 7 days before." |
 | Limit age | "As of 14:02." Add it after the limit bar label. |
 | Roast | "Roast:" then the text. |
 | Footer buttons | "Settings", "Refresh", "Quit TokenBar". |
