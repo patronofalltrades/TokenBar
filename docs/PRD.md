@@ -15,7 +15,7 @@ Use these terms with these meanings in all TokenBar documents.
 
 | Term | Meaning |
 |---|---|
-| Usage source | A place where TokenBar reads usage data. In v1, only local files: Claude Code logs, Codex logs and Gemini CLI chat files (D50). |
+| Usage source | A place where TokenBar reads usage data. In v1, only local files: Claude Code logs, Codex logs, Gemini CLI chat files (D50), the Grok Build log and Muse Code session files (D54). |
 | Provider | The code that reads one usage source (`UsageProvider` in AGENTS.md). |
 | Usage record | One unit of usage: timestamp, model name, input tokens, output tokens. It contains no prompt or response text. |
 | API cost | The real cost that a provider usage API reports. Only API-key providers (Later) report it. |
@@ -93,11 +93,11 @@ The personas below are assumptions. Validate them with the alpha survey (Section
 
 | Non-goal | Reason |
 |---|---|
-| Measure ChatGPT web, claude.ai web or Grok usage | No public usage API exists for these consumer products (Section 6). |
+| Measure ChatGPT web, claude.ai web or Grok web usage | No public usage API exists for these consumer products (Section 6). |
 | Read browser cookies or scrape web sessions | This conflicts with G4. It is also fragile. |
 | Class leaderboard | Roadmap "Later". It needs a server and consent design. |
 | MCP server | Roadmap "Later". |
-| xAI (Grok) usage | Roadmap "Later", when xAI supplies a usage source. |
+| xAI API usage and Grok plan limits | Roadmap "Later". They need an API key and a new host. Grok Build CLI usage comes from its local log (D54). |
 | API-key providers (OpenAI Admin API, Anthropic Admin API) | Roadmap "Later" (Section 7.5). v1 reads only local files. |
 | Languages other than English | Spanish comes after the launch. |
 | Windows, Linux, iOS, Intel Macs | macOS 14 or later on Apple silicon only (README). |

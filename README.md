@@ -66,7 +66,7 @@ Follow the "For AI agents" section of the README.
 | Feature | What it does |
 |---|---|
 | One number in the menu bar | Pick one index: Café Index, Tuition Meter or Water Footprint. The number sits next to the notch and judges you quietly. |
-| Claude Code, Codex and Gemini CLI usage | Reads the local logs on your Mac. No API key, no login. The Gemini CLI row shows only if you have it. |
+| Claude Code, Codex, Gemini CLI, Grok Build and Muse Code usage | Reads the local logs on your Mac. No API key, no login. The Gemini CLI, Grok Build and Muse Code rows show only if you have them. |
 | Real limits | Codex limits come from its logs. For Claude Code limits, click **Connect** in setup. TokenBar adds a status line to `~/.claude/settings.json` with a backup, and your old status line keeps working. Gemini CLI keeps no limit data, so its row shows tokens and cost only. |
 | The receipt | A line under the headline shows the math, for example "€45.60 of tokens since install ÷ €114,000 MBA tuition". Trust, but verify. |
 | Case-method roasts | About 40 short jokes about cold calls, cover letters, decks and coffee chats. |
@@ -130,7 +130,7 @@ Each [GitHub release](https://github.com/patronofalltrades/TokenBar/releases) li
 |---|---|
 | Alpha (now) | Everything above. Tested with a small group of classmates. |
 | v1.0 (January 2027) | Class launch at the start of the winter term, after the alpha feedback. |
-| Later | Spanish. A class leaderboard ("Top Token Burner, Section B"), opt-in only. An MCP server, so your AI can ask how much AI you use. Grok usage, when xAI gives a usage source. |
+| Later | Spanish. A class leaderboard ("Top Token Burner, Section B"), opt-in only. An MCP server, so your AI can ask how much AI you use. Grok and Muse plan limits, when xAI and Meta give a local source. |
 
 ## Contributing
 

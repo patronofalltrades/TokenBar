@@ -17,7 +17,7 @@ private func cost(_ model: String, _ tokens: TokenCounts) -> Decimal? {
     #expect(table.fxNote.hasPrefix("community estimate"))
     for model in table.models {
         #expect(model.source.hasPrefix("https://"), "\(model.id)")
-        #expect(["2026-10-08", "2026-10-14"].contains(model.lastVerified), "\(model.id)")
+        #expect(["2026-10-08", "2026-10-14", "2026-11-17"].contains(model.lastVerified), "\(model.id)")
         let prices = model.prices.all + (model.longContext?.prices.all ?? [])
         #expect(prices.allSatisfy { $0 >= 0 }, "\(model.id)")
         #expect(model.prices.input != nil && model.prices.output != nil, "\(model.id)")
