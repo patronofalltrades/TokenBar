@@ -142,7 +142,7 @@ Rules:
 - The 30-day view has no change pill, because the providers keep only 35 days.
 - A caption above the sparkline says "Last 7 days" or "Last 30 days". The pointer on a day changes the caption to the day and its value, for example "Tue 6 Oct: 2.1 cafés con leche".
 - A pill at the right of the caption shows the change in percent: the usage of the last 7 days against the 7 days before. Example: `▲ 12%`. The usage is the output tokens for the Water Footprint and the cost for the other indexes. Without usage in the 7 days before, the pill does not show.
-- A week without usage has no sparkline. When the sparkline shows, the provider list scrolls from 260 pt.
+- A week without usage has no sparkline.
 - If some models have no price, a tiny footnote under the headline says "Some models not counted". The Water Footprint counts tokens, not prices, so it has no footnote.
 - The popover shows no EUR, no "API-equivalent" text and no "price unknown" line (D42). Subscription users do not pay API prices.
 
@@ -167,7 +167,7 @@ Below the provider rows, a radar chart shows the most used providers (D53).
 - The most used provider reaches the outer ring. Each axis has a label with the provider name and the percent.
 - The radar shows only with 3 or more installed providers. A radar with fewer axes has no area.
 - A caption above the radar says "Most used, last 7 days". The height of the chart is 130 pt.
-- The radar is part of the provider list, so it scrolls with the list.
+- The radar is below the provider rows. It scrolls with the body (Section 3.1).
 - The radar uses the ink and the bar tint. It uses no brand color.
 
 A provider row has no cost (D42). A provider without a limit source shows "No limit data". It has no bar. Example: Claude Code without the status line setup (Section 5).
