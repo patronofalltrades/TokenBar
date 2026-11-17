@@ -35,11 +35,13 @@ struct DisplayBuilder {
             let installed = error.map { !Self.isNotInstalled($0) } ?? (snapshots[id] != nil)
             let snapshot = installed ? snapshots[id] : nil
             var unpriced = false
+            var modelOutput: [String: Int] = [:]
             for record in snapshot?.records ?? [] where record.timestamp <= now {
                 records.append(record)
                 let cost = costs.costEUR(record, prices: prices)
                 if record.timestamp >= weekStart {
                     outputWeek += record.tokens.output
+                    modelOutput[record.model, default: 0] += record.tokens.output
                     if cost == nil { unpriced = true }
                 }
                 if record.timestamp >= today {
@@ -56,7 +58,7 @@ struct DisplayBuilder {
             }
             rows.append(.init(provider: id, installed: installed,
                               errorText: installed && error != nil ? "TokenBar cannot read the \(Self.name(id)) logs. The log format possibly changed." : nil,
-                              limits: limits, hasUnpricedModels: unpriced))
+                              limits: limits, hasUnpricedModels: unpriced, modelLine: Self.modelLine(modelOutput)))
         }
 
         let installedRows = rows.filter(\.installed)
@@ -140,6 +142,20 @@ struct DisplayBuilder {
             state: state, index: index, menuBarText: text, menuBarSymbol: symbol, rows: rows,
             indexLine: line?.text, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
             indexMath: line?.math, roast: roast, lastRefresh: lastRefresh)
+    }
+
+    /// DRD 3.2: the 3 models with the most output tokens, each with its share. Nil without output tokens.
+    /// Output tokens, as for the Water Footprint: cache reads would hide the real use. No EUR (D42).
+    /// A date suffix goes, so "claude-haiku-4-5-20251001" and "claude-haiku-4-5" are one model.
+    static func modelLine(_ output: [String: Int]) -> String? {
+        var models: [String: Int] = [:]
+        for (model, tokens) in output { models[model.replacing(/-\d{4}-?\d{2}-?\d{2}$/, with: ""), default: 0] += tokens }
+        let total = models.values.reduce(0, +)
+        guard total > 0 else { return nil }
+        // The most tokens first. Equal counts are in name order, so the line does not change between refreshes.
+        return models.sorted { ($0.value, $1.key) > ($1.value, $0.key) }.prefix(3)
+            .map { "\($0.key) \(Int((Double($0.value) / Double(total) * 100).rounded()))%" }
+            .joined(separator: " · ")
     }
 
     static func isNotInstalled(_ error: any Error) -> Bool {

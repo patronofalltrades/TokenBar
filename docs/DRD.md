@@ -150,6 +150,7 @@ Each enabled provider has one row.
 | Limit label | `62% of 5-hour limit`. Always show the number as text. |
 | Reset | `resets in 1 h 48 min`. Use relative time below 24 hours. Use weekday and time above 24 hours: `resets Mon 09:00`. |
 | Age | `as of 14:02`. The time when the limit source last reported the value. Show it under each limit. |
+| Models | `This week: claude-opus-4-7 82% · claude-haiku-4-5 18%`. The 3 models with the most output tokens in the last 7 days, each with its share (D56). `.caption`, secondary. No line without output tokens. No EUR (D42). |
 
 A provider row has no cost (D42). A provider without a limit source shows "No limit data". It has no bar. Example: Claude Code without the status line setup (Section 5).
 
@@ -760,6 +761,7 @@ Use the system font (SF Pro) only. Do not bundle a font.
 | Limit bar | "Claude Code 5-hour limit, 62 percent used, resets in 1 hour 48 minutes." Use `.accessibilityValue`. |
 | Index headline | "3.4 cafés con leche today." No EUR (D42). |
 | Limit age | "As of 14:02." Add it after the limit bar label. |
+| Models | "Models this week: claude-opus-4-7 82%, claude-haiku-4-5 18%." Add it at the end of the provider row. |
 | Roast | "Roast:" then the text. |
 | Footer buttons | "Settings", "Refresh", "Quit TokenBar". |
 
