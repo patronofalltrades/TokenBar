@@ -27,7 +27,7 @@ Click the icon for the full teaching note:
 └──────────────────────────────────────────────┘
 ```
 
-> **Status:** Alpha. `tokenbar@0.1.0-alpha.2` is on npm. It works on the maintainer's Mac and on a few brave classmates' Macs. Expect bugs. Report them with the feedback link in the app.
+> **Status:** Alpha. The latest version is on [npm](https://www.npmjs.com/package/tokenbar). It works on the maintainer's Mac and on a few brave classmates' Macs. Expect bugs. Report them with the feedback link in the app.
 
 ## Why this exists
 
