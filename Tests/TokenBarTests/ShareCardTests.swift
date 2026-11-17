@@ -10,6 +10,7 @@ private let secret = "SECRET-MARKER"
         ☕ 3.4 cafés con leche today
         12 this week
         €6.12 of tokens ÷ €1.80 per café con leche
+        📈 Last 7 days ▃▅▁▇▄█▆
 
         “The protagonist has 38% of Opus left and a 9 AM deadline. Discuss.”
 
@@ -22,6 +23,7 @@ private let secret = "SECRET-MARKER"
         🎓 0.04% of your MBA tuition, in tokens
         At this pace, you'll burn through it by the year 4210.
         €45.60 of tokens since install ÷ €114,000 MBA tuition
+        📈 Last 7 days ▃▅▁▇▄█▆
 
         “Your finance professor would call this a sunk cost. Your AI calls it a Tuesday.”
 
@@ -34,11 +36,26 @@ private let secret = "SECRET-MARKER"
         💧 22 L of water today
         15 bottles (1.5 L) · 98 L this week
         195,556 output tokens × 0.1125 mL each (Mistral estimate)
+        📈 Last 7 days ▃▅▁▇▄█▆
 
         “Your prompts drank 22 L of water today. Somewhere a cooling tower is writing its own case study.”
 
         TokenBar · github.com/patronofalltrades/TokenBar
         """)
+}
+
+@Test func barsScaleToTheLargestValue() {
+    #expect(ShareCard.bars([1.2, 2.8, 0, 4.1, 2.2, 5.0, 3.4]) == "▃▅▁▇▄█▆")
+    #expect(ShareCard.bars([0, 0]) == "▁▁")
+    #expect(ShareCard.bars([]) == "")
+}
+
+/// A week without usage has no trend line on the card.
+@Test func cardHasNoTrendLineWithoutUsage() {
+    var s = PopoverSamples.normal
+    s.trend = s.trend.map { .init(day: $0.day, value: 0, text: $0.text) }
+    #expect(!ShareCard.text(s).contains("Last 7 days"))
+    #expect(ShareCard.lines(PopoverSamples.normal).contains { $0.trend.count == 7 })
 }
 
 private let noIndex = DisplaySnapshot(
