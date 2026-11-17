@@ -65,6 +65,10 @@ struct PopoverView: View {
                 ProviderRowView(row: row, now: now, actions: actions)
             }
             if let line = stillAvailableLine { Text(line).font(.callout) }
+            // A radar with fewer than 3 axes has no area.
+            if snapshot.shares.count >= 3, snapshot.shares.contains(where: { $0.percent > 0 }) {
+                RadarView(shares: snapshot.shares)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onGeometryChange(for: CGFloat.self, of: \.size.height) { listHeight = $0 }
@@ -317,6 +321,49 @@ private struct TrendView: View {
     }
 }
 
+/// The provider radar (DRD 3.2): one axis for each installed provider. The most used provider reaches the outer ring.
+private struct RadarView: View {
+    let shares: [DisplaySnapshot.ProviderShare]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Most used, last 7 days").font(.caption).foregroundStyle(Theme.secondary)
+            GeometryReader { proxy in
+                let top = shares.map(\.percent).max() ?? 0
+                ZStack {
+                    ForEach([1.0 / 3, 2.0 / 3, 1.0], id: \.self) { ring in
+                        polygon(in: proxy.size) { _ in ring }.stroke(Theme.rule)
+                    }
+                    polygon(in: proxy.size) { top > 0 ? shares[$0].percent / top : 0 }.fill(Theme.bar.opacity(0.4))
+                    polygon(in: proxy.size) { top > 0 ? shares[$0].percent / top : 0 }.stroke(Theme.ink, lineWidth: 2)
+                    ForEach(Array(shares.enumerated()), id: \.element.provider) { index, share in
+                        Text("\(DisplayBuilder.name(share.provider)) \(Int(share.percent.rounded()))%")
+                            .font(.caption2).monospacedDigit()
+                            .position(point(index, 1.3, in: proxy.size))
+                    }
+                }
+            }
+            .frame(height: 130)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(PopoverFormat.shares(shares))
+    }
+
+    /// The first axis points up. The radius leaves room for the labels.
+    private func point(_ index: Int, _ scale: Double, in size: CGSize) -> CGPoint {
+        let angle = 2 * Double.pi * Double(index) / Double(shares.count) - Double.pi / 2
+        let radius = (size.height / 2 - 20) * scale
+        return CGPoint(x: size.width / 2 + radius * cos(angle), y: size.height / 2 + radius * sin(angle))
+    }
+
+    private func polygon(in size: CGSize, scale: (Int) -> Double) -> Path {
+        Path { path in
+            path.addLines(shares.indices.map { point($0, scale($0), in: size) })
+            path.closeSubpath()
+        }
+    }
+}
+
 /// DRD 4.2. No API option in v1.
 private struct NoDataView: View {
     let check: @MainActor () -> Void
@@ -404,6 +451,12 @@ enum PopoverFormat {
         return (percent > 0 ? "▲ " : percent < 0 ? "▼ " : "") + "\(abs(percent))%"
     }
 
+    /// The VoiceOver text of the radar: "Output tokens in the last 7 days: Claude Code 60 percent, Codex 30 percent."
+    static func shares(_ shares: [DisplaySnapshot.ProviderShare]) -> String {
+        "Output tokens in the last 7 days: "
+            + shares.map { "\(DisplayBuilder.name($0.provider)) \(Int($0.percent.rounded())) percent" }.joined(separator: ", ") + "."
+    }
+
     /// "Updated 2 min ago".
     static func updated(_ date: Date, now: Date) -> String {
         let minutes = Int(max(0, now.timeIntervalSince(date)) / 60)
@@ -470,6 +523,13 @@ enum PopoverSamples {
                                   roast: "Your finance professor would call this a sunk cost. Your AI calls it a Tuesday.")
     static let water = snapshot(.normal, rows: [claude(62), codex], index: .water,
                                 roast: "Your prompts drank 22 L of water today. Somewhere a cooling tower is writing its own case study.")
+    /// Three installed providers, so the radar shows.
+    static let radar: DisplaySnapshot = {
+        let gemini = DisplaySnapshot.ProviderRow(provider: .geminiCLI, installed: true, errorText: nil, limits: [], hasUnpricedModels: false)
+        var s = snapshot(.normal, rows: [claude(62), codex, gemini], roast: nil)
+        s.shares = [.init(provider: .claudeCode, percent: 60), .init(provider: .codex, percent: 30), .init(provider: .geminiCLI, percent: 10)]
+        return s
+    }()
     static let warning = snapshot(.warning, rows: [claude(87), codex],
                                   roast: "87% used before lunch. The case writes itself.")
     static let tuitionWarning = snapshot(.warning, rows: [claude(87), codex], index: .tuition,
@@ -491,7 +551,7 @@ enum PopoverSamples {
 
     static let all: [(name: String, snapshot: DisplaySnapshot)] = [
         ("cafe", normal), ("tuition", tuition), ("water", water),
-        ("warning", warning), ("tuitionWarning", tuitionWarning), ("waterWarning", waterWarning), ("limitHit", limitHit), ("noData", noData), ("error", error),
+        ("warning", warning), ("tuitionWarning", tuitionWarning), ("waterWarning", waterWarning), ("limitHit", limitHit), ("noData", noData), ("error", error), ("radar", radar),
     ]
 }
 

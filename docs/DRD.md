@@ -158,6 +158,16 @@ Each enabled provider has one row.
 | Reset | `resets in 1 h 48 min`. Use relative time below 24 hours. Use weekday and time above 24 hours: `resets Mon 09:00`. |
 | Age | `as of 14:02`. The time when the limit source last reported the value. Show it under each limit. |
 
+Below the provider rows, a radar chart shows the most used providers (D53).
+
+- Each installed provider is one axis. The first axis points up.
+- The value of an axis is the share of the provider in the output tokens of the last 7 days.
+- The most used provider reaches the outer ring. Each axis has a label with the provider name and the percent.
+- The radar shows only with 3 or more installed providers. A radar with fewer axes has no area.
+- A caption above the radar says "Most used, last 7 days". The height of the chart is 130 pt.
+- The radar is part of the provider list, so it scrolls with the list.
+- The radar uses the ink and the bar tint. It uses no brand color.
+
 A provider row has no cost (D42). A provider without a limit source shows "No limit data". It has no bar. Example: Claude Code without the status line setup (Section 5).
 
 ### 3.3 Normal state
@@ -771,6 +781,7 @@ Use the system font (SF Pro) only. Do not bundle a font.
 | Index headline | "3.4 cafés con leche today." No EUR (D42). |
 | Sparkline | "Last 7 days." Each day: "Tue 6 Oct, 2.1 cafés con leche." No EUR (D42). |
 | Change pill | "Up 12 percent against the 7 days before." |
+| Provider radar | "Output tokens in the last 7 days: Claude Code 60 percent, Codex 30 percent, Gemini CLI 10 percent." One element. |
 | Limit age | "As of 14:02." Add it after the limit bar label. |
 | Roast | "Roast:" then the text. |
 | Footer buttons | "Settings", "Refresh", "Quit TokenBar". |
