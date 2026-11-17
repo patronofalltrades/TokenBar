@@ -26,6 +26,7 @@ struct DisplayBuilder {
         var records: [UsageRecord] = []
         var dailyCosts: [Date: Decimal] = [:]
         var dailyOutput: [Date: Int] = [:]
+        var weekOutput: [ProviderID: Int] = [:]
         var costToday: Decimal = 0, costWeek: Decimal = 0, outputToday = 0, outputWeek = 0
         costs.prune(before: today.addingTimeInterval(-40 * 24 * 3600), day: today)  // providers keep 35 days
         // The day starts of the last 40 days, newest first. A `Calendar` call for each record was most of the CPU (IES-225).
@@ -41,6 +42,7 @@ struct DisplayBuilder {
                 let cost = costs.costEUR(record, prices: prices)
                 if record.timestamp >= weekStart {
                     outputWeek += record.tokens.output
+                    weekOutput[id, default: 0] += record.tokens.output
                     if cost == nil { unpriced = true }
                 }
                 if record.timestamp >= today {
@@ -138,6 +140,12 @@ struct DisplayBuilder {
             trend.reverse()
         }
 
+        // The provider radar (DRD 3.2). Output tokens, as for the Water Footprint: cache reads would hide the real use.
+        let shares = installedRows.map {
+            DisplaySnapshot.ProviderShare(provider: $0.provider,
+                                          percent: outputWeek > 0 ? Double(weekOutput[$0.provider] ?? 0) / Double(outputWeek) * 100 : 0)
+        }
+
         // Menu bar (DRD 2.4 and 2.5). Each choice shows the limit value in Warning and Limit hit.
         let reset = top?.limit.resetsAt.map { Self.shortDuration($0.timeIntervalSince(now)) }
         let (text, symbol): (String, String) = switch state {
@@ -172,7 +180,7 @@ struct DisplayBuilder {
         return DisplaySnapshot(
             state: state, index: index, menuBarText: text, menuBarSymbol: symbol, rows: rows,
             indexLine: line?.text, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
-            indexMath: line?.math, trend: trend, trendDelta: trendDelta, roast: roast, lastRefresh: lastRefresh)
+            indexMath: line?.math, trend: trend, trendDelta: trendDelta, shares: shares, roast: roast, lastRefresh: lastRefresh)
     }
 
     static func isNotInstalled(_ error: any Error) -> Bool {

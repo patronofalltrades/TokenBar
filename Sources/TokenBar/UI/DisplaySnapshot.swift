@@ -29,6 +29,12 @@ struct DisplaySnapshot: Equatable, Sendable {
         let text: String            // for example "2.1 cafés con leche", "1.4 L", "0.04% of tuition"
     }
 
+    /// One axis of the provider radar (DRD 3.2).
+    struct ProviderShare: Equatable, Sendable {
+        let provider: ProviderID
+        let percent: Double         // 0...100: the share of the output tokens of the last 7 days
+    }
+
     let state: State
     let index: IndexChoice?         // nil until the user picks an index (DRD 2.5)
     let menuBarText: String         // for example "3.4", "62%", "87%", "1h48"
@@ -42,6 +48,7 @@ struct DisplaySnapshot: Equatable, Sendable {
     var indexMath: String? = nil    // the calculation of the headline. The only EUR text in the UI (D47).
     var trend: [TrendPoint] = []    // the last 7 days, oldest first. Empty before the index choice or without data.
     var trendDelta: Int? = nil      // percent change: the last 7 days against the 7 days before. Nil without earlier usage.
+    var shares: [ProviderShare] = []  // one for each installed provider. The radar needs 3 or more.
     let roast: String?              // nil before the user picks an index, when roasts are off, or when none matches
     let lastRefresh: Date?
 }
