@@ -16,7 +16,7 @@ struct PopoverView: View {
     var actions = PopoverActions()
     /// Fixed time for previews and tests. Nil: the current time, updated each minute.
     var now: Date?
-    @State private var listHeight: CGFloat = 0
+    @State private var bodyHeight: CGFloat = 0
     @State private var copied = false
 
     var body: some View {
@@ -31,22 +31,11 @@ struct PopoverView: View {
                 NoDataView(check: actions.refresh)
             } else {
                 Text("TokenBar").font(.headline)
-                headline
-                Theme.hairline
-                // DRD 3.1: the list scrolls only when it is taller than its share of the 560 pt.
-                // The sparkline takes 60 pt of that share.
-                let share: CGFloat = showsTrend ? 260 : 320
-                if listHeight > share {
-                    ScrollView { providerListView(now: now) }.frame(height: share)
+                // DRD 3.1: the part between the header and the footer scrolls only when it is taller than `bodyMax`.
+                if bodyHeight > Self.bodyMax {
+                    ScrollView { bodyContent(now: now) }.scrollIndicators(.visible).frame(height: Self.bodyMax)
                 } else {
-                    providerListView(now: now)
-                }
-                if let roast = snapshot.roast {
-                    Theme.hairline
-                    Text("“\(roast)”")
-                        .font(.callout).italic().foregroundStyle(Theme.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityLabel("Roast: \(roast)")
+                    bodyContent(now: now)
                 }
             }
             Theme.hairline
@@ -57,6 +46,28 @@ struct PopoverView: View {
         .frame(maxHeight: 560)
         .onPaper()
         .symbolRenderingMode(.hierarchical)
+    }
+
+    /// 560 pt minus the padding (32), the header (20), the footer with its rule and its confirmation line (about 60)
+    /// and the 12 pt gaps between them. The popover is then never taller than 560 pt.
+    private static let bodyMax: CGFloat = 400
+
+    /// The headline, the provider rows with the radar, and the roast. This part scrolls as one.
+    private func bodyContent(now: Date) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            headline
+            Theme.hairline
+            providerListView(now: now)
+            if let roast = snapshot.roast {
+                Theme.hairline
+                Text("“\(roast)”")
+                    .font(.callout).italic().foregroundStyle(Theme.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel("Roast: \(roast)")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onGeometryChange(for: CGFloat.self, of: \.size.height) { bodyHeight = $0 }
     }
 
     private func providerListView(now: Date) -> some View {
@@ -71,7 +82,6 @@ struct PopoverView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .onGeometryChange(for: CGFloat.self, of: \.size.height) { listHeight = $0 }
     }
 
     /// "Not installed" rows show only when no provider is installed.

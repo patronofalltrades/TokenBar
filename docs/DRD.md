@@ -131,7 +131,7 @@ Rules:
 ### 3.1 Layout
 
 - Width: 320 pt. Fixed.
-- Height: content height. Maximum 560 pt. If the content is taller, the provider list scrolls.
+- Height: content height. Maximum 560 pt. If the content is taller, the part between the header and the footer scrolls as one: the headline, the provider rows, the radar and the roast. The header and the footer stay in place. The scroll area is at most 400 pt high. Its scroll indicator is always visible (D59).
 - Padding: 16 pt on all sides. 12 pt between sections.
 - Order from top to bottom: header, index headline, provider rows, roast, footer (D42).
 - The index headline shows the value of the selected index in a large font (`.title2`, semibold), with the custom index icon (Section 8.3). The snapshot keeps the icon name in `indexSymbol`.
