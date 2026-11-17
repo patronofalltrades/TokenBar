@@ -167,7 +167,7 @@ struct OnboardingView: View {
                 if detection.grok { found("Grok Build", true) }
                 if detection.muse { found("Muse Code", true) }
             }
-            if detection == Detection(claudeCode: false, codex: false) {
+            if detection == .init(claudeCode: false, codex: false) {
                 Text("TokenBar found no Claude Code, Codex or Gemini CLI logs on this Mac. If you use one of them, run it one time. TokenBar checks again every minute.")
                     .fixedSize(horizontal: false, vertical: true)
             }
