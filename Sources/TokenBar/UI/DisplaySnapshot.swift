@@ -22,6 +22,13 @@ struct DisplaySnapshot: Equatable, Sendable {
         let hasUnpricedModels: Bool // true: the cost of part of the usage is not counted
     }
 
+    /// One day of the sparkline in the index headline (DRD 3.1). No EUR (D42).
+    struct TrendPoint: Equatable, Sendable {
+        let day: Date               // local midnight
+        let value: Double           // in the unit of the selected index. It gives the line shape.
+        let text: String            // for example "2.1 cafés con leche", "1.4 L", "0.04% of tuition"
+    }
+
     let state: State
     let index: IndexChoice?         // nil until the user picks an index (DRD 2.5)
     let menuBarText: String         // for example "3.4", "62%", "87%", "1h48"
@@ -33,6 +40,8 @@ struct DisplaySnapshot: Equatable, Sendable {
     var indexEmoji: String? = nil   // emoji for the share card text (DRD 7.7)
     var indexDetail: String? = nil  // small second line: the unit equivalent and the week, or the burn year (DRD 3.1)
     var indexMath: String? = nil    // the calculation of the headline. The only EUR text in the UI (D47).
+    var trend: [TrendPoint] = []    // the last 7 days, oldest first. Empty before the index choice or without data.
+    var trendDelta: Int? = nil      // percent change: the last 7 days against the 7 days before. Nil without earlier usage.
     let roast: String?              // nil before the user picks an index, when roasts are off, or when none matches
     let lastRefresh: Date?
 }
