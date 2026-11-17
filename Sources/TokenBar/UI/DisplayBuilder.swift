@@ -26,6 +26,7 @@ struct DisplayBuilder {
         var records: [UsageRecord] = []
         var dailyCosts: [Date: Decimal] = [:]
         var dailyOutput: [Date: Int] = [:]
+        var weekOutput: [ProviderID: Int] = [:]
         var costToday: Decimal = 0, costWeek: Decimal = 0, outputToday = 0, outputWeek = 0
         costs.prune(before: today.addingTimeInterval(-40 * 24 * 3600), day: today)  // providers keep 35 days
         // The day starts of the last 40 days, newest first. A `Calendar` call for each record was most of the CPU (IES-225).
@@ -41,6 +42,7 @@ struct DisplayBuilder {
                 let cost = costs.costEUR(record, prices: prices)
                 if record.timestamp >= weekStart {
                     outputWeek += record.tokens.output
+                    weekOutput[id, default: 0] += record.tokens.output
                     if cost == nil { unpriced = true }
                 }
                 if record.timestamp >= today {
@@ -108,7 +110,8 @@ struct DisplayBuilder {
         case nil: line = nil
         }
 
-        // The sparkline (DRD 3.1): one point for each of the last 7 days, in the unit of the index. No EUR (D42).
+        // The sparkline (DRD 3.1): one point for each of the last 30 days, in the unit of the index. No EUR (D42).
+        // The popover shows the last 7 or all 30. The providers keep 35 days.
         var trend: [DisplaySnapshot.TrendPoint] = []
         var trendDelta: Int?
         if let index, hasData {
@@ -121,7 +124,7 @@ struct DisplayBuilder {
             if before > 0 { trendDelta = Int(((usage(dayStarts.prefix(7)) - before) / before * 100).rounded()) }
             let unit = pick?.unit ?? cafe.units[0]
             var total = spend ?? 0  // the Tuition Meter is a running total: go back one day at a time
-            for day in dayStarts.prefix(7) {
+            for day in dayStarts.prefix(30) {
                 switch index {
                 case .cafe:
                     let value = (dailyCosts[day] ?? 0) / unit.priceEUR
@@ -136,6 +139,12 @@ struct DisplayBuilder {
                 }
             }
             trend.reverse()
+        }
+
+        // The provider radar (DRD 3.2). Output tokens, as for the Water Footprint: cache reads would hide the real use.
+        let shares = installedRows.map {
+            DisplaySnapshot.ProviderShare(provider: $0.provider,
+                                          percent: outputWeek > 0 ? Double(weekOutput[$0.provider] ?? 0) / Double(outputWeek) * 100 : 0)
         }
 
         // Menu bar (DRD 2.4 and 2.5). Each choice shows the limit value in Warning and Limit hit.
@@ -172,7 +181,7 @@ struct DisplayBuilder {
         return DisplaySnapshot(
             state: state, index: index, menuBarText: text, menuBarSymbol: symbol, rows: rows,
             indexLine: line?.text, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
-            indexMath: line?.math, trend: trend, trendDelta: trendDelta, roast: roast, lastRefresh: lastRefresh)
+            indexMath: line?.math, trend: trend, trendDelta: trendDelta, shares: shares, roast: roast, lastRefresh: lastRefresh)
     }
 
     static func isNotInstalled(_ error: any Error) -> Bool {
