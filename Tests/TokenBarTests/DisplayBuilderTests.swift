@@ -255,6 +255,24 @@ func trendHasThirtyDaysInTheIndexUnit(index: IndexChoice) {
     #expect(one.shares == [.init(provider: .claudeCode, percent: 0)])
 }
 
+/// D61: a corrupt count must not crash the app. The change in percent used `Int(...)` of a huge ratio, and the sums overflowed.
+@Test(arguments: IndexChoice.allCases)
+func corruptCountsDoNotCrashTheDisplay(index: IndexChoice) {
+    let huge = UsageRecord(provider: .claudeCode, model: "m", timestamp: noon.addingTimeInterval(-3600),
+                           tokens: TokenCounts(input: Int.max / 4, output: Int.max / 2))
+    let earlier = record(eur: 0.000001, at: noon.addingTimeInterval(-9 * 24 * 3600), output: 1)
+    let s = Fixture(index: index).build([snapshot([earlier, huge, huge, huge])])
+    #expect(s.trendDelta.map { abs($0) <= 999 } ?? true)
+}
+
+/// D61: the name comes from a log file that another program writes.
+@Test func modelNamesAreCleaned() {
+    #expect(DisplayBuilder.cleanModelName("claude-haiku-4-5-20251001") == "claude-haiku-4-5")
+    #expect(DisplayBuilder.cleanModelName("a\nb\u{202E}c") == "abc")
+    #expect(DisplayBuilder.cleanModelName(String(repeating: "x", count: 100)).count == 40)
+    #expect(DisplayBuilder.modelLine(["a\nb": 1]) == "ab 100%")
+}
+
 /// Each index fills only its own placeholders, so a roast never shows a second index (D41).
 @Test(arguments: IndexChoice.allCases)
 func roastsUseOnlyTheSelectedIndex(index: IndexChoice) {
