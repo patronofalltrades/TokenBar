@@ -69,9 +69,11 @@ actor MuseProvider: UsageProvider {
                   let event = record.payload?.event, event.kind == "model_completed",
                   let usage = event.usage, let micros = record.recordedAt else { return }
             // `input_tokens` includes the cache read. `output_tokens` includes the reasoning tokens.
-            let cacheRead = max(usage.cacheReadTokens ?? 0, usage.cachedTokens ?? 0, 0)
-            let counts = TokenCounts(input: max(0, usage.inputTokens - cacheRead), output: max(0, usage.outputTokens),
-                                     cacheRead: cacheRead, cacheWrite5m: max(0, usage.cacheWriteTokens ?? 0))
+            // Clamp first (D61): a corrupt value must not overflow the subtraction or the sums later.
+            let cacheRead = max(TokenCounts.clamp(usage.cacheReadTokens ?? 0), TokenCounts.clamp(usage.cachedTokens ?? 0))
+            let counts = TokenCounts(input: max(0, TokenCounts.clamp(usage.inputTokens) - cacheRead),
+                                     output: TokenCounts.clamp(usage.outputTokens),
+                                     cacheRead: cacheRead, cacheWrite5m: TokenCounts.clamp(usage.cacheWriteTokens ?? 0))
             // The model ID can have the provider prefix: "meta/muse-spark-1.3".
             let model = event.model.map { $0.hasPrefix("meta/") ? String($0.dropFirst(5)) : $0 } ?? "unknown"
             records["\(micros) \(model) \(counts.input) \(counts.output) \(counts.cacheRead)"] = UsageRecord(

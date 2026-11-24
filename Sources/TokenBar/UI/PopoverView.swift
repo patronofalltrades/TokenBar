@@ -296,16 +296,18 @@ private struct TrendView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
+                // One line (D61): a long unit name must not make the headline taller while the pointer moves.
                 Text(active.map { "\(PopoverFormat.day($0.day)): \($0.text)" } ?? title)
-                Spacer()
+                    .lineLimit(1).truncationMode(.tail)
+                Spacer(minLength: 4)
                 Button(days == 30 ? "7 days" : "30 days") { days = days == 30 ? 7 : 30 }
-                    .buttonStyle(.plain).underline()
+                    .buttonStyle(.plain).underline().fixedSize()
                     .accessibilityLabel(days == 30 ? "Show the last 7 days" : "Show the last 30 days")
                 // The change compares 7 days with the 7 days before. The 30-day view has no period before it.
                 if let delta, days != 30 {
                     Text(PopoverFormat.delta(delta))
-                        .padding(.horizontal, 6).padding(.vertical, 1)
-                        .background(Theme.paper.opacity(0.2), in: Capsule())
+                        .padding(.horizontal, 6).padding(.vertical, 1).fixedSize()
+                        .background(Color.black.opacity(0.2), in: Capsule())  // dark on the headline: 4.5:1 or more in both modes
                         .help("Against the 7 days before")
                         .accessibilityLabel(PopoverFormat.delta(delta, spoken: true))
                 }
@@ -358,9 +360,12 @@ private struct RadarView: View {
                     polygon(in: proxy.size) { top > 0 ? shares[$0].percent / top : 0 }.fill(Theme.bar.opacity(0.4))
                     polygon(in: proxy.size) { top > 0 ? shares[$0].percent / top : 0 }.stroke(Theme.ink, lineWidth: 2)
                     ForEach(Array(shares.enumerated()), id: \.element.provider) { index, share in
+                        let label = RadarLayout.label(index, count: shares.count, in: proxy.size)
                         Text("\(DisplayBuilder.name(share.provider)) \(Int(share.percent.rounded()))%")
-                            .font(.caption2).monospacedDigit()
-                            .position(point(index, 1.3, in: proxy.size))
+                            .font(.caption2).monospacedDigit().lineLimit(1)
+                            .frame(width: label.frame.width, height: label.frame.height,
+                                   alignment: label.side == .leading ? .leading : label.side == .trailing ? .trailing : .center)
+                            .position(x: label.frame.midX, y: label.frame.midY)
                     }
                 }
             }
@@ -371,16 +376,9 @@ private struct RadarView: View {
         .accessibilityLabel(PopoverFormat.shares(shares))
     }
 
-    /// The first axis points up. The radius leaves room for the labels.
-    private func point(_ index: Int, _ scale: Double, in size: CGSize) -> CGPoint {
-        let angle = 2 * Double.pi * Double(index) / Double(shares.count) - Double.pi / 2
-        let radius = (size.height / 2 - 20) * scale
-        return CGPoint(x: size.width / 2 + radius * cos(angle), y: size.height / 2 + radius * sin(angle))
-    }
-
     private func polygon(in size: CGSize, scale: (Int) -> Double) -> Path {
         Path { path in
-            path.addLines(shares.indices.map { point($0, scale($0), in: size) })
+            path.addLines(shares.indices.map { RadarLayout.point($0, count: shares.count, scale: scale($0), in: size) })
             path.closeSubpath()
         }
     }

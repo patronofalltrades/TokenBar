@@ -42,6 +42,15 @@ import Testing
         #expect(records[0].tokens == TokenCounts(input: 400, output: 90, cacheRead: 800, cacheWrite5m: 7))
     }
 
+    /// D61: a corrupt count must not crash the app. The subtraction input minus cache overflowed before the clamp.
+    @Test func corruptCountsAreClamped() async throws {
+        try write([completed(input: Int.min, output: Int.max, cached: Int.max, write: Int.max)])
+        let max = TokenCounts.maximumCount
+        #expect(try await records().map(\.tokens) == [TokenCounts(input: 0, output: max, cacheRead: max, cacheWrite5m: max)])
+        try write([completed(input: -5, output: -5, cached: -5, write: -5)], session: "2026/11/17/s2")
+        #expect(try await records().count == 2)  // negative counts give 0 and no trap
+    }
+
     @Test func countsOnlyModelCompletedEvents() async throws {
         // The other usage events repeat the same tokens. A replayed line counts one time.
         try write([completed(kind: "goal_usage_attribution"), completed(kind: "workflow_child_lifecycle"),

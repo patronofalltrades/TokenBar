@@ -131,7 +131,7 @@ private struct AppPopover: View {
                     openSettings()
                 }))
         } else {
-            ProgressView("Reading your logs…").padding(16).frame(width: 320).onPaper()
+            ProgressView("Reading your logs…").padding(16).frame(width: 320).onGlass()
         }
     }
 }

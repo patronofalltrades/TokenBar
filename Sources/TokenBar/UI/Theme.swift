@@ -111,7 +111,7 @@ private struct GlassCard: ViewModifier {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 if reduceTransparency {
-                    shape.fill(Theme.track)
+                    shape.fill(Theme.paper)  // not `track`: the limit bar track must stay visible on the card (D61)
                 } else {
                     shape.fill(.thinMaterial)
                 }

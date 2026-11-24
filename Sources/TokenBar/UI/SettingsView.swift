@@ -16,6 +16,7 @@ struct SettingsView: View {
         }
         .frame(width: 480)
         .tint(Theme.control)
+        .fontDesign(.rounded)  // D60
     }
 }
 

@@ -158,7 +158,7 @@ Each enabled provider has one row.
 | Limit bar | One bar for each limit of the provider. Width 100% of the row. Height 6 pt. |
 | Reset | `resets in 1 h 48 min`. Use relative time below 24 hours. Use weekday and time above 24 hours: `resets Mon 09:00`. |
 | Age | `as of 14:02`. The time when the limit source last reported the value. Show it under each limit. |
-| Models | `This week: claude-opus-4-7 82% · claude-haiku-4-5 18%`. The 3 models with the most output tokens in the last 7 days, each with its share (D56). `.caption`, secondary. No line without output tokens. No EUR (D42). |
+| Models | `This week: claude-opus-4-7 82% · claude-haiku-4-5 18%`. A model name has no control or format characters and at most 40 characters (D61). The 3 models with the most output tokens in the last 7 days, each with its share (D56). `.caption`, secondary. No line without output tokens. No EUR (D42). |
 
 Below the provider rows, a radar chart shows the most used providers (D53).
 
@@ -167,6 +167,7 @@ Below the provider rows, a radar chart shows the most used providers (D53).
 - The most used provider reaches the outer ring. Each axis has a label with the provider name and the percent.
 - The radar shows only with 3 or more installed providers. A radar with fewer axes has no area.
 - A caption above the radar says "Most used, last 7 days". The height of the chart is 130 pt.
+- Each axis label is outside the outer ring, next to its vertex. The text of a label grows away from the chart. A label never touches the ring, another label or the edge of the chart (`RadarLayout`, D61).
 - The radar is below the provider rows. It scrolls with the body (Section 3.1).
 - The radar uses the ink and the bar tint. It uses no brand color.
 
@@ -785,7 +786,7 @@ Use the system font (SF Pro) only, in its rounded design (D60): `.fontDesign(.ro
 2. A glass card holds one provider row, the radar, the roast and the "still available" line. It has a `.thinMaterial`, a corner radius of 12 pt, a 1 pt `Theme.rule` edge, 10 pt padding and a soft shadow.
 3. The index headline stays a solid `accent` surface with `paper` text. A translucent headline would lose its contrast.
 4. The share card stays opaque (Section 7.7). It is an image for chat apps.
-5. With **Reduce Transparency** on, the popover is solid paper, the cards are solid `Theme.track` and the shadow is off (Section 9.3).
+5. With **Reduce Transparency** on, the popover is solid paper, the cards are solid paper with the 1 pt edge, and the shadow is off (Section 9.3). A card is not `Theme.track`, because the limit bar track has that color and must stay visible on the card (D61).
 6. The contrast of text on glass depends on the wallpaper. A person checks the popover over a light and a dark wallpaper before each release.
 
 ---
