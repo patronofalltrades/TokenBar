@@ -50,6 +50,24 @@ import Testing
         #expect(records.map(\.model) == ["grok-4.5", "unknown", "unknown"])
     }
 
+    /// D61: a corrupt count must not crash the app.
+    @Test func corruptCountsAreClamped() async throws {
+        try writeLog([inference(prompt: Int.max, cached: Int.max, completion: Int.min)])
+        let max = TokenCounts.maximumCount
+        let records = try await GrokProvider(home: home).fetch(now: now).records
+        #expect(records.map(\.tokens) == [TokenCounts(input: 0, output: 0, cacheRead: max)])
+    }
+
+    /// D61: a session without a summary cost one file read in each project folder at each refresh.
+    @Test func missingSummaryIsNotSearchedAgainForFiveMinutes() async throws {
+        try writeLog([inference()])
+        let provider = GrokProvider(home: home)
+        #expect(try await provider.fetch(now: now).records.first?.model == "unknown")
+        try writeSummary(#"{"current_model_id":"grok-4.5"}"#)
+        #expect(try await provider.fetch(now: now.addingTimeInterval(60)).records.first?.model == "unknown")
+        #expect(try await provider.fetch(now: now.addingTimeInterval(301)).records.first?.model == "grok-4.5")
+    }
+
     @Test func repeatedRowCountsOneTime() async throws {
         try writeLog([inference(), inference(), inference(ago: 200), inference(ago: 36 * 24 * 3600)])
         #expect(try await GrokProvider(home: home).fetch(now: now).records.count == 2)

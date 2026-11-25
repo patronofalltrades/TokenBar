@@ -24,6 +24,9 @@ actor GrokProvider: UsageProvider {
     private var rows: Set<Row> = []
     /// Key: session ID.
     private var models: [String: String] = [:]
+    /// Key: session ID. When the search for its summary found nothing. Search again after `retryAfter` (D61).
+    private var missing: [String: Date] = [:]
+    private static let retryAfter: TimeInterval = 300
 
     init(home: URL = GrokProvider.defaultHome) {
         self.home = home
@@ -45,8 +48,11 @@ actor GrokProvider: UsageProvider {
         rows.formUnion(new)
         rows = rows.filter { $0.time >= start }
 
+        let live = Set(rows.map(\.session))
+        models = models.filter { live.contains($0.key) }
+        missing = missing.filter { live.contains($0.key) }
         var names: [String: String] = [:]
-        for session in Set(rows.map(\.session)) { names[session] = model(of: session) }
+        for session in live { names[session] = model(of: session, now: now) }
         let records = rows.map {
             UsageRecord(provider: .grok, model: names[$0.session] ?? "unknown", timestamp: $0.time, tokens: $0.tokens)
         }
@@ -64,16 +70,19 @@ actor GrokProvider: UsageProvider {
         guard line.range(of: marker) != nil, let entry = try? decoder.decode(Entry.self, from: line),
               entry.msg == event, let ctx = entry.ctx, let time = entry.ts?.date else { return nil }
         // `prompt_tokens` includes the cached tokens. `completion_tokens` includes the reasoning tokens.
-        let prompt = max(0, ctx.promptTokens)
-        let cached = min(max(0, ctx.cachedPromptTokens ?? 0), prompt)
+        // Clamp first (D61): a corrupt value must not overflow the sums later.
+        let prompt = TokenCounts.clamp(ctx.promptTokens)
+        let cached = min(TokenCounts.clamp(ctx.cachedPromptTokens ?? 0), prompt)
         return Row(session: entry.sid ?? "", time: time,
-                   tokens: TokenCounts(input: prompt - cached, output: max(0, ctx.completionTokens), cacheRead: cached))
+                   tokens: TokenCounts(input: prompt - cached, output: TokenCounts.clamp(ctx.completionTokens), cacheRead: cached))
     }
 
     /// The model of a session, from `sessions/<encoded folder>/<session ID>/summary.json`. The log row has no model.
     /// "unknown" has no price, so the popover says "Some models not counted".
-    private func model(of session: String) -> String {
+    private func model(of session: String, now: Date) -> String {
         if let known = models[session] { return known }
+        // A session without a summary cost one file read in each project folder. Do not repeat it at each refresh.
+        if let at = missing[session], now.timeIntervalSince(at) < Self.retryAfter { return "unknown" }
         // The ID becomes a path component. Permit only letters, digits, "-" and "_".
         guard !session.isEmpty,
               session.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }) else { return "unknown" }
@@ -85,8 +94,10 @@ actor GrokProvider: UsageProvider {
                   let model = summary.currentModelId ?? summary.info?.currentModelId ?? summary.modelId ?? summary.info?.modelId
             else { continue }
             models[session] = model
+            missing[session] = nil
             return model
         }
+        missing[session] = now
         return "unknown"
     }
 

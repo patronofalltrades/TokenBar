@@ -41,18 +41,20 @@ struct DisplayBuilder {
             for record in snapshot?.records ?? [] where record.timestamp <= now {
                 records.append(record)
                 let cost = costs.costEUR(record, prices: prices)
+                // A corrupt count must not overflow a sum (D61). The providers clamp too. This guards the old ones.
+                let output = TokenCounts.clamp(record.tokens.output)
                 if record.timestamp >= weekStart {
-                    outputWeek += record.tokens.output
-                    modelOutput[record.model, default: 0] += record.tokens.output
-                    weekOutput[id, default: 0] += record.tokens.output
+                    outputWeek += output
+                    modelOutput[record.model, default: 0] += output
+                    weekOutput[id, default: 0] += output
                     if cost == nil { unpriced = true }
                 }
                 if record.timestamp >= today {
-                    outputToday += record.tokens.output
+                    outputToday += output
                     costToday += cost ?? 0
                 }
                 let day = dayStart(record.timestamp)
-                dailyOutput[day, default: 0] += record.tokens.output
+                dailyOutput[day, default: 0] += output
                 guard let cost else { continue }
                 dailyCosts[day, default: 0] += cost
                 if record.timestamp >= weekStart { costWeek += cost }
@@ -123,7 +125,8 @@ struct DisplayBuilder {
                 days.reduce(0) { $0 + (index == .water ? Double(dailyOutput[$1] ?? 0) : double(dailyCosts[$1] ?? 0)) }
             }
             let before = usage(dayStarts.dropFirst(7).prefix(7))
-            if before > 0 { trendDelta = Int(((usage(dayStarts.prefix(7)) - before) / before * 100).rounded()) }
+            // Clamped (D61): a tiny earlier week and a large current week give a huge ratio. Int(...) traps on it.
+            if before > 0 { trendDelta = Int(max(-999, min(999, ((usage(dayStarts.prefix(7)) - before) / before * 100).rounded()))) }
             let unit = pick?.unit ?? cafe.units[0]
             var total = spend ?? 0  // the Tuition Meter is a running total: go back one day at a time
             for day in dayStarts.prefix(30) {
@@ -191,13 +194,23 @@ struct DisplayBuilder {
     /// A date suffix goes, so "claude-haiku-4-5-20251001" and "claude-haiku-4-5" are one model.
     static func modelLine(_ output: [String: Int]) -> String? {
         var models: [String: Int] = [:]
-        for (model, tokens) in output { models[model.replacing(/-\d{4}-?\d{2}-?\d{2}$/, with: ""), default: 0] += tokens }
+        for (model, tokens) in output { models[cleanModelName(model), default: 0] += tokens }
         let total = models.values.reduce(0, +)
         guard total > 0 else { return nil }
         // The most tokens first. Equal counts are in name order, so the line does not change between refreshes.
         return models.sorted { ($0.value, $1.key) > ($1.value, $0.key) }.prefix(3)
             .map { "\($0.key) \(Int((Double($0.value) / Double(total) * 100).rounded()))%" }
             .joined(separator: " · ")
+    }
+
+    /// A model name for the popover (D61): no date suffix, no control or format characters (newline, right-to-left override),
+    /// at most 40 characters. The name comes from a log file that another program writes.
+    static func cleanModelName(_ name: String) -> String {
+        let dateless = name.replacing(/-\d{4}-?\d{2}-?\d{2}$/, with: "")
+        let visible = String(String.UnicodeScalarView(dateless.unicodeScalars.filter {
+            !CharacterSet.controlCharacters.contains($0) && $0.properties.generalCategory != .format
+        }))
+        return visible.count > 40 ? String(visible.prefix(39)) + "…" : visible
     }
 
     static func isNotInstalled(_ error: any Error) -> Bool {

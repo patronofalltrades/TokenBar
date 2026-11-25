@@ -12,6 +12,12 @@ struct TokenCounts: Hashable, Sendable {
     var cacheRead = 0
     var cacheWrite5m = 0
     var cacheWrite1h = 0
+
+    /// No real response has more tokens than this. A larger value is a corrupt log line (D61).
+    static let maximumCount = 1_000_000_000_000
+
+    /// A count from a log file, kept in 0 to `maximumCount`. Sums of clamped counts cannot overflow.
+    static func clamp(_ count: Int) -> Int { min(max(count, 0), maximumCount) }
 }
 
 /// One API response, or one API bucket.

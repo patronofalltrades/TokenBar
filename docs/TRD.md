@@ -312,6 +312,8 @@ Mapping: `input = max(0, tokens.input + tokens.tool − tokens.cached)`. `cacheR
 3. The session ID becomes a path component. Accept only letters, digits, `-` and `_`.
 4. A session without a model in `summary.json` has the model `unknown`. It has no price (Section 6, rule 3).
 5. No limit data exists in the local files. The row has no limit bars.
+6. Clamp each count to 0 to 10^12 (`TokenCounts.clamp`, D61). A larger value is a corrupt line, and it must not overflow a sum.
+7. A session without a summary is searched again after 5 minutes at the earliest. The search reads one file in each project folder.
 
 **Verification status. UNVERIFIED on a real install.** Sources: relayhistory `ingest/grok.rs` (a test literal of the log line), agentpulse issue 31 (observed on grok 1.0.77), tokscale `sessions/grok.rs` (the two "includes" rules). No source shows a line from a real install. The model IDs that Grok Build writes are not confirmed: the fixtures use `grok-4.5-build` and `grok-code-fast`, which are not on the xAI price page. Those models have no price until a person confirms them. The history is only as long as the log. Tests use synthetic fixtures.
 
@@ -340,7 +342,8 @@ Mapping: `input = max(0, tokens.input + tokens.tool − tokens.cached)`. `cacheR
 3. Count each subagent file. Its usage is not in the parent file.
 4. A replayed line counts one time. The key is the timestamp, the model and the counts.
 5. No limit data exists in the local files. The row has no limit bars.
-6. Meta publishes no price for cache writes. A cache write costs 0 (Section 6, rule 5).
+6. Clamp each count to 0 to 10^12 (`TokenCounts.clamp`, D61). A larger value is a corrupt line, and it must not overflow a sum.
+7. Meta publishes no price for cache writes. A cache write costs 0 (Section 6, rule 5).
 
 **Verification status.** From three open-source parsers and their fixtures: tokscale `sessions/muse.rs`, relayhistory `ingest/muse/parse.rs` and Irrlicht `agents/muse/parser.go`. They agree on all fields in the table. No Muse Code data is on this Mac. Tests use synthetic fixtures.
 
