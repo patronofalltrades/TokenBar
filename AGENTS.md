@@ -81,7 +81,7 @@ Do not add a third-party dependency without approval from the maintainer. Use th
 2. A provider returns usage data. A provider does not format text or show UI.
 3. Prices, café-index units and roasts are data, not code. Keep them in `Sources/TokenBar/Resources/*.json`. Each price must have a source URL and a "last verified" date.
 4. Do not read prompt content or response content from logs. Read only token counts, model names, timestamps, limit percentages and limit reset times.
-5. Do not send usage data off the Mac. Do not add telemetry or analytics.
+5. Do not send usage data off the Mac. Do not add telemetry or analytics. One exception: the opt-in class leaderboard (D62, TRD Section 17). It is off by default. It sends only the fields in TRD 17.1.
 6. Keep API keys only in the Keychain. Do not write keys to files, logs or `UserDefaults`. v1 has no API keys. This rule applies when API keys come back (Later).
 
 ## 6. Concurrent work with other agents

@@ -50,6 +50,7 @@ struct DisplaySnapshot: Equatable, Sendable {
     var trend: [TrendPoint] = []    // the last 30 days, oldest first. Empty before the index choice or without data.
     var trendDelta: Int? = nil      // percent change: the last 7 days against the 7 days before. Nil without earlier usage.
     var shares: [ProviderShare] = []  // one for each installed provider. The radar needs 3 or more.
+    var leaderboard: LeaderboardNumbers? = nil  // the three numbers for the class leaderboard. Nil without usage data.
     let roast: String?              // nil before the user picks an index, when roasts are off, or when none matches
     let lastRefresh: Date?
 }

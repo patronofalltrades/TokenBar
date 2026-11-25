@@ -13,6 +13,9 @@ final class AppModel {
     private var roasts = RoastSelector(roasts: try! Roast.shipped())
     private let tuition = TuitionTotal(defaults: .standard)
     private var shown = DisplaySettings()
+    private var shownAccount = LeaderboardAccount(.standard)
+    /// The class leaderboard (D62). It sends nothing while the toggle is off or the server address is empty.
+    let leaderboard = LeaderboardModel(client: LeaderboardHTTP.client(config: try? LeaderboardConfig.shipped()), tokens: KeychainTokenStore())
     private var watcher: FileWatcher?
     private var pending: Set<ProviderID> = []
     private var scheduled: Set<ProviderID> = []
@@ -33,6 +36,8 @@ final class AppModel {
                 guard let self else { return }
                 // The builder also writes settings. Those writes do not change `DisplaySettings`, so no loop.
                 if DisplaySettings() != shown, store.lastRefresh != nil { build() }
+                // A new class code, handle or toggle value sends at once (TRD 17.4 rule 1).
+                if LeaderboardAccount(.standard) != shownAccount { syncLeaderboard() }
             }
         }
         // The bridge writes the Claude limits file in this folder. Make it, so the watcher can include it.
@@ -74,11 +79,23 @@ final class AppModel {
         await store.refresh(only: ids)
         build()
         if let snapshot { LimitAlerts().refreshed(snapshot) }
+        syncLeaderboard()  // not awaited: a request never blocks the usage refresh (TRD 17.4 rule 5)
         if !pending.isEmpty {
             let ids = pending
             pending = []
             await refresh(only: ids)
         }
+    }
+
+    private func syncLeaderboard() {
+        shownAccount = LeaderboardAccount(.standard)
+        let numbers = snapshot?.leaderboard
+        Task { await leaderboard.tick(numbers: numbers) }
+    }
+
+    /// The leaderboard card for the popover. Nil when the leaderboard is off or has no board.
+    var leaderboardCard: LeaderboardCardData? {
+        leaderboard.card(index: snapshot?.index, cafe: builder.cafe, water: builder.water)
     }
 
     private func build() {
@@ -112,7 +129,7 @@ struct TokenBarApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Settings { SettingsView() }
+        Settings { SettingsView(leaderboard: model.leaderboard) }
     }
 }
 
@@ -123,7 +140,7 @@ private struct AppPopover: View {
 
     var body: some View {
         if let snapshot = model.snapshot {
-            PopoverView(snapshot: snapshot, actions: PopoverActions(
+            PopoverView(snapshot: snapshot, leaderboard: model.leaderboardCard, actions: PopoverActions(
                 refresh: { Task { await model.refresh() } },
                 openSettings: {
                     // An accessory app is not active, so the Settings window opens behind other windows.

@@ -186,7 +186,12 @@ struct DisplayBuilder {
         return DisplaySnapshot(
             state: state, index: index, menuBarText: text, menuBarSymbol: symbol, rows: rows,
             indexLine: line?.text, indexSymbol: line?.symbol, indexEmoji: line?.emoji, indexDetail: line?.detail,
-            indexMath: line?.math, trend: trend, trendDelta: trendDelta, shares: shares, roast: roast, lastRefresh: lastRefresh)
+            indexMath: line?.math, trend: trend, trendDelta: trendDelta, shares: shares,
+            leaderboard: spend.map {
+                LeaderboardNumbers(weekCostEUR: NSDecimalNumber(decimal: costWeek).doubleValue, weekOutputTokens: outputWeek,
+                                   spendSinceInstallEUR: NSDecimalNumber(decimal: $0).doubleValue)
+            },
+            roast: roast, lastRefresh: lastRefresh)
     }
 
     /// DRD 3.2: the 3 models with the most output tokens, each with its share. Nil without output tokens.
