@@ -18,7 +18,7 @@ TokenBar is a macOS menu bar app for Apple silicon. In v1, it reads LLM usage fr
 Technical goals:
 
 1. Read only token counts, model names, timestamps and limit percentages. Never keep prompt or response content.
-2. Make no network request unless the user turns on the update check.
+2. Make no network request unless the user turns on the update check or the class leaderboard (Section 17).
 3. Show new usage in 60 seconds or less (PRD AC5).
 4. Use less than 1% average CPU when idle (PRD NFR-04).
 5. Keep the provider layer clean: one `UsageProvider` protocol and one adapter for each source.
@@ -447,11 +447,11 @@ Skipped: loading user-supplied data files from disk. Add it if contributors ask 
 
 | Requirement | Implementation | Check |
 |---|---|---|
-| Local only | No server. No analytics SDK. No crash reporter. | Code review. `grep` in CI for `URLSession` outside `Core/HTTP.swift`. |
+| Local only | No analytics SDK. No crash reporter. The only server is the opt-in class leaderboard (Section 17). | Code review. `grep` in CI for `URLSession` outside `Core/HTTP.swift`. |
 | No prompt content | Decodable structs declare only the fields in Section 5. | Fixture test: content contains `SECRET-MARKER`; assert no record, log or file contains it. |
 | Keys in Keychain (Later) | v1 has no API keys. When they come back: `SecItemAdd`/`SecItemCopyMatching`, `kSecClassGenericPassword`, service = bundle ID, account = `ProviderID.rawValue`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`. | Unit test with a test-only service name. |
 | No keys in files (Later) | Never write a key to `UserDefaults`, a file or a log. Do not print a key in an error. | Code review. |
-| Host allowlist | `HTTP.swift` has one function. In v1, it rejects any host that is not `api.github.com`. | Unit test. |
+| Host allowlist | `HTTP.swift` has one function. It rejects any host that is not on the list: `api.github.com` (update check, off by default) and the leaderboard host from `Resources/leaderboard.json` (Section 17, off by default). | Unit test. |
 | Read-only on other apps' files | Open `~/.claude`, `~/.codex`, `~/.gemini/tmp`, `~/.grok` and `~/.local/share/muse` files read-only. Never write there. | Code review. |
 | Logs | Use `os.Logger` with `privacy: .private` for paths and model names. Log counts, not values. | Code review. |
 
@@ -605,7 +605,7 @@ Add Sparkle only if users fail to update and the build is signed.
 **Future seams (do not build now).**
 
 - MCP server: a later `--mcp` mode in `App/main.swift` can reuse the providers and `CostEngine`, because they have no UI imports. It must expose totals only, never records with paths. Skipped until the roadmap item starts.
-- Class leaderboard: needs a backend. This breaks "no data leaves the Mac". It needs an explicit opt-in, a pseudonym, daily totals only (no model, project or path), and a deletion path. Out of scope for v1.0.
+- Class leaderboard: specified in Section 17 (D62). Build order: the server, then the app. The deploy needs the maintainer's Cloudflare account.
 
 ## 14. Work breakdown
 
@@ -689,3 +689,82 @@ Parallel waves: Wave 1: T01. Wave 2: T02, T03, T06, T10, T14. Wave 3: T04, T05, 
 | TQ5 | If the formula ships after the alpha (TRD-T11): does the release workflow need a tap token for automatic formula updates? Is the `brew trust --tap` step acceptable for the launch audience? | Maintainer, after the alpha |
 | TQ6 | Which Xcode version does CI pin? It must ship Swift 6 and Swift Testing. | First agent on T01 |
 | TQ7 | Does TokenBar also read `~/Library/Application Support/Claude/*/.claude/projects` (Claude Desktop sessions)? CodexBar does. Not checked on this Mac. | Maintainer |
+
+---
+
+## 17. Class leaderboard (opt-in, D62)
+
+The leaderboard lets a class compare its AI use. It is the only feature that sends data off the Mac. It replaces the rule "no data leaves the Mac" with: no data leaves the Mac, except the fields in 17.1, and only when the user turns the leaderboard on.
+
+### 17.1 Rules
+
+1. The leaderboard is off by default. The user turns it on in Settings with a class code and a handle.
+2. With the toggle off, or with an empty server address in `Resources/leaderboard.json`, the app makes no leaderboard request. A test checks this.
+3. The app sends these fields and no other field: the handle, the class code (in the URL), the member token (in a header), the date, the cost of the last 7 days in EUR, the output tokens of the last 7 days, and the total spend since install in EUR.
+4. The app sends no provider name, no model name, no path, no prompt content, no device ID and no limit data.
+5. Everyone who has the class code sees the handle and the three numbers of each member. The Settings text says this before the user turns the toggle on.
+6. The member token is 32 random bytes, in base64url. The app makes it on the Mac and keeps it in the Keychain (AGENTS 5.6). The server keeps only its SHA-256 hash.
+7. The user can leave the class and delete the data at any time. The server deletes a member that has not written for 30 days.
+8. The server code reads no IP address and keeps none. The hosting service (Cloudflare) can keep its own request logs under its own policy.
+
+### 17.2 Protocol, version 1
+
+The base address is `endpoint` in `Resources/leaderboard.json`. The maintainer sets it after the deploy. The file has an empty `endpoint` until then.
+
+| Request | Header | Body | Reply |
+|---|---|---|---|
+| `PUT /v1/classes/{code}/members/{handle}` | `Authorization: Bearer <token>` | `{"v":1,"asOf":"2026-11-25","weekCostEUR":8.5,"weekOutputTokens":123456,"spendSinceInstallEUR":45.6}` | 204 |
+| `GET /v1/classes/{code}/board` | none | none | 200 `{"v":1,"members":[{"handle":"ana","asOf":"2026-11-25","weekCostEUR":8.5,"weekOutputTokens":123456,"spendSinceInstallEUR":45.6}]}` |
+| `DELETE /v1/classes/{code}/members/{handle}` | `Authorization: Bearer <token>` | none | 204 |
+
+| Reply | Meaning |
+|---|---|
+| 401 | The token does not match the member. |
+| 403 | The class has 500 members. |
+| 404 | The class or the member does not exist. |
+| 409 | The handle belongs to another token. |
+| 422 | The request is not valid (see below). |
+| 429 | The member wrote less than 10 minutes ago. The reply has `Retry-After`. |
+
+Validation, on the server:
+
+- `code`: 8 to 40 characters, `a-z`, `0-9` and `-`.
+- `handle`: 2 to 20 characters, letters, digits, `_` and `-`. Two handles that differ only in case are the same handle. The server keeps the case that the member sent first.
+- The body is at most 1,024 bytes. A field that is not in the table is not valid. Each number is finite.
+- `weekCostEUR` is 0 to 100,000. `weekOutputTokens` is a whole number from 0 to 10,000,000,000,000. `spendSinceInstallEUR` is 0 to 10,000,000. `asOf` is a date.
+- The first `PUT` with a new code makes the class. The first `PUT` with a new handle makes the member and keeps the token hash.
+
+### 17.3 Boards
+
+The server returns the numbers. The app makes the three boards, with its own data files, so the units are the same as in the popover.
+
+| Board | Value | Shown as |
+|---|---|---|
+| Café Index | `weekCostEUR` divided by the price of the café con leche | cafés con leche |
+| Water Footprint | `weekOutputTokens` times the millilitres for each token | litres |
+| Tuition Meter | `spendSinceInstallEUR` divided by the tuition | percent |
+
+A higher value ranks first. Equal values rank by handle. The board shows no EUR (D42).
+
+### 17.4 App behavior
+
+1. After a refresh, the app sends its numbers if the last send was 30 minutes ago or more. It sends at once when the user turns the toggle on.
+2. The app fetches the board at most one time in 5 minutes, and only while the toggle is on.
+3. A failed request is quiet. The next cycle tries again. After a failure the wait doubles, to 2 hours at most.
+4. The popover shows the leaderboard card (DRD 3.10) only when the toggle is on and a board is loaded.
+5. A request has a timeout of 10 seconds. The request never blocks the refresh of the usage.
+
+### 17.5 Server
+
+The server is a Cloudflare Worker with a D1 table (`server/` folder). It needs no machine to run. The free plan is enough for a class.
+
+- The logic has no Cloudflare code. `node --test server/test/*.test.js` tests it.
+- Table `members`: `class_code`, `handle_key` (lower case), `handle`, `token_hash`, `as_of`, `week_cost_eur`, `week_output_tokens`, `spend_since_install_eur`, `updated_at`.
+- Retention: on each `PUT` to a class, the server deletes the members of that class with `updated_at` older than 30 days.
+- A class code is a shared secret. Anyone with the code can read the board and join. The app makes a random code for the user ("Make a code").
+- The leaderboard is for a class that trusts each other. There is no cheat protection: a member can send any number.
+
+### 17.6 Verification status
+
+The protocol and the limits come from this document. The server is not deployed. The app cannot send anything until the maintainer sets the address.
+

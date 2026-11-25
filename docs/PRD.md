@@ -85,9 +85,10 @@ The personas below are assumptions. Validate them with the alpha survey (Section
 | G1 | Show current AI usage and cost in the menu bar, with no API key, for Claude Code and Codex users. |
 | G2 | Warn the user before a limit, when a limit source exists. |
 | G3 | Make usage memorable with the café index and roasts. |
-| G4 | Keep all data on the Mac. Send no telemetry. Read no prompt content. |
+| G4 | Keep all data on the Mac. Send no telemetry. Read no prompt content. One exception: the opt-in class leaderboard (G7, D62). |
 | G5 | Get real users at IESE and collect evidence of adoption without telemetry. |
 | G6 | Make the project easy to contribute to: café units and roasts by pull request. |
+| G7 | Let a class compare its AI use in an opt-in leaderboard. The user joins with a class code and a handle. TokenBar sends three weekly numbers and nothing else (TRD 17, D62). |
 
 ### 5.2 Non-goals for v1
 
@@ -95,7 +96,6 @@ The personas below are assumptions. Validate them with the alpha survey (Section
 |---|---|
 | Measure ChatGPT web, claude.ai web or Grok web usage | No public usage API exists for these consumer products (Section 6). |
 | Read browser cookies or scrape web sessions | This conflicts with G4. It is also fragile. |
-| Class leaderboard | Roadmap "Later". It needs a server and consent design. |
 | MCP server | Roadmap "Later". |
 | xAI API usage and Grok plan limits | Roadmap "Later". They need an API key and a new host. Grok Build CLI usage comes from its local log (D54). |
 | API-key providers (OpenAI Admin API, Anthropic Admin API) | Roadmap "Later" (Section 7.5). v1 reads only local files. |
@@ -292,7 +292,7 @@ As P3, I want to add my Anthropic admin key, so that I see my real API cost.
 | v0.1 alpha | Early November 2026 | US-01 to US-08, US-10 |
 | v0.2 alpha | Mid-December 2026 | US-09, US-11, US-12, US-21 |
 | v1.0 | January 2027 | US-15, US-17 to US-20, and fixes from alpha feedback |
-| Later | — | US-13, US-14 (API keys), Spanish, MCP server, opt-in class leaderboard, xAI usage |
+| Later | — | US-13, US-14 (API keys), Spanish, MCP server, xAI usage |
 
 Create one Linear issue for each story. Use the story ID in the issue title. US-16 is cancelled (2026-10-08, Section 6). Do not reuse the ID.
 
@@ -301,7 +301,7 @@ Create one Linear issue for each story. Use the story ID in the issue title. US-
 | ID | Requirement |
 |---|---|
 | NFR-01 | TokenBar reads no prompt or response content (AGENTS.md 5.4). |
-| NFR-02 | TokenBar sends no usage data off the Mac and has no telemetry (AGENTS.md 5.5). |
+| NFR-02 | TokenBar sends no usage data off the Mac and has no telemetry, except the opt-in class leaderboard (AGENTS.md 5.5, TRD 17). The leaderboard is off by default. |
 | NFR-03 | v1 has no API keys. When API keys come back (Later), TokenBar keeps them only in the Keychain (AGENTS.md 5.6). |
 | NFR-04 | TokenBar uses less than 1% average CPU when idle (target, to verify in TRD). |
 | NFR-05 | TokenBar works offline. In v1, only the opt-in update check needs the network. |
