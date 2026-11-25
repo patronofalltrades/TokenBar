@@ -268,6 +268,18 @@ TokenBar has no Stale state and no stale banner (Section 2.4, rule 3).
 
 Keyboard: `⌘,` opens Settings. `⌘R` refreshes. `⌘Q` quits.
 
+### 3.10 Class leaderboard card (D62)
+
+The card shows only when the leaderboard is on in Settings and the app has loaded a board (TRD 17).
+
+- A glass card (Section 8.5) below the provider rows and the radar, above the roast.
+- Title: "Class leaderboard" and the class code in `.caption`, secondary.
+- One line for the selected index (Section 2.5): "You are #3 of 28" with the value of the user: "7.2 cafés con leche", "31 L of water" or "0.4% of your MBA tuition".
+- The first 3 members of that board, one line each: the rank, the handle and the value. The line of the user has the ink color and a medium weight. The others are secondary.
+- The caption "Updated 5 min ago" at the bottom.
+- The card has no EUR (D42). VoiceOver reads the card as one element: "Class leaderboard. You are number 3 of 28. First: Ana, 12 cafés con leche. Second: …".
+- A failed fetch hides the card. It shows no error.
+
 ---
 
 ## 4. Onboarding and first run
@@ -429,6 +441,20 @@ Rules:
 6. No Café index toggle exists (D41). The index choice replaces it.
 
 When Roasts is off, TokenBar shows the index and the numbers only. It must work fully.
+
+### 5.1 Class leaderboard section (D62)
+
+The Settings window has a **Leaderboard** section (TRD 17).
+
+| Element | Rule |
+|---|---|
+| Toggle | "Join a class leaderboard". Off by default. It cannot turn on without a class code and a handle. |
+| Class code | A text field and a **Make a code** button. The button fills a random code, for example `cafe-k3m9-x7q2`. The user shares the code with the class. |
+| Handle | A text field. 2 to 20 characters: letters, digits, `_` and `-`. No real name is needed. |
+| Consent text | "TokenBar sends your handle, your cost this week, your output tokens this week and your total spend since install to the class server. Everyone who has the class code sees them. TokenBar sends nothing else." It shows above the toggle. |
+| Leave button | **Leave class and delete my data**. It asks the server to delete the member, then clears the code, the handle and the token. |
+| Not set up | When the server address is empty, the section shows "The class leaderboard is not set up yet." The toggle is off and disabled. |
+| Errors | A taken handle shows "That handle is taken in this class. Choose another." A full class shows "This class is full." |
 
 ---
 
@@ -856,4 +882,4 @@ The user can reach all controls in the popover and in Settings with the keyboard
 | 8 | Resolved 2026-10-08: tuition is a benchmark, not a café unit (Section 7.6). | — |
 | 9 | Resolved 2026-10-08: the share card is a v0.2 Must (Section 7.7). | — |
 | 10 | Future idea, not v1: a mood mascot in the popover that reacts to the usage level. | Later |
-| 11 | Future idea, not v1: an opt-in class leaderboard (README roadmap). It needs its own privacy design. | Later |
+| 11 | Resolved 2026-11-25: the opt-in class leaderboard (D62, TRD Section 17, Section 3.10 and Section 5). | — |
