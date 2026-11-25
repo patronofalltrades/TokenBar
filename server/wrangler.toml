@@ -1,0 +1,8 @@
+name = "tokenbar-leaderboard"
+main = "src/index.mjs"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tokenbar-leaderboard"
+database_id = "REPLACE_WITH_THE_ID_FROM_wrangler_d1_create"
