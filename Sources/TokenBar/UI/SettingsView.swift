@@ -4,6 +4,9 @@ import SwiftUI
 
 /// The Settings window content (DRD 5). Put it in a SwiftUI `Settings` scene.
 struct SettingsView: View {
+    /// Nil in tests and previews: the Leaderboard tab then shows the not set up state.
+    var leaderboard: LeaderboardModel?
+
     /// TRD 5.1. The status line bridge (TRD-T13) reads this exact command. Do not change it here only.
     static let statusLineSnippet =
         #"{"statusLine": {"type": "command", "command": "~/Applications/TokenBar.app/Contents/MacOS/TokenBar --statusline"}}"#
@@ -12,6 +15,7 @@ struct SettingsView: View {
         TabView {
             GeneralSettings().tabItem { Label("General", systemImage: "gearshape") }
             AlertSettings().tabItem { Label("Alerts", systemImage: "bell") }
+            LeaderboardSettings(model: leaderboard).tabItem { Label("Leaderboard", systemImage: "person.3") }
             AboutSettings().tabItem { Label("About", systemImage: "info.circle") }
         }
         .frame(width: 480)
@@ -115,6 +119,61 @@ struct GeneralSettings: View {
             loginFailed = true
         }
         loginStatus = SMAppService.mainApp.status
+    }
+}
+
+/// DRD 5.1. Off by default. The consent text shows above the toggle.
+struct LeaderboardSettings: View {
+    static let consent = "TokenBar sends your handle, your cost this week, your output tokens this week and your total spend since install to the class server. Everyone who has the class code sees them. TokenBar sends nothing else."
+
+    let model: LeaderboardModel?
+    @AppStorage(SettingsKey.leaderboardEnabled) private var enabled = false
+    @AppStorage(SettingsKey.leaderboardCode) private var code = ""
+    @AppStorage(SettingsKey.leaderboardHandle) private var handle = ""
+    @State private var leaving = false
+
+    private var configured: Bool { model?.isConfigured ?? false }
+    private var ready: Bool { LeaderboardRules.isValidCode(code) && LeaderboardRules.isValidHandle(handle) }
+
+    var body: some View {
+        Form {
+            if !configured {
+                Text("The class leaderboard is not set up yet.").foregroundStyle(Theme.secondary)
+            }
+            Text(Self.consent).font(.caption).foregroundStyle(Theme.secondary)
+            Toggle("Join a class leaderboard", isOn: $enabled)
+                .disabled(!configured || !ready)
+            HStack {
+                TextField("Class code", text: $code, prompt: Text("cafe-k3m9-x7q2"))
+                Button("Make a code") { code = LeaderboardRules.makeCode() }
+            }
+            .disabled(!configured)
+            TextField("Handle", text: $handle, prompt: Text("2 to 20 letters, digits, _ or -"))
+                .disabled(!configured)
+            if !code.isEmpty, !LeaderboardRules.isValidCode(code) {
+                Text("A class code has 8 to 40 characters: a to z, 0 to 9 and -.").font(.caption).foregroundStyle(Theme.secondary)
+            }
+            if !handle.isEmpty, !LeaderboardRules.isValidHandle(handle) {
+                Text("A handle has 2 to 20 characters: letters, digits, _ and -.").font(.caption).foregroundStyle(Theme.secondary)
+            }
+            if let problem = model?.state.problem {
+                Text(problem).font(.caption).foregroundStyle(Theme.ink)
+            }
+            Button("Leave class and delete my data", role: .destructive) {
+                leaving = true
+                Task {
+                    await model?.leave()
+                    leaving = false
+                }
+            }
+            .disabled(!configured || leaving || (code.isEmpty && handle.isEmpty))
+            if model?.leaveFailed == true {
+                Text("TokenBar could not reach the server. Your data stays until you try again.").font(.caption).foregroundStyle(Theme.ink)
+            }
+        }
+        .formStyle(.grouped)
+        // The toggle cannot stay on without a valid code and handle.
+        .onChange(of: ready) { _, valid in if !valid { enabled = false } }
     }
 }
 

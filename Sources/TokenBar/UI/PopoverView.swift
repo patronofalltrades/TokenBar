@@ -13,6 +13,8 @@ struct PopoverActions {
 /// The popover (DRD 3 and 4.2). It only reads the snapshot.
 struct PopoverView: View {
     let snapshot: DisplaySnapshot
+    /// The class leaderboard card (DRD 3.10). Nil hides it.
+    var leaderboard: LeaderboardCardData?
     var actions = PopoverActions()
     /// Fixed time for previews and tests. Nil: the current time, updated each minute.
     var now: Date?
@@ -57,6 +59,7 @@ struct PopoverView: View {
         VStack(alignment: .leading, spacing: 12) {
             headline
             providerListView(now: now)
+            if let leaderboard { LeaderboardCard(data: leaderboard, now: now) }
             if let roast = snapshot.roast {
                 Text("“\(roast)”")
                     .font(.callout).italic().foregroundStyle(Theme.secondary)
@@ -381,6 +384,41 @@ private struct RadarView: View {
             path.addLines(shares.indices.map { RadarLayout.point($0, count: shares.count, scale: scale($0), in: size) })
             path.closeSubpath()
         }
+    }
+}
+
+/// The class leaderboard card (DRD 3.10): your rank on the board of the selected index, and the top 3.
+private struct LeaderboardCard: View {
+    let data: LeaderboardCardData
+    let now: Date
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text("Class leaderboard").font(.caption.weight(.semibold))
+                Spacer()
+                Text(data.code).font(.caption).foregroundStyle(Theme.secondary).lineLimit(1)
+            }
+            if let headline = data.headline, let me = data.me {
+                Text("\(headline) · \(me.text)").font(.callout.weight(.medium))
+            }
+            ForEach(data.top, id: \.rank) { entry in
+                HStack {
+                    Text("#\(entry.rank)").monospacedDigit()
+                    Text(entry.handle).lineLimit(1)
+                    Spacer()
+                    Text(entry.text).lineLimit(1)
+                }
+                .font(.caption)
+                .fontWeight(entry.isMe ? .medium : .regular)
+                .foregroundStyle(entry.isMe ? Theme.ink : Theme.secondary)
+            }
+            Text(PopoverFormat.updated(data.updatedAt, now: now)).font(.caption2).foregroundStyle(Theme.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassCard()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(data.voiceOver)
     }
 }
 

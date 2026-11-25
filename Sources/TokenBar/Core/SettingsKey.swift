@@ -9,6 +9,9 @@ enum SettingsKey {
     static let alert95Enabled = "alert95Enabled"        // default true
     static let alertLimitEnabled = "alertLimitEnabled"  // default true
     static let trendDays = "trendDays"                  // 7 or 30, default 7 (DRD 3.1)
+    static let leaderboardEnabled = "leaderboardEnabled"  // default false (TRD 17.1)
+    static let leaderboardCode = "leaderboardCode"
+    static let leaderboardHandle = "leaderboardHandle"
 }
 
 /// The settings that change the display. A change rebuilds the snapshot at once, without a log read (IES-224).
