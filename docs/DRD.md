@@ -733,7 +733,7 @@ Rules:
 
 1. Use `Theme.hairline` between popover sections. Do not use `Divider`.
 2. The index headline is a solid `accent` surface with `paper` text: white on red, or near-black on white.
-3. The paper fills the full popover. No window material shows at the edge.
+3. The popover is frosted glass (D60): a window material with a 40% tint of the paper over it. Groups of content sit on glass cards (Section 8.5). The onboarding and Settings windows keep the solid paper.
 4. The bar fill below 80%, the bar fill from 80% and the track have an sRGB distance of 0.3 or more in each mode. A test checks the distance.
 5. Use `ThemeButtonStyle` for the main onboarding buttons. A white system tint hides the button text.
 
@@ -753,7 +753,7 @@ A provider logo keeps its brand colors (D55). This is the only brand color in th
 | Roast | `.callout`, italic, in typographic quotes |
 | Footer | `.caption` |
 
-Use the system font (SF Pro) only. Do not bundle a font.
+Use the system font (SF Pro) only, in its rounded design (D60): `.fontDesign(.rounded)` on the popover, the onboarding and Settings windows. Do not bundle a font. The share card keeps its own fonts (Section 7.7).
 
 ### 8.3 Iconography
 
@@ -778,6 +778,15 @@ Use the system font (SF Pro) only. Do not bundle a font.
 4. Do not animate the menu bar item.
 5. Do not animate the sparkline.
 6. When **Reduce Motion** is on, remove all animation. Change values immediately.
+
+### 8.5 Glass (D60)
+
+1. The popover window has a `.regularMaterial` with the paper color at 40% over it. The two colors of each mode stay (D45).
+2. A glass card holds one provider row, the radar, the roast and the "still available" line. It has a `.thinMaterial`, a corner radius of 12 pt, a 1 pt `Theme.rule` edge, 10 pt padding and a soft shadow.
+3. The index headline stays a solid `accent` surface with `paper` text. A translucent headline would lose its contrast.
+4. The share card stays opaque (Section 7.7). It is an image for chat apps.
+5. With **Reduce Transparency** on, the popover is solid paper, the cards are solid `Theme.track` and the shadow is off (Section 9.3).
+6. The contrast of text on glass depends on the wallpaper. A person checks the popover over a light and a dark wallpaper before each release.
 
 ---
 
@@ -815,6 +824,7 @@ macOS 14 has no system-wide Dynamic Type for apps. Requirements:
 1. Each bar shows its percentage as text.
 2. The Warning and Limit hit states use a different symbol shape, not only a color.
 3. Test all states with **Increase Contrast** and **Differentiate Without Color** on.
+4. With **Reduce Transparency** on, the popover is solid and the cards are solid (Section 8.5). Test all states with it on.
 
 ### 9.4 Keyboard
 

@@ -60,10 +60,64 @@ enum Theme {
 
 extension View {
     /// Ink on paper, with the accent tint. The paper fills the full window, so no material edge shows.
+    /// The font is the system font in its rounded design (D60). It is not a bundled font (DRD 8.2).
     func onPaper() -> some View {
         foregroundStyle(Theme.ink)
             .background(Theme.paper)
             .tint(Theme.control)
+            .fontDesign(.rounded)
+    }
+
+    /// The popover window (D60): a frosted material with a tint of the paper over it.
+    /// With Reduce Transparency on, the window is solid paper, as `onPaper`.
+    func onGlass() -> some View {
+        modifier(GlassWindow())
+    }
+
+    /// A frosted card for a group of content (D60): a material, a hairline edge and a soft shadow.
+    func glassCard() -> some View {
+        modifier(GlassCard())
+    }
+}
+
+private struct GlassWindow: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    func body(content: Content) -> some View {
+        content
+            .foregroundStyle(Theme.ink)
+            .background {
+                if reduceTransparency {
+                    Theme.paper
+                } else {
+                    ZStack {
+                        Rectangle().fill(.regularMaterial)
+                        Theme.paper.opacity(0.4)  // keeps the two-color look (D45) over any wallpaper
+                    }
+                }
+            }
+            .tint(Theme.control)
+            .fontDesign(.rounded)
+    }
+}
+
+private struct GlassCard: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    private let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+
+    func body(content: Content) -> some View {
+        content
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                if reduceTransparency {
+                    shape.fill(Theme.track)
+                } else {
+                    shape.fill(.thinMaterial)
+                }
+            }
+            .overlay { shape.strokeBorder(Theme.rule, lineWidth: 1) }
+            .shadow(color: .black.opacity(reduceTransparency ? 0 : 0.08), radius: 6, y: 2)
     }
 }
 

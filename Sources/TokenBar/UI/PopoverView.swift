@@ -44,7 +44,7 @@ struct PopoverView: View {
         .padding(16)
         .frame(width: 320, alignment: .leading)
         .frame(maxHeight: 560)
-        .onPaper()
+        .onGlass()
         .symbolRenderingMode(.hierarchical)
     }
 
@@ -56,13 +56,12 @@ struct PopoverView: View {
     private func bodyContent(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             headline
-            Theme.hairline
             providerListView(now: now)
             if let roast = snapshot.roast {
-                Theme.hairline
                 Text("“\(roast)”")
                     .font(.callout).italic().foregroundStyle(Theme.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .glassCard()
                     .accessibilityLabel("Roast: \(roast)")
             }
         }
@@ -75,7 +74,7 @@ struct PopoverView: View {
             ForEach(visibleRows, id: \.provider) { row in
                 ProviderRowView(row: row, now: now, actions: actions)
             }
-            if let line = stillAvailableLine { Text(line).font(.callout) }
+            if let line = stillAvailableLine { Text(line).font(.callout).glassCard() }
             // A radar with fewer than 3 axes has no area.
             if snapshot.shares.count >= 3, snapshot.shares.contains(where: { $0.percent > 0 }) {
                 RadarView(shares: snapshot.shares)
@@ -215,6 +214,7 @@ private struct ProviderRowView: View {
                 }
             }
         }
+        .glassCard()
     }
 
     @ViewBuilder private var badge: some View {
@@ -366,6 +366,7 @@ private struct RadarView: View {
             }
             .frame(height: 130)
         }
+        .glassCard()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(PopoverFormat.shares(shares))
     }
