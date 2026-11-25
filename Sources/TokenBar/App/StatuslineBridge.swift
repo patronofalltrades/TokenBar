@@ -39,7 +39,9 @@ enum StatuslineBridge {
         guard (try? process.run()) != nil else { return nil }
 
         let writer = stdin.fileHandleForWriting
-        DispatchQueue.global().async {
+        // Its own thread (D61), not the shared GCD pool: with a busy pool the input came late, the command waited
+        // for it, and the 2 s limit below returned nil. CI failed on this test at 2.4 s to 2.7 s.
+        Thread.detachNewThread {
             try? writer.write(contentsOf: input)
             try? writer.close()
         }
